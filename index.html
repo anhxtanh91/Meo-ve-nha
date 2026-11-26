@@ -1361,16 +1361,14 @@ function buildMapN(){
   map=[...Array(ROWS)].map(()=>Array(COLS).fill(' '));
   const ground=(c0,c1,top=9)=>{for(let c=c0;c<=c1;c++)for(let r=top;r<ROWS;r++)map[r][c]=r===top?'G':'D';};
   const plat=(c0,c1,r)=>{for(let c=c0;c<=c1;c++)map[r][c]='p';};
-  if(LV===3){ // Màn 2: rolling farmland — terraced paddies, irrigation ditches, fence rails, a barn loft
-    const ditch=(c0,c1)=>ground(c0,c1,10);
-    ground(0,24);
-    ground(25,28,8);ground(29,35,7);ground(36,40,8);ground(41,46,9);          // first rolling hill
-    ditch(47,52);ground(53,62);plat(55,59,6);                                  // ditch, fence rail
-    ground(66,70,9);ground(71,75,8);ground(76,80,7);ground(81,86,6);ground(87,91,8); // terraced paddies up the slope
-    ditch(92,97);ground(98,102);ditch(103,108);ground(109,113);                // twin ditches with rats
+  if(LV===3){ // Màn 2: flat farmland — irrigation ditches, wooden boards on posts, a barn loft, canals to jump
+    const ditch=(c0,c1)=>{for(let c=c0;c<=c1;c++)map[9][c]=' ';ground(c0,c1,10);};
+    ground(0,62);plat(30,34,6);ditch(47,52);plat(55,59,6);
+    ground(66,113);plat(72,76,6);plat(80,84,4);plat(87,90,6);ditch(92,97);ditch(103,108);
     ground(117,140);plat(121,125,6);plat(128,132,4);plat(135,138,6);           // barn loft: stacked boards
-    ground(144,148,8);ground(149,156,7);ground(157,160,8);ground(161,170,9);ditch(171,175);ground(176,179); // second hill
-    ground(183,190,8);ground(191,197,9);plat(193,196,6);ditch(198,202);ground(203,COLS-1);
+    ground(144,179);plat(148,152,6);ditch(155,160);plat(164,168,6);ditch(171,175);
+    ground(183,COLS-1);plat(193,196,6);ditch(198,202);
+    for(const [a,b] of [[20,24],[38,42],[68,71],[98,101],[124,127],[146,149],[186,190],[208,212]])ground(a,b,8); // low field dikes: gentle bumps
   }else{ // Màn 3: steep night forest — root slopes, ravines, climbing branches, a canopy route over the fire
     ground(0,16);
     ground(20,25,8);ground(26,31,7);ground(32,37,6);plat(35,39,3);            // root slope up to a high branch
@@ -1390,7 +1388,7 @@ function buildMapN(){
 }
 let fires4=[];
 function resetLevelN(){
-  buildMapN();pads=[];waves=[];enemies=[];fishes=[];parts=[];fireK=1;rainK=0;
+  buildMapN();hoppers=[];pads=[];waves=[];enemies=[];fishes=[];parts=[];fireK=1;rainK=0;
   const beetles=LV===3?[18,32,49,58,78,94,100,106,120,134,151,165,173,187,200,214]:[12,28,46,57,66,84,104,114,135,148,166,180,194,210];
   beetles.forEach(c=>enemies.push({type:'beetle',x:c*T+8,y:groundY(c),vx:-18,vy:0,hw:6,h:8,dir:-1,alive:true,dead:0,onGround:true}));
   const fly=LV===3?[[50,5],[84,3],[105,5],[130,2],[152,4],[200,5],[212,4]]:[[42,4],[62,4],[96,3],[118,5],[146,2],[171,4],[207,3],[216,4]];
@@ -1512,6 +1510,63 @@ const FIELDS3=layer(g=>{const r=mulberry(303);const P=(x,y,w,h,c)=>{g.fillStyle=
 });
 const REEDS3=layer(g=>{const r=mulberry(77);const P=(x,y,w,h,c)=>{g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),w,h);};
   for(let x=0;x<LWID;x+=2){const hh=6+Math.floor(r()*10*(.5+.5*Math.sin(x*.05)));const lean=r()<.5?0:1;for(let q=0;q<hh;q++)P(x+(q>hh*.6?lean:0),146-q,1,1,q>hh-3?'#f6d27a':r()<.5?'#c8923a':'#a8742e');if(r()<.25)P(x-1,146-hh-1,3,2,'#e8b860');}});
+
+/* Màn 2 life: swaying rice, grazing buffalo, hopping grasshoppers */
+const BUFF_S=(up)=>strSprite(up?[
+ '....o.............o..',
+ '...oo.............oo.',
+ '..ooo.............ooo',
+ '...ooooo.......ooooo.',
+ '.....ooooooooooooo...',
+ '..ooooooooooooooooo..',
+ '.ooooooooooooooooooo.',
+ 'oooooooooooooooooooo.',
+ 'ooooooooooooooooooo..',
+ '.ooooooooooooooooo...',
+ '..oo..oo.....oo..oo..',
+ '..oo..oo.....oo..oo..',
+ '..oo..oo.....oo..oo..']:[
+ '.............o.......',
+ '.............oo......',
+ '..........ooooo......',
+ '.....ooooooooooo.....',
+ '..ooooooooooooooo....',
+ '.ooooooooooooooooo...',
+ 'ooooooooooooooooooo..',
+ 'oooooooooooooooooooo.',
+ 'oooooooooooooooooooo.',
+ '.oooooooooooooooooo.o',
+ '..oo..oo.....oo..ooo.',
+ '..oo..oo.....oo..oo..',
+ '..oo..oo.....oo..oo..'],{o:'#3a2238'});
+// buffalo facing right: head on the right in the 'up' frame, head lowered to graze in the other
+const BUFF={up:BUFF_S(true),down:BUFF_S(false)};
+const BUFFS=[{x:180,y:132,sp:2.2,ph:0},{x:520,y:126,sp:-1.6,ph:2},{x:900,y:138,sp:1.8,ph:4.5}];
+function drawBuffalo(cx){const off=cx*.3;
+  for(const b of BUFFS){const walk=Math.sin(gt*.13+b.ph)>.2;const bx=b.x+(walk?0:0)+Math.sin(gt*.05+b.ph)*40;
+    const x=((bx-off)%LWID+LWID)%LWID;const sx=x>W+30?x-LWID:x;if(sx<-30||sx>W+30)continue;
+    const graze=Math.sin(gt*.7+b.ph)>-.1;const fr=graze?BUFF.down:BUFF.up;const face=Math.cos(gt*.05+b.ph)>0?1:-1;
+    alpha(.85,()=>{blit(fr,sx,b.y,face);const tx=sx-face*10,ty=b.y-7;rect(tx+Math.round(Math.sin(gt*3+b.ph)),ty,1,3,'#3a2238');});}
+}
+function drawRice3(cx){const off=cx*.7;const x0=Math.floor(off/2)*2;
+  for(let wx=x0;wx<x0+W+4;wx+=2){const sx=wx-off,h=hashD(wx*3+1),hh=7+Math.floor(h*9*(.6+.4*Math.sin(wx*.05)));
+    // wind: a steady sway plus gusts rolling across the field
+    const gust=Math.max(0,Math.sin(wx*.012-gt*1.3))**3;const sway=Math.sin(gt*2.1+wx*.09)*.8+gust*3.2;
+    for(let q=0;q<hh;q++){const k=q/hh;const o=Math.round(sway*k*k);rect(sx+o,146-q,1,1,q>hh-3?'#f6d27a':h<.5?'#c8923a':'#a8742e');}
+    const tip=Math.round(sway)+1;if(h>.3){rect(sx+tip,146-hh,2,1,'#e8b860');rect(sx+tip+1,146-hh+1,1,2,'#d8a048');}}
+}
+let hoppers=[];
+function updHoppers(dt){if(LV!==3)return;
+  if(hoppers.length<7&&Math.random()<dt*2){const x=cam+Math.random()*W,c=Math.floor(x/T);const gy=groundY(c);if(gy<=H&&tileAt(c,Math.floor(gy/T))==='G'&&Math.abs(x-p.x)>30)hoppers.push({x,y:gy,vx:0,vy:0,t:1+Math.random()*3,dir:Math.random()<.5?-1:1,col:Math.random()<.5?'#6aa83a':'#a8903a',air:false});}
+  for(const h of hoppers){h.t-=dt;const near=Math.abs(h.x-p.x)<26&&Math.abs(h.y-p.y)<20;
+    if(!h.air&&(h.t<=0||near)){h.air=true;h.dir=near?Math.sign(h.x-p.x)||1:(Math.random()<.5?-1:1);h.vx=h.dir*(40+Math.random()*50);h.vy=-(110+Math.random()*90);if(near)tone(3200,2600,.03,'square',.01);}
+    if(h.air){h.vy+=G*.7*dt;h.x+=h.vx*dt;h.y+=h.vy*dt;const gy=groundY(Math.floor(h.x/T));if(h.vy>0&&h.y>=gy){h.y=gy;h.air=false;h.t=1.5+Math.random()*4;}}}
+  hoppers=hoppers.filter(h=>h.x>cam-40&&h.x<cam+W+40&&h.y<H);}
+function drawHoppers(cx){for(const h of hoppers){const x=R(h.x-cx),y=R(h.y),d=h.dir;
+  rect(x-2,y-3,5,2,h.col);rect(x+d*2,y-4,2,1,h.col);rect(x+d*3,y-4,1,1,'#202010');
+  if(h.air){rect(x-d*2,y-5,3,1,'#d8e8a0');rect(x-d*3,y-2,1,2,h.col);rect(x+d,y-1,1,1,h.col);}
+  else{rect(x-d*2,y-4,1,1,h.col);rect(x-d*3,y-3,1,2,h.col);rect(x-d,y-1,1,1,h.col);rect(x+d,y-1,1,1,h.col);}
+  rect(x+d*3,y-6,1,2,'#405020');}}
 function drawBack3(cx){
   if(!MOUNT_SUN){MOUNT_SUN=hueCv(MOUNT,'#6a3a7a',.55);HILLS_SUN=hueCv(HILLS,'#9a5a6a',.55);CLOUDS_SUN=CLOUDS_DAY.map(c=>hueCv(c,'#ff9a86',.5));TREE_SUN=BIGTREE.map(t=>hueCv(t,'#4a2a3a',.62));}
   ctx.drawImage(SKY_SUN,0,0);
@@ -1520,10 +1575,11 @@ function drawBack3(cx){
   for(let i=0;i<7;i++){const x=((W+40)-((gt*9+i*7)%(W+120)))+Math.abs(i-3)*7,y=46+Math.abs(i-3)*4+Math.sin(gt*2+i)*1;const f=Math.floor(gt*5+i)%2;rect(x,y,1,1,'#3a2440');rect(x-1,y-f,1,1,'#3a2440');rect(x+1,y-f,1,1,'#3a2440');rect(x-2,y-1,1,1,'#3a2440');rect(x+2,y-1,1,1,'#3a2440');}
   wrapDraw(MOUNT_SUN,cx*.1,0);wrapDraw(HILLS_SUN,cx*.17,6);
   wrapDraw(FIELDS3,cx*.3,0);
+  drawBuffalo(cx);
   // wind rolling across the rice
   ctx.save();ctx.globalCompositeOperation='lighter';for(let i=0;i<4;i++){const x=((gt*26+i*140-cx*.3)%(W+160)+W+160)%(W+160)-80;ctx.globalAlpha=.08;ctx.fillStyle='#fff0b0';ctx.beginPath();ctx.ellipse(x,128,46,7,0,0,Math.PI*2);ctx.fill();}ctx.restore();
-  {const off=cx*.6,k0=Math.floor(off/420)-1;for(let k=k0;k<k0+3;k++){if(hash(k*7+2)<.35)continue;const t=TREE_SUN[(k%2+2)%2];ctx.drawImage(t,R(k*420+hash(k*3)*90-off),146-t.height);}}
-  wrapDraw(REEDS3,cx*.7,0);
+  {const off=cx*.6,k0=Math.floor(off/260)-1;for(let k=k0;k<k0+4;k++){if(hashD(k*7+2)<.25)continue;const t=TREE_SUN[(k%2+2)%2];ctx.drawImage(t,R(k*260+hashD(k*3)*80-off),146-t.height);}}
+  drawRice3(cx);
   // irrigation canal behind the gaps, reflecting the sunset
   rect(0,144,W,32,'#7a4a6a');rect(0,144,W,2,'#ffc890');for(let y=150;y<176;y+=5){const o2=Math.floor(gt*6+y*3)%16;for(let x=-o2;x<W;x+=24)rect(x,y,7,1,y<160?'#ffb070':'#a86a7a');}
 }
@@ -2288,6 +2344,7 @@ function drawWorld(){
   drawDecay(cx);
   drawSprout(cx);
   if(LV===4){drawCamp(cx);drawFires4(cx);}
+  if(LV===3)drawHoppers(cx);
   drawAmbient(cx);
   drawFish(cx);
   for(const e of enemies){if(Math.abs(e.x-cx-W/2)>W/2+80)continue;e.type==='beetle'?drawBeetle(e,cx):e.type==='frog'?drawFrogE(e,cx):drawBee(e,cx);}
@@ -2534,7 +2591,7 @@ function update(dt){
   else if(state==='arrive'){updArrive(dt);updBus(dt);updParts(dt);}
   else if(state==='play'){
     if(!p.ctrl&&LV===1&&bus.gone&&!boss)p.ctrl=true; // the cat waits until the bus has driven off screen
-    updPlayer(dt);if(state==='play'){updEnemies(dt);updFish();updBoss(dt);updFires4();if(LV===2){updPads(dt);updWaves(dt);updJumpers(dt);}}updBus(dt);updParts(dt);
+    updPlayer(dt);if(state==='play'){updEnemies(dt);updFish();updBoss(dt);updFires4();updHoppers(dt);if(LV===2){updPads(dt);updWaves(dt);updJumpers(dt);}}updBus(dt);updParts(dt);
     const target=boss?ARENA_X:p.x-W*.42;cam+=(target-cam)*Math.min(1,dt*(boss?4:7));cam=clamp(cam,0,LW-W);
     if(bannerT>0){bannerT-=dt;if(bannerT<=0)show('banner',false);}
   }
