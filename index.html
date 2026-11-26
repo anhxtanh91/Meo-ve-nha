@@ -722,6 +722,11 @@ function getTile(t,l,r,v,deep,wl=0){
     if(l){P(0,0,7,16,'#2e1a0e');P(1,1,5,14,'#d6a868');P(2,3,3,10,'#b8864c');P(3,5,1,6,'#e8c48a');P(1,1,5,1,'#e8c48a');}
     if(r){P(9,0,7,16,'#2e1a0e');P(10,1,5,14,'#d6a868');P(11,3,3,10,'#b8864c');P(12,5,1,6,'#e8c48a');P(10,1,5,1,'#e8c48a');}
     if(l){g.clearRect(0,0,1,2);g.clearRect(0,14,1,2);}if(r){g.clearRect(15,0,1,2);g.clearRect(15,14,1,2);}}
+  else if(t==='p'&&LV===3){ // Màn 2: weathered wooden board / fence rail
+    P(0,0,16,7,'#2a160c');P(0,1,16,5,'#9a6236');P(0,1,16,1,'#d09a5c');P(0,5,16,1,'#6a3e20');
+    for(let i=0;i<3;i++){const x=Math.floor(rnd()*13),y=2+Math.floor(rnd()*3);P(x,y,3,1,'#7e4c28');}
+    P(3,3,1,1,'#3a2414');P(12,3,1,1,'#3a2414');if(rnd()<.5)P(Math.floor(rnd()*14),0,2,1,'#e8c070');
+    if(l){g.clearRect(0,0,1,1);g.clearRect(0,6,1,1);}if(r){g.clearRect(15,0,1,1);g.clearRect(15,6,1,1);}}
   else if(t==='q'){P(0,1,16,5,'#173a22');P(0,1,16,4,'#4fa03e');P(0,1,16,1,'#86cc5c');P(0,4,16,1,'#3a8236');for(let x=1;x<16;x+=3)P(x,2+(x%2),1,1,'#68b34a');
     if(l){g.clearRect(0,1,2,1);g.clearRect(0,5,1,1);P(0,0,1,2,'#86cc5c');}if(r){g.clearRect(14,1,2,1);g.clearRect(15,5,1,1);P(15,0,1,2,'#86cc5c');}}
   else if(t==='p'){ // L1: a puffy leaf canopy to stand on (replaces the old wooden branch)
@@ -1356,33 +1361,42 @@ function buildMapN(){
   map=[...Array(ROWS)].map(()=>Array(COLS).fill(' '));
   const ground=(c0,c1,top=9)=>{for(let c=c0;c<=c1;c++)for(let r=top;r<ROWS;r++)map[r][c]=r===top?'G':'D';};
   const plat=(c0,c1,r)=>{for(let c=c0;c<=c1;c++)map[r][c]='p';};
-  if(LV===3){
-    ground(0,24);ground(28,52);plat(34,37,6);ground(44,47,8);
-    ground(56,80);plat(62,65,6);plat(68,71,4);ground(76,78,7);
-    ground(84,106);ground(92,95,8);ground(93,95,7);
-    ground(110,134);plat(116,119,6);plat(122,125,5);
-    ground(138,160);ground(146,149,7);
-    ground(164,186);plat(170,173,6);plat(176,179,4);
-    ground(190,COLS-1);ground(194,197,8);
-  }else{
-    ground(0,22);ground(26,50);plat(32,35,6);ground(42,45,8);
-    ground(54,78);plat(60,63,6);plat(66,69,4);
-    ground(82,104);ground(90,93,8);
-    ground(108,132);
-    ground(136,158);plat(142,145,6);ground(150,153,7);
-    ground(162,184);plat(168,171,6);plat(174,177,4);
-    ground(188,COLS-1);ground(196,199,8);
+  if(LV===3){ // Màn 2: rolling farmland — terraced paddies, irrigation ditches, fence rails, a barn loft
+    const ditch=(c0,c1)=>ground(c0,c1,10);
+    ground(0,24);
+    ground(25,28,8);ground(29,35,7);ground(36,40,8);ground(41,46,9);          // first rolling hill
+    ditch(47,52);ground(53,62);plat(55,59,6);                                  // ditch, fence rail
+    ground(66,70,9);ground(71,75,8);ground(76,80,7);ground(81,86,6);ground(87,91,8); // terraced paddies up the slope
+    ditch(92,97);ground(98,102);ditch(103,108);ground(109,113);                // twin ditches with rats
+    ground(117,140);plat(121,125,6);plat(128,132,4);plat(135,138,6);           // barn loft: stacked boards
+    ground(144,148,8);ground(149,156,7);ground(157,160,8);ground(161,170,9);ditch(171,175);ground(176,179); // second hill
+    ground(183,190,8);ground(191,197,9);plat(193,196,6);ditch(198,202);ground(203,COLS-1);
+  }else{ // Màn 3: steep night forest — root slopes, ravines, climbing branches, a canopy route over the fire
+    ground(0,16);
+    ground(20,25,8);ground(26,31,7);ground(32,37,6);plat(35,39,3);            // root slope up to a high branch
+    plat(40,44,6);                                                             // branch bridge over the first ravine
+    ground(45,48,6);ground(49,53,8);ground(54,60,9);plat(50,53,5);plat(56,59,3);  // cliff down, then climb branches
+    ground(64,72);ground(68,70,8);                                             // after the deep ravine: a fallen log mound
+    ground(75,80,8);ground(81,87,9);ground(88,92,7);plat(84,87,5);            // uneven floor
+    plat(95,98,6);ground(101,126);                                             // branch over the ravine, then the campsite
+    // burning zone: fires on the forest floor, mounds between them, branches above as an escape route
+    ground(127,138);ground(133,136,8);plat(127,131,5);
+    ground(139,152);plat(143,149,5);
+    ground(153,169);ground(160,163,8);plat(155,158,5);plat(164,168,5);
+    ground(173,190);plat(175,183,5);ground(186,189,8);
+    ground(191,205);ground(196,199,8);plat(200,204,5);
+    ground(209,COLS-1);plat(209,213,5);
   }
 }
 let fires4=[];
 function resetLevelN(){
   buildMapN();pads=[];waves=[];enemies=[];fishes=[];parts=[];fireK=1;rainK=0;
-  const beetles=LV===3?[18,40,49,70,88,100,118,130,143,155,168,182,196,208,216]:[16,38,47,58,74,86,98,112,126,140,156,166,180,194,206,214];
+  const beetles=LV===3?[18,32,49,58,78,94,100,106,120,134,151,165,173,187,200,214]:[12,28,46,57,66,84,104,114,135,148,166,180,194,210];
   beetles.forEach(c=>enemies.push({type:'beetle',x:c*T+8,y:groundY(c),vx:-18,vy:0,hw:6,h:8,dir:-1,alive:true,dead:0,onGround:true}));
-  const fly=LV===3?[[50,5],[100,5],[128,4],[152,5],[200,5],[212,4]]:[[48,5],[96,4],[146,5],[180,5],[204,4],[214,5]];
+  const fly=LV===3?[[50,5],[84,3],[105,5],[130,2],[152,4],[200,5],[212,4]]:[[42,4],[62,4],[96,3],[118,5],[146,2],[171,4],[207,3],[216,4]];
   fly.forEach(([c,r])=>enemies.push({type:'bee',x0:c*T+8,y0:r*T+12,x:c*T+8,y:r*T+12,hw:5,h:8,t:hash(c)*6,dir:-1,alive:true,dead:0,vy:0}));
-  flags=(LV===3?[40,90,130,168,205]:[38,86,120,165,206]).map(c=>({x:c*T+8,y:groundY(c),on:false}));
-  fires4=LV===4?[124,129,140,147,157,166,178,181,192,202,212,219].map((c,i)=>({x:c*T+8,ph:i*1.37,c})):[];
+  flags=(LV===3?[38,88,126,167,206]:[34,70,110,150,212]).map(c=>({x:c*T+8,y:groundY(c),on:false}));
+  fires4=LV===4?[124,129,138,141,147,154,159,166,175,181,193,202,211,219].map((c,i)=>({x:c*T+8,ph:i*1.37,c})):[];
   if(LV===4)for(const [dx,ph] of [[105,0],[215,Math.PI]])fires4.push({x:ARENA_X+dx,ph,c:Math.floor((ARENA_X+dx)/T),arena:true});scareWob=0;
   stats={fish:0,total:0,stomps:0};
   p=newPlayer(56,144);
@@ -2269,7 +2283,7 @@ function drawWorld(){
   drawSign(cx);
   drawArenaTree(cx);
   if(!bus.gone)drawBus(bus.x-cx,144,bus.door,bus.leaving,bus.dist);
-  if(LV===2){drawDockPosts(cx);for(const d of pads)if(!padSolid(d))drawPad(d,cx);}else drawCanopyTrees(cx);
+  if(LV===2){drawDockPosts(cx);for(const d of pads)if(!padSolid(d))drawPad(d,cx);}else if(LV===3)drawDockPosts(cx);else drawCanopyTrees(cx);
   drawTiles(cx);
   drawDecay(cx);
   drawSprout(cx);
