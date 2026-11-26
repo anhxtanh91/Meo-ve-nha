@@ -1284,8 +1284,29 @@ const MUS={bpm:92,lead:[ // [semitone from A4 or null, beats]
 let musT=0,musLi=0,musBi=0,musLT=0,musBT=0,musTimer=null;
 function nf(semi){return 440*Math.pow(2,semi/12);}
 function mnote(f,t,dur,type,v){const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+dur*.95);o.connect(g).connect(musBus);o.start(t);o.stop(t+dur);}
-function startMusic(){if(musTimer||!ac)return;const beat=60/MUS.bpm;musLT=musBT=ac.currentTime+.1;
-  musTimer=setInterval(()=>{if(!ac)return;const ahead=ac.currentTime+.6;
+/* boss music: fast, minor key, driving bass, drums — switches in while a boss fight is on */
+const BMUS={bpm:150,
+ lead:[[0,.5],[3,.5],[7,.5],[8,1],[7,.5],[3,.5],[2,.5],[3,1.5],[null,.5],[-1,.5],[0,.5],[3,.5],[7,1],[8,.5],[11,.5],[12,2],
+       [12,.5],[11,.5],[8,.5],[7,1],[8,.5],[7,.5],[3,.5],[2,1.5],[null,.5],[3,.5],[2,.5],[0,.5],[-1,1],[0,.5],[-4,.5],[-1,2]],
+ bass:[-24,-28,-29,-24]}; // A, F, E, A roots, one bar each, played as 8ths
+function mhit(t,kind){const n=kind==='k'?0:Math.floor(ac.sampleRate*(kind==='s'?.16:.04));
+  if(kind==='k'){const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(42,t+.12);g.gain.setValueAtTime(.32,t);g.gain.exponentialRampToValueAtTime(.0001,t+.16);o.connect(g).connect(musBus);o.start(t);o.stop(t+.18);return;}
+  const b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);
+  const src=ac.createBufferSource();src.buffer=b;const fl=ac.createBiquadFilter();fl.type=kind==='s'?'bandpass':'highpass';fl.frequency.value=kind==='s'?1800:7000;const g=ac.createGain();g.gain.value=kind==='s'?.16:.05;src.connect(fl).connect(g).connect(musBus);src.start(t);}
+let musMode='calm';
+const bossMusicOn=()=>!!boss&&state==='play'&&!['dead','flee','intro'].includes(boss.state);
+function startMusic(){if(musTimer||!ac)return;let beat=60/MUS.bpm;musLT=musBT=ac.currentTime+.1;
+  musTimer=setInterval(()=>{if(!ac)return;const want=bossMusicOn()?'boss':boss&&state==='play'&&boss.state==='intro'?'quiet':'calm';
+    if(want!==musMode){musMode=want;musLi=musBi=0;musLT=musBT=ac.currentTime+.08;if(want==='boss'){mhit(musLT,'k');mnote(nf(-24),musLT,.6,'sawtooth',.08);}}
+    const ahead=ac.currentTime+.6;
+    if(musMode==='quiet'){musLT=musBT=ahead;return;} // the music drops out while the boss makes its entrance
+    if(musMode==='boss'){beat=60/BMUS.bpm;const hot=boss&&boss.hits>=2;
+      while(musLT<ahead){const [n,b]=BMUS.lead[musLi];if(n!==null){mnote(nf(n+(hot?12:0)),musLT,b*beat*.9,'square',.04);if(hot)mnote(nf(n),musLT,b*beat*.9,'triangle',.05);}musLT+=b*beat;musLi=(musLi+1)%BMUS.lead.length;}
+      while(musBT<ahead){const r=BMUS.bass[musBi];for(let k=0;k<8;k++){const t=musBT+k*beat/2;mnote(nf(r+(k===6?12:0)),t,beat*.42,'sawtooth',.06);mnote(nf(r-12),t,beat*.42,'triangle',.1);
+          if(k%4===0)mhit(t,'k');if(k%4===2)mhit(t,'s');mhit(t,'h');if(hot&&k===7)mhit(t+beat/4,'k');}
+        musBT+=4*beat;musBi=(musBi+1)%BMUS.bass.length;}
+      return;}
+    beat=60/MUS.bpm;
     while(musLT<ahead){const [n,b]=MUS.lead[musLi];if(n!==null)mnote(nf(n),musLT,b*beat,'square',.05);musLT+=b*beat;musLi=(musLi+1)%MUS.lead.length;}
     while(musBT<ahead){const [n,b]=MUS.bass[musBi];for(let k=0;k<b;k++){mnote(nf(n),musBT+k*beat,beat*.9,'triangle',.12);if(k%2===1)mnote(nf(n+7),musBT+k*beat+beat/2,beat*.4,'triangle',.07);}musBT+=b*beat;musBi=(musBi+1)%MUS.bass.length;}
   },150);}
