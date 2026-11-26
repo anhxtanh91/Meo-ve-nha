@@ -2,7 +2,7 @@
 
 Game platformer pixel về chú mèo đen lạc đường tìm về nhà.
 
-Chơi ngay: https://anhxtanh91.github.io/meo-ve-nha/
+Chơi ngay: https://anhxtanh91.github.io/Meo-ve-nha/
 
 - Chạy trên trình duyệt: máy tính, điện thoại, iPad.
 - Cài như app: Safari → Chia sẻ → Thêm vào MH chính (iPhone/iPad), Chrome → Cài đặt ứng dụng (Android/máy tính).
