@@ -3172,6 +3172,7 @@ const CUTS=[{a:'cut1',name:'Mở đầu',note:'Chuyến xe buýt',ok:()=>true},
   {a:'dream2',name:'Flashback 5',note:'Câu cá bên hồ',ok:d=>d.includes(2)},
   {a:'cut5',name:'Màn 6',note:'Con hẻm phố đêm',ok:d=>reached(d,5)},
   {a:'boss5',name:'Màn 6',note:'Mèo hoang',ok:d=>reached(d,5)},
+  {a:'dream5',name:'Flashback 6',note:'Hai chú mèo và cô bé',ok:d=>d.includes(5)},
   {a:'cutEnd',name:'Kết thúc',note:'Về đến nhà',ok:d=>d.includes(5)}];
 let cvT=0,cvEnd=0;
 // replay a boss's entrance, or the scene after a boss, straight in the arena
@@ -3228,6 +3229,7 @@ function menuDo(a){
   else if(a==='cut5'){closeMenu();cutView=true;startLevel(5);}
   else if(a==='cutEnd'){closeMenu();cutView=true;LV=5;startEnding();}
   else if(a==='dream1'){closeMenu();cutView=true;startDream1(null);}
+  else if(a==='dream5'){closeMenu();cutView=true;startDream1(null,'friends');}
   else if(a==='dream6'){closeMenu();cutView=true;startDream1(null,'kitchen');}
   else if(a==='dream4'){closeMenu();cutView=true;startDream1(null,'dog');}
   else if(a==='dream3'){closeMenu();cutView=true;startDream1(null,'rice');}
@@ -3506,7 +3508,7 @@ function updOutro(dt){
     if(dream){dream.k=clamp((o.t-.9)/2.6,0,1);dream.d=clamp((o.t-3.6)/2.8,0,1);}
     if(o.t>3.4&&!o.saveShown){o.saveShown=1;$('saveText').innerHTML='Đang lưu trò chơi<span class="dots"><i>.</i><i>.</i><i>.</i></span>';show('ovSave',true);}
     if(o.t>4.6&&!o.saved){o.saved=1;if(!cutView){const ok=saveGame();$('saveText').innerHTML=ok?'Đã lưu ✓':'Không lưu được (trình duyệt chặn bộ nhớ)';}else $('saveText').innerHTML='Đã lưu ✓';}
-    if(o.t>7.2){show('ovSave',false);p.zzz=false;dream=null;if(cutView){endCutView();return;}const nx=nextLevel(LV);if((LV===1||LV===2||LV===3||LV===4||LV===6)&&nx){startDream1(nx,LV===2?'fish':LV===3?'rice':LV===4?'dog':LV===6?'kitchen':'forest');return;}if(nx){startLevel(nx);return;}if(LV===5){startEnding();return;}setState('l2');$('btnL2Again').focus({preventScroll:true});return;}}
+    if(o.t>7.2){show('ovSave',false);p.zzz=false;dream=null;if(cutView){endCutView();return;}const nx=nextLevel(LV);if((LV===1||LV===2||LV===3||LV===4||LV===6)&&nx){startDream1(nx,LV===2?'fish':LV===3?'rice':LV===4?'dog':LV===6?'kitchen':'forest');return;}if(nx){startLevel(nx);return;}if(LV===5){startDream1(null,'friends');return;}setState('l2');$('btnL2Again').focus({preventScroll:true});return;}}
   else if(o.ph==='look'){P=poseSit(gt,1);P.k='sit';p.face=1;if(o.t>.7)go('rise');}
   else if(o.ph==='rise'){P.k='crouch';p.face=1;if(o.t>.18)go('exit');}
   else if(o.ph==='exit'){p.face=1;p.vx=Math.min(130,p.vx+260*dt);p.x+=p.vx*dt;p.ph+=p.vx*dt*.19;P=poseRun(p.ph,gt);if(p.x>cam+W+26){if(cutView){endCutView();return;}fadeThen(()=>{p.x=cam+W+60;setState('saving');o.t=0;},.7);}}
@@ -4593,12 +4595,13 @@ let dr1=null,DR1_PAPER={};
 function startDream1(next,kind='forest'){parts.length=0;$('bossBar').hidden=true;dr1={t:0,next,done:false,kind};setState('dream1');
   // a soft music-box tune
   const N=[523,659,784,659,587,698,880,698,523,659,784,1047,988,784,659,523];N.forEach((f,i)=>{tone(f,f,.5,'triangle',.035,1.2+i*.42);tone(f*2,f*2,.18,'sine',.012,1.2+i*.42);});
+  if(kind==='friends'){for(const d of [8.2,8.5,9.4,9.7])tone(700,900,.12,'sine',.03,d);}
   if(kind==='kitchen'){tone(300,700,.18,'square',.03,6);tone(200,120,.1,'square',.04,6.6);for(const d of [6.8,7.0,7.2])tone(1800,1500,.05,'square',.02,d);tone(2400,600,.25,'square',.05,8.1);hiss(.35,.06,3000,8.1);}
   if(kind==='dog'){for(const d of [4.5,4.8,7,7.25,9.2])tone(330,200,.12,'square',.04,d);tone(1200,700,.35,'sawtooth',.04,10.4);tone(1000,600,.3,'sawtooth',.035,10.9);}
   if(kind==='forest'){tone(220,240,.9,'sawtooth',.012,10);tone(300,700,.18,'square',.03,10.9);tone(260,250,.5,'sawtooth',.03,11.5);tone(280,260,1.2,'sawtooth',.02,11.9);tone(900,500,.08,'square',.03,11.95);tone(900,500,.08,'square',.03,12.1);}
   if(kind==='rice'){tone(520,300,.22,'sawtooth',.03,10.5);tone(480,280,.2,'sawtooth',.025,10.8);tone(300,90,.12,'square',.05,11.5);tone(90,60,.08,'sine',.06,11.52);}} // a caw, then a plop
-function endDream1(){if(!dr1||dr1.done)return;dr1.done=true;const nx=dr1.next,k=dr1.kind;if(cutView){endCutView();return;}fadeThen(()=>{dr1=null;startLevel(nx||nextLevel(k==='fish'?2:k==='rice'?3:k==='dog'?4:k==='kitchen'?6:1));},.5);}
-function updDream1(dt){dr1.t+=dt;if(dr1.t>(dr1.kind==='fish'?13.2:dr1.kind==='dog'?14.4:dr1.kind==='kitchen'?12.4:dr1.kind==='rice'?14.4:14.6))endDream1();}
+function endDream1(){if(!dr1||dr1.done)return;dr1.done=true;const nx=dr1.next,k=dr1.kind;if(cutView){endCutView();return;}if(k==='friends'){fadeThen(()=>{dr1=null;startEnding();},.5);return;}fadeThen(()=>{dr1=null;startLevel(nx||nextLevel(k==='fish'?2:k==='rice'?3:k==='dog'?4:k==='kitchen'?6:1));},.5);}
+function updDream1(dt){dr1.t+=dt;if(dr1.t>(dr1.kind==='fish'?13.2:dr1.kind==='dog'?14.4:dr1.kind==='kitchen'?12.4:dr1.kind==='friends'?12.8:dr1.kind==='rice'?14.4:14.6))endDream1();}
 // a wobbly crayon stroke: dotted, waxy, with gaps and paper showing through
 function crayon(g,pts,col,w,seed,closed){const r=mulberry(seed);g.fillStyle=col;const n=pts.length;
   for(let i=0;i<(closed?n:n-1);i++){const [x0,y0]=pts[i],[x1,y1]=pts[(i+1)%n];const L=Math.hypot(x1-x0,y1-y0),k=Math.max(1,Math.ceil(L*1.6));
@@ -4643,14 +4646,15 @@ function dr1Girl(g,x,y,ph,face,seed,run){const lg=run?Math.sin(ph)*5:0,bob=run?-
   g.fillStyle='#2a1a1a';g.fillRect(x-3+face,y-38,1,2);g.fillRect(x+2+face,y-38,1,2);crayon(g,[[x-3+face,y-34],[x+face,y-32],[x+3+face,y-34]],'#c0303a',1,seed+13);
   g.globalAlpha=.5;g.fillStyle='#ff8a8a';g.fillRect(x-5+face,y-35,2,1);g.fillRect(x+4+face,y-35,2,1);g.globalAlpha=1;}
 // the black cat as a child draws it: a blob body, round head, triangle ears, a big curly tail, yellow eyes
-function dr1Cat(g,x,y,ph,face,seed,run){const bob=run?-Math.abs(Math.sin(ph))*3:0,lg=run?Math.sin(ph)*4:0;y+=bob;
-  for(const [lx,o] of [[-7,lg],[-3,-lg],[4,lg],[8,-lg]])crayon(g,[[x+lx*face,y-6],[x+lx*face+o,y]],'#1a1a22',2,seed+lx);
-  dr1Blank(g,x,y-9,11,5);for(let q=0;q<3;q++)scribble(g,x,y-9,11,5,'#22222a',seed+1+q*37,1.4);crayon(g,[...Array(14)].map((_,i)=>{const a=i/14*6.283;return [x+Math.cos(a)*11,y-9+Math.sin(a)*5];}),'#0a0a10',1,seed+2,true);
-  const hx=x+face*12,hy=y-15;dr1Blank(g,hx,hy,6,5);for(let q=0;q<3;q++)scribble(g,hx,hy,6,5,'#22222a',seed+3+q*41,1.5);crayon(g,[...Array(12)].map((_,i)=>{const a=i/12*6.283;return [hx+Math.cos(a)*6,hy+Math.sin(a)*5];}),'#0a0a10',1,seed+4,true);
-  for(const d of [-1,1]){crayon(g,[[hx+d*5,hy-3],[hx+d*4,hy-10],[hx+d*1,hy-4]],'#0a0a10',2,seed+5+d,true);}
+function dr1Cat(g,x,y,ph,face,seed,run,pal){const PB=pal?pal.b:'#22222a',PO=pal?pal.o:'#0a0a10',PL=pal?pal.o:'#1a1a22';const bob=run?-Math.abs(Math.sin(ph))*3:0,lg=run?Math.sin(ph)*4:0;y+=bob;
+  for(const [lx,o] of [[-7,lg],[-3,-lg],[4,lg],[8,-lg]])crayon(g,[[x+lx*face,y-6],[x+lx*face+o,y]],PL,2,seed+lx);
+  dr1Blank(g,x,y-9,11,5);for(let q=0;q<3;q++)scribble(g,x,y-9,11,5,PB,seed+1+q*37,1.4);crayon(g,[...Array(14)].map((_,i)=>{const a=i/14*6.283;return [x+Math.cos(a)*11,y-9+Math.sin(a)*5];}),PO,1,seed+2,true);
+  if(pal&&pal.s)for(const sx of [-6,-2,2,6])crayon(g,[[x+sx,y-14],[x+sx+face,y-8]],pal.s,1,seed+60+sx);
+  const hx=x+face*12,hy=y-15;dr1Blank(g,hx,hy,6,5);for(let q=0;q<3;q++)scribble(g,hx,hy,6,5,PB,seed+3+q*41,1.5);crayon(g,[...Array(12)].map((_,i)=>{const a=i/12*6.283;return [hx+Math.cos(a)*6,hy+Math.sin(a)*5];}),PO,1,seed+4,true);
+  for(const d of [-1,1]){crayon(g,[[hx+d*5,hy-3],[hx+d*4,hy-10],[hx+d*1,hy-4]],PO,2,seed+5+d,true);}
   g.fillStyle='#ffe040';g.fillRect(hx-3+face,hy-1,2,2);g.fillRect(hx+1+face,hy-1,2,2);g.fillStyle='#1a1a1a';g.fillRect(hx-2+face,hy-1,1,2);g.fillRect(hx+2+face,hy-1,1,2);
   g.fillStyle='#ff9ab0';g.fillRect(hx+face,hy+1,1,1);crayon(g,[[hx+face*2,hy+2],[hx+face*9,hy]],'#5a5a66',1,seed+9);crayon(g,[[hx+face*2,hy+3],[hx+face*9,hy+4]],'#5a5a66',1,seed+10);
-  const tw=run?Math.sin(ph*1.3)*3:Math.sin(gt*2)*2;crayon(g,[[x-face*10,y-10],[x-face*15,y-16],[x-face*14,y-23+tw],[x-face*10,y-25+tw],[x-face*8,y-21+tw]],'#0a0a10',2,seed+11);}
+  const tw=run?Math.sin(ph*1.3)*3:Math.sin(gt*2)*2;crayon(g,[[x-face*10,y-10],[x-face*15,y-16],[x-face*14,y-23+tw],[x-face*10,y-25+tw],[x-face*8,y-21+tw]],PO,2,seed+11);}
 // sitting by the water: the girl on the bank with her legs out, the cat sitting up beside her
 function dr1GirlSit(g,x,y,face,seed,rodA){crayon(g,[[x-1,y-2],[x+face*12,y-1]],'#3a2a1a',1,seed);crayon(g,[[x+1,y],[x+face*12,y+1]],'#3a2a1a',1,seed+1);crayon(g,[[x+face*12,y-2],[x+face*12,y+2]],'#3a2a1a',2,seed+2);
   g.fillStyle='#f3ead2';g.beginPath();g.moveTo(x,y-20);g.lineTo(x-8,y);g.lineTo(x+8,y);g.fill();scribble(g,x,y-7,5,5,'#5ab0f0',seed+4);crayon(g,[[x,y-20],[x-8,y],[x+8,y]],'#2a70c0',2,seed+5,true);
@@ -4844,12 +4848,38 @@ function drawDreamKitchen(g,t,boil){const FY=144,TY=104,TX0=150,TX1=262;
   if(t>8.1){for(const ox of [8,13]){crayon(g,[[cx+ox,cy-30],[cx+ox,cy-37]],'#e03a3a',2,1661+ox);g.fillStyle='#e03a3a';g.fillRect(cx+ox-1,cy-28,2,2);}}
   if(t>=5.2&&t<6){crayon(g,[[cx-16,cy-4],[cx-20,cy-6]],'#9a9a9a',1,1670);crayon(g,[[cx-16,cy-8],[cx-20,cy-11]],'#9a9a9a',1,1671);}
 }
+// the last dream: the black cat and the grey tabby (the stray, as a friend) play with a ball of yarn, then snuggle up to the girl
+const DR_GREY={b:'#8a8a96',o:'#4a4a56',s:'#5a5a66'};
+function drawDreamFriends(g,t,boil){const GY=140;
+  crayon(g,[...Array(23)].map((_,i)=>[i*15,GY+Math.sin(i*1.5)*1.5]),'#3a9a2a',2,1700+boil%3);
+  for(let y=GY+2;y<H-8;y+=3)crayon(g,[[8,y],[W-8,y+1]],'#8ad06a',1,1710+y+boil%2);
+  for(let x=10;x<W;x+=14)crayon(g,[[x,GY+1],[x+2,GY-5],[x+4,GY+1]],'#5aba3a',1,1720+x+boil%2);
+  for(const [r,c] of [[70,'#f06a6a'],[66,'#f8b050'],[62,'#f0e060'],[58,'#7ac04a'],[54,'#5ab0f0']])crayon(g,[...Array(16)].map((_,i)=>{const a=Math.PI+i/15*Math.PI;return [200+Math.cos(a)*r,100+Math.sin(a)*r*.6];}),c,2,1750+r+boil%2);
+  dr1Tree(g,30,1,1730+boil%2);dr1Tree(g,292,.85,1740+boil%2);
+  for(const [fx,fy,fc2] of [[70,152,'#f04a6a'],[150,158,'#ffd23a'],[230,151,'#b05ad0'],[262,160,'#f04a6a'],[110,162,'#ffd23a']]){scribble(g,fx,fy,2,2,fc2,fx+boil%2);g.fillStyle='#ffe060';g.fillRect(fx,fy,1,1);}
+  const gx=96,bEnd=166+Math.sin(3.2*2.2)*24;let bx=150,by=GY,cx=126,cy=GY,cf=1,ox=196,oy=GY,of=-1,crun=false,orun=false,hug=false;
+  if(t>=4.4&&t<7.6){const u=t-4.4;bx=166+Math.sin(u*2.2)*24;by=GY-1;
+    cx=bx-22+Math.sin(u*2.2+.6)*4;ox=bx+22+Math.sin(u*2.2+.6)*4;
+    cy=GY-Math.max(0,Math.sin(u*4.4))*9;oy=GY-Math.max(0,Math.sin(u*4.4+Math.PI))*9;crun=orun=true;}
+  else if(t>=7.6&&t<8.4){const u=(t-7.6)/.8;bx=bEnd;cx=lerp(bEnd-22,gx-28,u);ox=lerp(bEnd+22,gx+28,u);cf=-1;of=-1;crun=orun=true;}
+  else if(t>=8.4){bx=bEnd;cx=gx-28;ox=gx+28;hug=true;cy=GY-Math.abs(Math.sin(gt*3))*1;oy=GY-Math.abs(Math.sin(gt*3+1))*1;}
+  // ball of yarn with a trailing thread
+  {const rx=R(bx),ry=R(by-4),sp=gt*(t>4.4&&t<7.6?6:0);dr1Blank(g,rx,ry,4,4);scribble(g,rx,ry,4,4,'#e84a6a',1760,1.6);for(let k=0;k<3;k++){const a=sp+k*2.1;crayon(g,[[rx+Math.cos(a)*3,ry+Math.sin(a)*3],[rx-Math.cos(a)*3,ry-Math.sin(a)*1]],'#b02a4a',1,1761+k);}
+    crayon(g,[[rx-3,ry+3],[rx-10,ry+4],[rx-16,ry+3]],'#e84a6a',1,1765);}
+  dr1Girl(g,gx,GY,gt*6,1,700+boil%3*17,false);
+  if(hug){crayon(g,[[gx-2,GY-26],[gx-12,GY-18]],'#3a2a1a',1,1770);crayon(g,[[gx+2,GY-26],[gx+12,GY-18]],'#3a2a1a',1,1771);}
+  dr1Cat(g,R(cx),R(cy),gt*14,cf,800+boil%3*13,crun);dr1Cat(g,R(ox),R(oy),gt*14+1.5,of,1780+boil%3*13,orun,DR_GREY);
+  // hearts while they play, and lots of hearts plus purr marks once they snuggle
+  const nh=hug?6:t>4.4?2:0;for(let i=0;i<nh;i++){const q=((gt*.45+i/nh)%1),hx=(hug?gx+(i%3-1)*18:i%2?cx:ox)+Math.sin(q*6+i)*5,hy=(hug?GY-50:GY-30)-q*40;g.globalAlpha=1-q;
+    scribble(g,R(hx-2),R(hy),2,2,'#f04a6a',1790+i);scribble(g,R(hx+2),R(hy),2,2,'#f04a6a',1796+i);g.fillStyle='#f04a6a';g.fillRect(R(hx-2),R(hy+1),5,2);g.fillRect(R(hx-1),R(hy+3),3,1);g.fillRect(R(hx),R(hy+4),1,1);g.globalAlpha=1;}
+  if(hug)for(const [px,d2] of [[cx+14,1],[ox-14,-1]]){const w=Math.sin(gt*6)*1.5;crayon(g,[[px,GY-22+w],[px+d2*3,GY-24-w],[px+d2*6,GY-22+w]],'#9a7ad0',1,1800+d2);}
+}
 let DR1_FR=null;
 function drawDream1(){const d=dr1;if(!d)return;const t=d.t;ctx.drawImage(dr1Paper(d.kind==='kitchen'?'in':d.kind==='rice'),0,0);
   // the drawing "boils" a little like hand-drawn animation: redraw with a new wobble a few times a second
-  const boil=Math.floor(gt*(t>4?8:4)),alive=clamp((t-4)/.8,0,1),CE=d.kind==='rice'?10.2:10,FE=d.kind==='rice'?12.8:d.kind==='kitchen'?10.8:13,run=t>4.4&&t<CE;
+  const boil=Math.floor(gt*(t>4?8:4)),alive=clamp((t-4)/.8,0,1),CE=d.kind==='rice'?10.2:10,FE=d.kind==='rice'?12.8:d.kind==='kitchen'?10.8:d.kind==='friends'?11.2:13,run=t>4.4&&t<CE;
   if(!DR1_FR)DR1_FR=mkCanvas(W,H);const [fc,g]=DR1_FR;g.clearRect(0,0,W,H);
-  if(d.kind==='fish')drawDreamFish(g,t,boil,run);else if(d.kind==='dog')drawDreamDog(g,t,boil);else if(d.kind==='kitchen')drawDreamKitchen(g,t,boil);else{
+  if(d.kind==='fish')drawDreamFish(g,t,boil,run);else if(d.kind==='dog')drawDreamDog(g,t,boil);else if(d.kind==='kitchen')drawDreamKitchen(g,t,boil);else if(d.kind==='friends')drawDreamFriends(g,t,boil);else{
   // ground
   const ts=Math.min(t,CE),scroll=ts<4.4?0:ts<8?(ts-4.4)*46:(3.6*46)-(ts-8)*46;
   if(d.kind==='rice')drawDreamRiceBg(g,t,boil,scroll);else{
