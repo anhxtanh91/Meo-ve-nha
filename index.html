@@ -761,7 +761,7 @@ function drawBack(cx){
   // big trees close behind the path
   {const off=cx*.7,k0=Math.floor(off/300)-1;for(let k=k0;k<k0+4;k++){const t=BIGTREE[(k%2+2)%2];const sx=R(k*300+hash(k*3)*50-off);
     if(hashD(k*17+5)<decayAt(sx+t.width/2+cx)*1.1){ctx.drawImage(STUMP.r,sx+t.width/2-15,146-23);continue;}swayImg(t,sx,146-t.height,k*2.3);}}
-  {const dk=decayAt(cx+W/2);if(dk>0){ctx.save();ctx.globalCompositeOperation='multiply';ctx.fillStyle=mixHex('#ffffff','#d8a868',dk*.75);ctx.fillRect(0,60,W,86);ctx.restore();}}
+  {const dk=decayAt(cx+W/2);if(dk>0){ctx.save();ctx.globalCompositeOperation='multiply';const gr=ctx.createLinearGradient(0,0,0,92);gr.addColorStop(0,'#ffffff');gr.addColorStop(1,mixHex('#ffffff','#d8a868',dk*.75));ctx.fillStyle=gr;ctx.fillRect(0,0,W,146);ctx.restore();}}
   // water ditch (visible through gaps)
   rect(0,144,W,32,'#2f6f8a');rect(0,144,W,2,'#7fc4da');for(let y=150;y<176;y+=5){const o2=Math.floor(gt*6+y*3)%16;for(let x=-o2;x<W;x+=24)rect(x,y,7,1,'#4f93ad');}
 }
