@@ -961,7 +961,40 @@ function updBoss(dt){
     else if(p.inv<=0&&!(p.safe>0))hurt(b.x,false);
   }
 }
-function drawBoss(cx){
+/* ---- every boss is drawn offscreen first, then composited with: a pulsing blood-red aura that grows as it gets hurt,
+   squash & stretch from its own motion (breathing at rest, stretch when it leaps or dives, a squash when it lands),
+   dark afterimages when it moves fast, and a white flash instead of a blank frame when it is hit ---- */
+const [BFX_CV,BFX_G]=mkCanvas(W,H),[BFX_L,BFX_LG]=mkCanvas(W,H),BFX_TR=[0,1,2,3].map(()=>mkCanvas(W,H));let bfx=null;
+const bossRage=b=>{const mx=b.kind==='frog'?5:3;return clamp((b.hits||0)/(mx-1),0,1);};
+function drawBoss(cx){if(!boss||boss.state==='gone'){bfx=null;return;}const b=boss;
+  if(!bfx||bfx.b!==b)bfx={b,px:b.x,py:b.y,vx:0,vy:0,sq:0,t:gt,tr:[],ti:0,trT:0,has:false};
+  const f=bfx,dt=Math.max(1/240,gt-f.t);if(gt!==f.t){const vx=(b.x-f.px)/dt,vy=(b.y-f.py)/dt;if(Math.abs(vx)<2000&&Math.abs(vy)<2000){ // ignore teleports
+      if(f.vy>140&&Math.abs(vy)<30)f.sq=Math.min(1,f.vy/320); // landed hard
+      f.vx+=(vx-f.vx)*.5;f.vy+=(vy-f.vy)*.5;}f.px=b.x;f.py=b.y;f.t=gt;f.sq=Math.max(0,f.sq-dt*4);}
+  const old=ctx;BFX_G.clearRect(0,0,W,H);ctx=BFX_G;try{drawBossRaw(cx);}finally{ctx=old;}
+  const blink=b.flash>0&&Math.floor(b.flash*20)%2,dead=b.state==='dead'||b.state==='gone',intro=b.state==='intro'||b.intro;
+  const rage=dead?0:bossRage(b),beat=(()=>{const k=(gt*(1.1+rage*.7))%1;return Math.exp(-k*9)+.6*Math.exp(-Math.max(0,k-.2)*9)*(k>.2?1:0);})();
+  const spd=Math.hypot(f.vx,f.vy),ax=R(b.x-cx),ay=R(b.y);
+  // squash & stretch around the boss's feet
+  const breathe=Math.sin(gt*2.6)*.018,st=clamp(Math.abs(f.vy)/2600,0,.1),sqk=f.sq*.16;
+  const sy=1+breathe+st-sqk,sx=1-breathe*.6-st*.6+sqk*.9;
+  const put=(img,a,filt)=>{ctx.save();if(filt)ctx.filter=filt;ctx.globalAlpha=a;ctx.translate(ax,ay);ctx.scale(sx,sy);ctx.translate(-ax,-ay);ctx.drawImage(img,0,0);ctx.restore();};
+  // afterimages
+  f.trT-=1/60;if(spd>150&&!blink&&!intro){if(f.trT<=0){f.trT=.035;const [tc,tg]=BFX_TR[f.ti];tg.clearRect(0,0,W,H);tg.drawImage(BFX_CV,0,0);f.tr.unshift({c:tc,t:gt,cx});f.tr.length=Math.min(f.tr.length,4);f.ti=(f.ti+1)%4;}}
+  for(const tr of f.tr){const age=gt-tr.t;if(age>.22)continue;ctx.save();ctx.globalAlpha=.22*(1-age/.22);ctx.filter='brightness(.35) sepia(1) hue-rotate(-40deg) saturate(5)';ctx.drawImage(tr.c,R(tr.cx-cx),0);ctx.restore();}
+  if(blink){if(f.has)put(BFX_L,.85,'brightness(0) invert(1)');return;} // hit: a white flash of its silhouette
+  // a dark pool of shadow under it, shrinking as it rises
+  if(!dead&&!(b.state==='intro'&&b.hidden)){const hgt=clamp((GROUND_Y-b.y)/90,0,1),hw=(b.hw||16)*1.3*(1-hgt*.5);alpha(.32*(1-hgt*.7),()=>{ctx.fillStyle='#000';ctx.beginPath();ctx.ellipse(ax,GROUND_Y+1,hw,3,0,0,Math.PI*2);ctx.fill();});}
+  // the boss itself with its aura
+  ctx.save();if(!dead&&!(b.state==='intro'&&b.hidden)){ctx.shadowColor=`rgba(${R(170+rage*85)},${R(14-rage*10)},${R(24-rage*18)},${Math.min(1,.6+rage*.3+beat*.25).toFixed(2)})`;ctx.shadowBlur=8+rage*6+beat*4;}
+  ctx.translate(ax,ay);ctx.scale(sx,sy);ctx.translate(-ax,-ay);if(rage>.99&&!dead)ctx.translate(Math.round(Math.sin(gt*47)*.6),0);ctx.drawImage(BFX_CV,0,0);ctx.restore();
+  // keep a copy of this frame for the white hit flash
+  BFX_LG.clearRect(0,0,W,H);BFX_LG.drawImage(BFX_CV,0,0);f.has=true;}
+// a heartbeat vignette while a boss fight is on: the edges throb red, faster and stronger as the boss nears its end
+function drawBossVignette(){const b=boss;if(!b||state!=='play'||b.state==='intro'||b.intro||b.state==='dead'||b.state==='gone'||cutView)return;
+  const rage=bossRage(b),k=(gt*(1.1+rage*.7))%1,beat=Math.exp(-k*9)+.6*(k>.2?Math.exp(-(k-.2)*9):0),a=.26+rage*.18+beat*(.1+rage*.12);
+  const g=ctx.createRadialGradient(W/2,H/2,H*.34,W/2,H/2,W*.6);g.addColorStop(0,'rgba(40,0,0,0)');g.addColorStop(1,`rgba(70,0,6,${a.toFixed(3)})`);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
+function drawBossRaw(cx){
   if(!boss||boss.state==='gone')return;const b=boss;if(b.kind==='rat6'){drawRatBoss(cx);return;}if(b.kind==='stray'){drawStrayBoss(cx);return;}if(b.kind==='frog'){drawFrogBoss(cx);return;}if(b.kind==='dog'){drawDogBoss(cx);return;}if(b.kind==='crow2'){drawCrowBoss(cx);return;}
   if(b.swarm){const f=Math.floor(gt*16)%2;for(const s of b.swarm){const sx=s.x-cx;if(sx<-20||sx>W+20||s.y<-20||s.y>H)continue;const dir=(s.out?s.vx:(s.tx-s.x))>0?1:-1;blit((f+s.i)%2?BEE.a:BEE.b,sx,s.y+2,-dir);}}
   if(b.state==='intro'&&b.t<5&&b.kind!=='crow')return;
@@ -3655,6 +3688,7 @@ function drawDream(){if(!dream)return;const k=dream.k,d=dream.d;if(k<=0&&d<=0)re
     gr=ctx.createRadialGradient(sx,sy,r0,sx,sy,r1+40);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(1,`rgba(${R(255-150*k)},${R(255-145*k)},${R(255-130*k)},1)`);ctx.globalCompositeOperation='multiply';ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
     gr=ctx.createRadialGradient(sx,sy,0,sx,sy,r0+44);gr.addColorStop(0,`rgba(255,214,182,${.5*k})`);gr.addColorStop(.55,`rgba(255,200,205,${.26*k})`);gr.addColorStop(1,'rgba(255,200,190,0)');ctx.globalCompositeOperation='screen';ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);}
   ctx.globalCompositeOperation='source-over';
+  drawBossVignette();
   if(catVis)drawPlayer(cam); // the cat stays crisp black on top of the grade
   if(d>0){const gr=ctx.createRadialGradient(sx,sy,Math.max(0,r0*(1-d)),sx,sy,Math.max(1,r1*(1.2-d)));gr.addColorStop(0,`rgba(0,0,0,${Math.min(1,d*d*1.1)})`);gr.addColorStop(1,`rgba(0,0,0,${Math.min(1,d*1.6)})`);ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
     if(d>=1){ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);}}
