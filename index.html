@@ -2182,15 +2182,15 @@ function buildDump6(ground,plat){
   ridge(25,[8,7,6,5,6,7,6,7,8]);
   pit(44,49);ridge(44,[8,7,8],{bot:10});              // over a pit: linger and you drop in
   ridge(55,[8,7,7,6,6,5,5,6,7,8],{chain:true});         // a loose ridge: step on it and the whole thing slides
-  ridge(81,[8,7,6,6,7,8]);plat(84,87,3);
+  ridge(81,[8,7,6,6,7,8]);
   pit(98,101);
   // past the iron fence: the scrapyard, taller and looser
   ridge(117,[8,7,6,5,4,5,6,7,8]);
   pit(136,143);ridge(136,[7,6,6,7],{chain:true,bot:10}); // a sliding bridge: run!
-  ridge(150,[8,7,6,5,5,6,7,8]);plat(156,159,2);
+  ridge(150,[8,7,6,5,5,6,7,8]);
   ridge(171,[8,7,6,6,5,5,4,5,6,7,8],{chain:true});
   ridge(200,[8,7,6,7,6,7,8]);
-  pit(215,218);plat(215,218,7);
+  ridge(215,[8,8]);                                    // no floating planks ever: a low heap bridges the last pit
 }
 function heapAt(c,r){for(const h of heaps6)if(c>=h.c0&&c<=h.c1&&(r===undefined||(r>=h.top&&r<=h.bot)))return h;return null;}
 const heapDust=(x0,x1,y)=>{if(Math.random()<.5)parts.push({x:x0+Math.random()*(x1-x0),y:y+1,vx:(Math.random()*2-1)*20,vy:-20-Math.random()*30,life:.5,max:.5,c:['#6a5a44','#3a3a44','#c8c0a8','#8a4a3a'][Math.floor(Math.random()*4)],g:300});};
