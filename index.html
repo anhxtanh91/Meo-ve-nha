@@ -4105,7 +4105,7 @@ function paintFore(env){
           foliage(L,G,{amb:.1,rim:'#3e6e5e'});x+=s*n*.95+ri(4,10);}}}
   }
   else if(LV===2){
-    const WT=B-18,CLEAN=['#0e3448','#134460','#185674','#1f6a88','#2a7e9a'],DIRTY=['#1e220c','#2a3010','#384016','#48501c','#5a6224'];
+    const WT=B-10,CLEAN=['#0e3448','#134460','#185674','#1f6a88','#2a7e9a'],DIRTY=['#1e220c','#2a3010','#384016','#48501c','#5a6224'];
     for(let x=0;x<w;x++){const dz=env.decay(env.wx(x)),P=mixP(CLEAN,DIRTY,dz),t=WT+Math.round(Math.sin(x*.07)*.6);
       for(let y=t;y<B;y++){const d=(y-t)/(B-t);let v=.75-d*.6+(hsh(Math.floor(x/6),y)-.5)*.12;px(x,y,sh(P,v,x,y));}
       px(x,t,mix('#9ed4e4','#9aa858',dz));if(hsh(x,3)<.3)px(x,t+1,mix('#5fa8c4','#6a7a34',dz));
