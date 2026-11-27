@@ -1581,7 +1581,7 @@ function buildMapN(){
 }
 let fires4=[];
 function resetLevelN(){
-  buildMapN();hoppers=[];pads=[];waves=[];enemies=[];drops=[];fishes=[];parts=[];fireK=1;rainK=0;
+  buildMapN();hoppers=[];pads=[];waves=[];enemies=[];drops=[];fishes=[];parts=[];fireK=1;rainK=0;chase4=null;anim4=[];
   const beetles=LV===6?[14,30,38,60,70,86,122,130,152,162,176,186,205,224]:LV===5?[45,48,80,84,115,121,160,165,198,202]:LV===3?[18,32,49,58,78,94,100,106,120,134,151,165,173,187,200,214]:[12,28,46,57,66,84,104,114,135,148,166,180,194,210];
   beetles.forEach(c=>enemies.push({type:'beetle',x:c*T+8,y:groundY(c),vx:-18,vy:0,hw:6,h:8,dir:-1,alive:true,dead:0,onGround:true}));
   const fly=LV===6?[[30,3],[58,2],[150,3],[175,2],[200,3],[216,2]]:LV===5?[[34,2],[58,1],[94,2],[132,3],[150,1],[182,2],[212,3]]:LV===3?[[50,5],[84,3],[105,5],[130,2],[152,4],[200,5],[212,4]]:[[42,4],[62,4],[96,3],[118,5],[146,2],[171,4],[207,3],[216,4]];
@@ -2751,6 +2751,60 @@ function fireH(f){return (4+15*Math.max(0,Math.sin(gt*1.6+f.ph)))*fireK;}
 function updFires4(){if(LV!==4||state!=='play')return;for(const f of fires4){const h=fireH(f);if(h<9)continue;const gy=groundY(f.c);
   if(Math.abs(p.x-f.x)<p.hw+7&&p.y>gy-h+4&&p.inv<=0&&!(p.safe>0))hurt(f.x,false);}
   if(fireAt(p.x)>.2&&Math.random()<.02)SFX.crackle();}
+/* ---- the forest fire flares up: a wall of flame chases the cat; deer, rabbits and birds flee the same way beside it.
+   Animals the fire catches leap into the background and fade into the night. Near the boss the forest goes pitch dark, only embers drift. ---- */
+let chase4=null,anim4=[];const CH4_START=FIRE_X+24,CH4_END=()=>ARENA_X-70;
+function chaseDark4(cx){if(LV!==4)return 0;return clamp((cx+W/2-(ARENA_X-230))/170,0,1)*(boss&&boss.state!=='intro'?0:1);}
+function surf4(c,y){for(let r=Math.max(0,Math.floor((y-36)/T));r<ROWS;r++){const t=tileAt(c,r);if(SOLID.has(t))return r*T;}return H+40;} // ground only, never the canopy platforms
+function spawnAnim4(k,x,run){const sp=k==='deer'?126+Math.random()*16:k==='rabbit'?108+Math.random()*14:96+Math.random()*50;
+  anim4.push({k,x,y:k==='bird'?40+Math.random()*60:surf4(Math.floor(x/T),GROUND_Y),vx:sp,vy:0,ph:Math.random()*6,st:'run',t:0,stag:k==='deer'&&Math.random()<.5,s:k==='bird'?(Math.random()<.3?1.4:1):1,col:k==='rabbit'?(Math.random()<.5?'#8a7a6a':'#9a8670'):null});}
+function updChase4(dt){if(LV!==4)return;
+  if(!chase4&&p.x>CH4_START&&p.x<CH4_END()&&state==='play'){chase4={wall:p.x-150,v:70,t:0,end:false,fade:0,cd:.6};enemies=enemies.filter(e=>e.x<FIRE_X-40); // every creature in the burning forest is running for its life now, none of them attacksshakeT=.6;shakeA=2;hiss(.9,.08,700);tone(90,50,1.2,'sawtooth',.06);
+    for(const [k,dx] of [['deer',60],['deer',150],['rabbit',30],['rabbit',90],['rabbit',-40],['bird',20],['bird',80],['bird',140],['bird',-20],['deer',-80]])spawnAnim4(k,p.x+dx);}
+  const c=chase4;if(!c)return;c.t+=dt;
+  if(!c.end){const gap=p.x-c.wall,tv=gap>125?118:gap<75?82:100;c.v+=(tv-c.v)*Math.min(1,dt*1.5);c.wall+=c.v*dt; // always looming close behind, never out of reachif(p.x>CH4_END()){c.end=true;}
+    if(c.wall>p.x-10&&state==='play'){c.wall=p.x-60;hurt(p.x,true);return;} // swallowed by the fire
+    c.cd-=dt;if(c.cd<=0){c.cd=.9+Math.random()*1.1;const r=Math.random();spawnAnim4(r<.3?'deer':r<.65?'rabbit':'bird',c.wall-20);}
+    if(Math.random()<dt*3)SFX.crackle();}
+  else{c.fade=Math.min(1,c.fade+dt*.5);c.wall+=c.v*(1-c.fade)*dt;}
+  for(const a of anim4){a.t+=dt;if(a.st==='run'){a.ph+=dt*(a.k==='rabbit'?13:a.k==='deer'?11:16);a.x+=a.vx*dt;
+      if(a.k!=='bird'){const gy=surf4(Math.floor(a.x/T),a.y),ahead=surf4(Math.floor((a.x+16)/T),a.y);
+        let fireAhead=false;for(const f of fires4)if(f.x-a.x>4&&f.x-a.x<26&&fireH(f)>6)fireAhead=true;
+        if(a.y>=gy-.5&&(fireAhead||ahead>H||ahead<gy-2)&&!a.air){a.vy=a.k==='deer'?-260:-230;a.air=1;}
+        a.vy+=G*dt;a.y+=a.vy*dt;if(a.y>=gy&&gy<H){a.y=gy;a.vy=0;a.air=0;}if(a.y>H)a.st='lost';}
+      else a.y+=Math.sin(a.t*2+a.ph)*8*dt;
+      if(c&&!c.end&&a.x<c.wall+8){a.st='lost';a.t=0;}
+      for(const f of fires4)if(a.st==='run'&&a.k!=='bird'&&Math.abs(f.x-a.x)<5&&a.y>groundY(f.c)-fireH(f)+3&&fireH(f)>9&&Math.random()<.5){a.st='lost';a.t=0;}
+      if(a.st==='lost'){a.sx=a.x-cam;a.sy=a.y;a.cam0=cam;a.t=0;tone(a.k==='deer'?620:a.k==='bird'?1500:1100,a.k==='deer'?300:700,.35,'triangle',.03);}}
+    else if(a.t>2.6)a.gone=1;
+    if(a.x>ARENA_X+W+40||(c.end&&a.x>CH4_END()+260))a.gone=1;}
+  anim4=anim4.filter(a=>!a.gone);}
+function drawAnimal4(a,lost){const ph=a.ph,k=a.k,sil=lost?'#140a08':null;const C=(c)=>sil||c;
+  if(k==='deer'){const bob=a.air?0:-Math.abs(Math.sin(ph))*2,y0=bob;
+    const leg=(hx,hy,an,col)=>{for(let i=0;i<9;i++)rect(hx+Math.sin(an)*i*.9,y0+hy+Math.cos(an)*i,i>6?1:2,1,i>=8?C('#1a100a'):col);};
+    const fa=a.air?-.9:Math.sin(ph)*.9,ba=a.air?.9:Math.sin(ph+Math.PI)*.9;
+    leg(-7,-8,ba,C('#5a3a20'));leg(-5,-8,ba+.4,C('#6a4426'));leg(5,-8,fa,C('#5a3a20'));leg(7,-8,fa-.4,C('#6a4426'));
+    rect(-9,y0-14,18,6,C('#8a5a32'));rect(-8,y0-15,15,1,C('#9a6a3a'));rect(-7,y0-9,13,1,C('#c8a070'));rect(-9,y0-14,2,3,C('#6a4426'));rect(-11,y0-15,2,2,C('#f0e8d8'));
+    rect(6,y0-19,4,6,C('#8a5a32'));rect(7,y0-21,7,3,C('#8a5a32'));rect(13,y0-20,2,2,C('#3a2414'));rect(8,y0-23,2,2,C('#6a4426'));rect(11,y0-21,1,1,C('#0a0606'));rect(7,y0-17,1,3,C('#c8a070'));
+    if(a.stag){const A=C('#d8c8a0');rect(9,y0-28,1,6,A);rect(7,y0-28,2,1,A);rect(10,y0-26,2,1,A);rect(11,y0-30,1,3,A);rect(8,y0-30,1,2,A);}}
+  else if(k==='rabbit'){const hop=a.air?0:-Math.abs(Math.sin(ph))*4,y0=hop,st=Math.sin(ph)>0;const b=C(a.col||'#8a7a6a');
+    rect(-4,y0-6,8,4,b);rect(-3,y0-7,6,1,b);rect(3,y0-8,3,3,b);rect(4,y0-12,1,4,b);rect(5,y0-11,1,3,C('#b8a090'));rect(5,y0-7,1,1,C('#0a0606'));rect(-5,y0-6,2,2,C('#f0ece0'));
+    if(st){rect(-4,y0-2,4,1,b);rect(2,y0-2,2,1,b);}else{rect(-6,y0-3,3,1,b);rect(3,y0-3,3,1,b);}}
+  else{const up=Math.floor(ph)%2===0,b=C('#6a5040');rect(-2,-1,5,2,b);rect(3,-2,2,2,b);rect(5,-1,1,1,C('#c8a040'));rect(-4,-1,2,1,b);if(up){rect(-1,-4,3,3,C('#8a6a50'));}else{rect(-1,1,3,2,C('#8a6a50'));}}}
+function drawLost4(cx){for(const a of anim4){if(a.st!=='lost')continue;const k=clamp(a.t/2.4,0,1),e=k*k*(3-2*k);
+  const sx=a.sx-(cx-a.cam0)*.35-e*30,sy=a.sy+(100-a.sy)*e-Math.sin(e*Math.PI)*26,sc=a.s*(1-.62*e);
+  ctx.save();ctx.globalAlpha=1-e;ctx.translate(R(sx),R(sy));ctx.scale(sc,sc);drawAnimal4(a,true);ctx.restore();
+  if(k<.5){alpha(1-k*2,()=>flame(sx,sy-4*sc,8*(1-k*2),3,a.ph*5));}}}
+function drawChase4(cx){const c=chase4;if(!c){return;}
+  for(const a of anim4)if(a.st==='run'){ctx.save();ctx.translate(R(a.x-cx),R(a.y));if(a.s!==1)ctx.scale(a.s,a.s);drawAnimal4(a,false);ctx.restore();}
+  const wx=c.wall-cx,f=1-c.fade;if(wx<-120||f<=0)return;
+  alpha(.9*f,()=>{for(let x=-200;x<wx-40;x+=3)rect(x,GROUND_Y-2-hashD(Math.floor((x+cx)/3))*3,3,3,(Math.floor((x+cx)/3)+Math.floor(gt*8))%5?'#3a1206':'#a8400e');});
+  alpha(.85*f,()=>{for(let x=-160;x<wx;x+=4){const h=60+30*Math.sin((x+cx)*.05+gt*1.3);rect(x,GROUND_Y-h,4,h,'rgba(90,20,6,.5)');}});
+  for(let i=0;i<22;i++){const x=wx-6-i*7+Math.sin(gt*2+i)*3,h=(46+44*Math.abs(Math.sin(gt*1.7+i*1.3))+(i<5?26:0)-(i>14?20:0))*f;flame(x,GROUND_Y+2,h,7+(i%3)*2,i*7.7);}
+  for(let i=0;i<6;i++){const x=wx-14-i*20,h=(26+20*Math.abs(Math.sin(gt*2.3+i)))*f;flame(x,GROUND_Y-40-i*4,h,5,i*3.3+50);} // flames licking up the trunks
+  alpha(.45*f,()=>glow(wx-30,GROUND_Y-30,110,'rgb(255,120,40)',.5));
+  if(Math.random()<.7*f)parts.push({x:c.wall-Math.random()*60,y:GROUND_Y-20-Math.random()*50,vx:20+Math.random()*30,vy:-40-Math.random()*40,life:1.2,max:1.2,c:Math.random()<.5?'#ffb050':'#ff7a20',g:-15});
+  if(Math.random()<.35*f)parts.push({x:c.wall-20,y:GROUND_Y-70-Math.random()*20,vx:10,vy:-30,life:1.6,max:1.6,c:'#2a2020',g:-10});}
 function drawArena4(cx){const T0=BURNT||BIGTREE;for(const [x,fl] of [[LTREE_X,1],[TREE_X,0]]){const t=(BURNT||BIGTREE)[fl];const sx=R(x-t.width/2-cx);ctx.drawImage(t,sx,GROUND_Y+2-t.height);
   const fk=Math.max(.05,fireK);alpha(.5*fk,()=>glow(sx+t.width/2,GROUND_Y-t.height*.55,t.width*.6,'rgb(255,110,40)',.3));for(let i=0;i<9;i++)flame(sx+18+hashD(i*7+fl)*(t.width-36),GROUND_Y+2-t.height+24+hashD(i*13+fl)*t.height*.48,(10+8*Math.abs(Math.sin(gt*2.4+i)))*fk,4,i*3+fl*11);flame(sx+t.width/2,GROUND_Y-2,14*fk,6,fl*5);}}
 // night lighting: everything multiplied by a dark mask with warm/cool light pools
@@ -2772,8 +2826,10 @@ function drawNight(cx){const fv=fireAt(cx+W/2);
   const cf=FIRE_X-18-cx;if(cf>-80&&cf<W+80)lightPool(cf,GROUND_Y-8,70*Math.max(.3,fireK),'rgba(255,150,80,.9)');
   for(const f of fires4){const x=f.x-cx;if(x<-60||x>W+60)continue;lightPool(x,GROUND_Y-8,30+fireH(f)*2.4,'rgba(255,140,70,.8)');}
   if(boss&&boss.kind==='dog'&&boss.state!=='intro')lightPool(boss.x-cx,boss.y-10,30,'rgba(90,80,90,.6)');
+  if(chase4){const f=1-chase4.fade,wx=chase4.wall-cx;if(f>0&&wx>-160)lightPool(wx-20,GROUND_Y-30,150*f,'rgba(255,130,60,.95)');}
   ctx.save();ctx.globalCompositeOperation='multiply';ctx.drawImage(LCV,0,0);ctx.restore();
   drawEyes(cx);
+  {const dz=chaseDark4(cx);if(dz>0){alpha(dz*.88,()=>rect(0,0,W,H,'#050304'));for(let i=0;i<26;i++){const k=((gt*(.1+hashD(i*3)*.08)+hashD(i*5))%1),x=((hashD(i*7)*W*1.3-cx*.15+Math.sin(gt*1.1+i)*8)%W+W)%W,y=GROUND_Y+4-k*130,fl=.5+.5*Math.sin(gt*(5+i%4)+i);alpha(dz*(1-k)*fl,()=>{rect(x,y,1,1,fl>.7?'#ffd070':'#ff7a20');glow(x,y,3,'rgb(255,140,50)',.5);});}}}
   // things that glow on top of the dark
   const dk=boss&&boss.kind==='dog'&&boss.state==='intro'?boss.dk||0:0;
   if(dk>0){alpha(dk*.93,()=>rect(0,0,W,H,'#050304'));
@@ -4191,12 +4247,13 @@ function drawWorld(){
   drawArenaTree(cx);
   if(!bus.gone)drawBus(bus.x-cx,144,bus.door,bus.leaving,bus.dist);
   if(LV===2){drawDockPosts(cx);for(const d of pads)if(!padSolid(d))drawPad(d,cx);}else if(LV===5)drawBalc5(cx);else if(LV===6)drawGate6(cx);else drawCanopyTrees(cx);
+  if(LV===4)drawLost4(cx);
   drawTiles(cx);
   if(LV===6){drawLake6(cx);drawTurtle6(cx);drawHeaps6(cx);drawTyres6(cx);}
   drawDecay(cx);
   drawSprout(cx);
   if(LV===5)drawDeco5(cx);
-  if(LV===4){drawCamp(cx);drawFires4(cx);}
+  if(LV===4){drawCamp(cx);drawFires4(cx);drawChase4(cx);}
   if(LV===3)drawHoppers(cx);
   drawAmbient(cx);
   drawFish(cx);
@@ -4655,7 +4712,7 @@ function update(dt){
   else if(state==='arrive'){updArrive(dt);updBus(dt);updParts(dt);}
   else if(state==='play'){
     if(!p.ctrl&&LV===1&&bus.gone&&!boss)p.ctrl=true; // the cat waits until the bus has driven off screen
-    updCutView(dt);if(state!=='play')return;if(lvS&&!cutView)lvS.t+=dt;updPlayer(dt);if(state==='play'){updEnemies(dt);updHeaps6(dt);updFish();updBoss(dt);updFires4();updHoppers(dt);updCity5(dt);if(LV===2){updPads(dt);updWaves(dt);updJumpers(dt);}}updBus(dt);updParts(dt);
+    updCutView(dt);if(state!=='play')return;if(lvS&&!cutView)lvS.t+=dt;updPlayer(dt);if(state==='play'){updEnemies(dt);updHeaps6(dt);updFish();updBoss(dt);updFires4();updChase4(dt);updHoppers(dt);updCity5(dt);if(LV===2){updPads(dt);updWaves(dt);updJumpers(dt);}}updBus(dt);updParts(dt);
     const target=boss?ARENA_X:p.x-W*.42;cam+=(target-cam)*Math.min(1,dt*(boss?4:7));cam=clamp(cam,LV===5?CAMMIN5:0,LW-W);
     if(bannerT>0){bannerT-=dt;if(bannerT<=0)show('banner',false);}
   }
