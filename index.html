@@ -61,6 +61,7 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rend
 .mi .note{font-size:.62em;opacity:.8}
 #llist.cuts{display:grid;grid-template-columns:1fr 1fr;gap:.4cqw 1.2cqw;min-width:min(94%,640px)}#llist.cuts .mi{font-size:max(13px,3cqw);flex-direction:column;gap:0;line-height:1.05}#llist.cuts .mi .note{font-size:.8em}#llist.cuts .mi[data-a=back]{grid-column:1/-1;flex-direction:row}
 #llist .empty{font-size:max(14px,3.2cqw);color:var(--muted);margin:0}
+#llist.lv{display:grid;grid-template-columns:1fr 1fr;gap:.4cqw 1.2cqw;min-width:min(94%,640px)}#llist.lv .mi{font-size:max(13px,3.2cqw);line-height:1.1}#llist.lv .mi .lab{min-width:0}#llist.lv .empty,#llist.lv .mi[data-a=back]{grid-column:1/-1}#llist.lv .empty{font-size:max(12px,2.6cqw)}
 .mi .lab{min-width:5.2em;text-align:left}
 .bar{display:inline-flex;gap:2px;align-items:flex-end}
 .bar i{display:inline-block;width:.32em;background:currentColor;opacity:.25}
@@ -3121,7 +3122,7 @@ function saveAudio(){try{localStorage.setItem('meo-ve-nha-audio',JSON.stringify(
 function adjVol(which,d){if(which==='mus')musVol=clamp(musVol+d,0,10);else{vol=clamp(vol+d,0,10);}
   if(muted&&d>0){muted=false;$('mute').textContent='♪ on';}applyVol();drawVol();saveAudio();if(which==='sfx')tone(660,660,.06,'square',.05);}
 function menuMark(){MI().forEach((el,i)=>el.classList.toggle('sel',i===menuSel));}
-function setPage(pg){menuPage=pg;if(pg==='levels')buildLevels();if(pg==='cuts')buildCuts();$('llist').classList.toggle('cuts',pg==='cuts');$('mlist').hidden=pg!=='main';$('slist').hidden=pg!=='sound';$('llist').hidden=pg!=='levels'&&pg!=='cuts';$('menuKeys').textContent=pg==='main'?'↑ ↓ chọn · Enter xác nhận · Esc đóng':'↑ ↓ chọn · ← → chỉnh âm lượng · Esc quay lại';
+function setPage(pg){menuPage=pg;if(pg==='levels')buildLevels();if(pg==='cuts')buildCuts();$('llist').classList.toggle('cuts',pg==='cuts');$('llist').classList.toggle('lv',pg==='levels');$('mlist').hidden=pg!=='main';$('slist').hidden=pg!=='sound';$('llist').hidden=pg!=='levels'&&pg!=='cuts';$('menuKeys').textContent=pg==='main'?'↑ ↓ chọn · Enter xác nhận · Esc đóng':'↑ ↓ chọn · ← → chỉnh âm lượng · Esc quay lại';
   menuSel=0;drawVol();menuMark();document.querySelector('#ovMenu h2').textContent=pg==='main'?'Cài đặt':pg==='sound'?'Âm thanh':pg==='cuts'?'Cutscene':'Chọn màn';
   if(pg==='cuts'){$('menuKeys').textContent='↑ ↓ chọn · Enter xem · Esc quay lại';}
   if(pg==='levels'){$('menuKeys').textContent='↑ ↓ chọn · Enter chơi · Esc quay lại';const it=MI();const k=it.findIndex(e=>!e.classList.contains('locked'));menuSel=Math.max(0,k);menuMark();}}
