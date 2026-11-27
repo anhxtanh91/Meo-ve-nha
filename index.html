@@ -869,7 +869,21 @@ function updBoss(dt){
   const L=LTREE_X+44,Rx=TREE_X-44,CX=ARENA_X+160,TOP=62,LOW=GROUND_Y-1;
   const minionsAlive=enemies.some(e=>e.type==='minion'&&e.alive);
   switch(b.state){
-    case 'intro':{const k=ease(clamp(b.t/2.2,0,1));b.x=lerp(ARENA_X+W+40,CX,k);b.y=lerp(40,TOP,k)+Math.sin(b.t*3)*4;b.dir=-1;if(b.t>2.4)bossSet('p1');break;}
+    case 'intro':{ // the swarm gathers, scatters, then pulls together into one ball, and the queen appears right there
+      const MX=CX,MY=TOP,CAT=ARENA_X+84;b.x=MX;b.y=MY;b.dir=-1;
+      if(!b.swarm){b.swarm=[...Array(22)].map((_,i)=>({x:CX+hashD(i*7+1)*140-50,y:56+hashD(i*11+2)*64,ph:hashD(i*13)*6.3,tx:0,ty:0,wT:0,vx:0,vy:0,i}));SFX.buzz();$('bossBar').hidden=true;
+        if(seenIntro[1]){b.t=4.6;for(const s of b.swarm){s.x=MX+Math.cos(s.ph)*6;s.y=MY+Math.sin(s.ph)*6;}}seenIntro[1]=1;}
+      const t=b.t;p.ctrl=false;keys.L=keys.R=false;if(p.x<CAT-2&&t<2.6){p.vx=60;p.face=1;}else if(p.onGround){p.vx=0;p.face=1;}
+      for(const s of b.swarm){
+        if(t<2.2){s.tx=CX+30+Math.cos(s.ph+gt*.8)*(22+(s.i%5)*6);s.ty=84+Math.sin(s.ph*1.3+gt*1.1)*(10+(s.i%3)*4);const k=Math.min(1,dt*2.2);s.x+=(s.tx-s.x)*k;s.y+=(s.ty-s.y)*k;}
+        else if(t<3.6){s.wT-=dt;if(s.wT<=0){s.wT=.25+Math.random()*.3;s.tx=ARENA_X+30+Math.random()*(W-60);s.ty=24+Math.random()*110;}const k=Math.min(1,dt*3.5);s.x+=(s.tx-s.x)*k;s.y+=(s.ty-s.y)*k;}
+        else if(t<5){const q=ease(clamp((t-3.6)/1.3,0,1)),a=s.ph+t*6,r=lerp(46+(s.i%4)*8,3,q);const k=Math.min(1,dt*(4+q*6));s.x+=(MX+Math.cos(a)*r-s.x)*k;s.y+=(MY+Math.sin(a)*r*.7-s.y)*k;}
+        else{if(!s.out){s.out=1;const a=s.ph+s.i*.3,v=110+hashD(s.i*3)*90;s.vx=Math.cos(a)*v;s.vy=Math.sin(a)*v*.7-40;}s.x+=s.vx*dt;s.y+=s.vy*dt;s.vy-=30*dt;s.vx*=1+dt*.6;}
+        s.x+=Math.sin(gt*23+s.i)*.4;s.y+=Math.cos(gt*19+s.i*2)*.4;}
+      if(t>2.2&&!b.sc1){b.sc1=1;SFX.buzz();}
+      if(t>=5&&!b.rev){b.rev=1;bossBar();SFX.buzz();tone(300,600,.25,'triangle',.05);puff(MX,MY-4,14,'#ffe27a',70,50,.5);puff(MX,MY-4,8,'#ffffff',50,40,.35);shakeT=.25;shakeA=2;}
+      if(t>7.4){b.swarm=null;p.ctrl=true;bossSet('p1');}
+      break;}
     case 'p1':{b.x=CX+Math.sin(b.t*.9)*70;b.y=TOP+Math.sin(b.t*2.2)*6;b.dir=Math.cos(b.t*.9)>0?1:-1;
       if(!minionsAlive){b.waveT-=dt;if(b.waveT<=0){if(b.summoned<6){b.shake=.4;summonMinion(0);summonMinion(1);b.summoned+=2;SFX.buzz();b.waveT=1.4;}else{bossSet('angry');SFX.roar();}}}
       break;}
@@ -912,6 +926,8 @@ function updBoss(dt){
 }
 function drawBoss(cx){
   if(!boss||boss.state==='gone')return;const b=boss;if(b.kind==='stray'){drawStrayBoss(cx);return;}if(b.kind==='frog'){drawFrogBoss(cx);return;}if(b.kind==='dog'){drawDogBoss(cx);return;}if(b.kind==='crow2'){drawCrowBoss(cx);return;}
+  if(b.swarm){const f=Math.floor(gt*16)%2;for(const s of b.swarm){const sx=s.x-cx;if(sx<-20||sx>W+20||s.y<-20||s.y>H)continue;const dir=(s.out?s.vx:(s.tx-s.x))>0?1:-1;blit((f+s.i)%2?BEE.a:BEE.b,sx,s.y+2,-dir);}}
+  if(b.state==='intro'&&b.t<5&&b.kind!=='crow')return;
   const QF=b.kind==='crow'?CROWB:QUEEN;
   const stun=b.state==='stun';
   const fr=stun?(Math.floor(gt*4)%2?QF.sa:QF.sb):(Math.floor(gt*(b.kind==='crow'?9:18))%2?QF.a:QF.b);
@@ -2447,7 +2463,7 @@ function buildLevels(){const done=completedLevels();let h='';
 let cutView=false;
 const reached=(d,id)=>{const i=ORDER.indexOf(id);return i<=0||d.includes(ORDER[i-1])||d.includes(id);};
 const CUTS=[{a:'cut1',name:'Mở đầu',note:'Chuyến xe buýt',ok:()=>true},
-  {a:'boss1',name:'Màn 1',note:'Ong Chúa xuất hiện',ok:d=>reached(d,1)},
+  {a:'boss1',name:'Màn 1',note:'Bầy ong và Ong Chúa',ok:d=>reached(d,1)},
   {a:'boss3',name:'Màn 2',note:'Quạ và chuột',ok:d=>reached(d,3)},
   {a:'boss4',name:'Màn 3',note:'Chó hoang giữa rừng cháy',ok:d=>reached(d,4)},
   {a:'out4',name:'Màn 3',note:'Mưa dập lửa',ok:d=>d.includes(4)},
