@@ -2760,14 +2760,16 @@ function surf4(c,y){for(let r=Math.max(0,Math.floor((y-36)/T));r<ROWS;r++){const
 function spawnAnim4(k,x,run){const sp=k==='deer'?126+Math.random()*16:k==='rabbit'?108+Math.random()*14:96+Math.random()*50;
   anim4.push({k,x,y:k==='bird'?40+Math.random()*60:surf4(Math.floor(x/T),GROUND_Y),vx:sp,vy:0,ph:Math.random()*6,st:'run',t:0,stag:k==='deer'&&Math.random()<.5,s:k==='bird'?(Math.random()<.3?1.4:1):1,col:k==='rabbit'?(Math.random()<.5?'#8a7a6a':'#9a8670'):null});}
 function updChase4(dt){if(LV!==4)return;
-  if(!chase4&&p.x>CH4_START&&p.x<CH4_END()&&state==='play'){chase4={wall:p.x-150,v:70,t:0,end:false,fade:0,cd:.6};enemies=enemies.filter(e=>e.x<FIRE_X-40); // every creature in the burning forest is running for its life now, none of them attacksshakeT=.6;shakeA=2;hiss(.9,.08,700);tone(90,50,1.2,'sawtooth',.06);
+  if(!chase4&&p.x>CH4_START&&p.x<CH4_END()&&state==='play'){chase4={wall:p.x-150,v:70,t:0,end:false,fade:0,cd:.6};enemies=enemies.filter(e=>e.x<FIRE_X-40); // every creature in the burning forest is running for its life now, none of them attacks
+    shakeT=.6;shakeA=2;hiss(.9,.08,700);tone(90,50,1.2,'sawtooth',.06);
     for(const [k,dx] of [['deer',60],['deer',150],['rabbit',30],['rabbit',90],['rabbit',-40],['bird',20],['bird',80],['bird',140],['bird',-20],['deer',-80]])spawnAnim4(k,p.x+dx);}
   const c=chase4;if(!c)return;c.t+=dt;
-  if(!c.end){const gap=p.x-c.wall,tv=gap>125?118:gap<75?82:100;c.v+=(tv-c.v)*Math.min(1,dt*1.5);c.wall+=c.v*dt; // always looming close behind, never out of reachif(p.x>CH4_END()){c.end=true;}
+  if(!c.end){const gap=p.x-c.wall,tv=gap>125?118:gap<75?82:100;c.v+=(tv-c.v)*Math.min(1,dt*1.5);c.wall+=c.v*dt; // always looming close behind, never out of reach
+    if(p.x>CH4_END()||boss&&boss.state==='intro'){c.end=true;return;} // the boss area: the fire stops here
     if(c.wall>p.x-10&&state==='play'){c.wall=p.x-60;hurt(p.x,true);return;} // swallowed by the fire
     c.cd-=dt;if(c.cd<=0){c.cd=.9+Math.random()*1.1;const r=Math.random();spawnAnim4(r<.3?'deer':r<.65?'rabbit':'bird',c.wall-20);}
     if(Math.random()<dt*3)SFX.crackle();}
-  else{c.fade=Math.min(1,c.fade+dt*.5);c.wall+=c.v*(1-c.fade)*dt;}
+  else{c.fade=Math.min(1,c.fade+dt*.8);c.v*=Math.exp(-dt*3);c.wall+=c.v*(1-c.fade)*dt;}
   for(const a of anim4){a.t+=dt;if(a.st==='run'){a.ph+=dt*(a.k==='rabbit'?13:a.k==='deer'?11:16);a.x+=a.vx*dt;
       if(a.k!=='bird'){const gy=surf4(Math.floor(a.x/T),a.y),ahead=surf4(Math.floor((a.x+16)/T),a.y);
         let fireAhead=false;for(const f of fires4)if(f.x-a.x>4&&f.x-a.x<26&&fireH(f)>6)fireAhead=true;
