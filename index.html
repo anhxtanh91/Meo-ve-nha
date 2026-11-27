@@ -4061,15 +4061,15 @@ function paintFore(env){
       for(let i=0;i<s*3;i++){const a=r(-3.1,0),rr=s+r(0,1.5);px(x+Math.cos(a)*rr,cy+Math.sin(a)*rr,pick(['#ecc468','#d4a046','#b8822e']));}
       for(let i=0;i<8;i++){const sx=x+r(-s-3,s+3);hl(sx,B-1,ri(1,3),pick(['#d4a046','#ecc468']));}
       for(let dx=-s+1;dx<s;dx++)px(x+dx,B-1,'#2a1606');}
-    function post(x){const hh=ri(18,24);for(let yy=B-hh;yy<B;yy++){px(x,yy,'#2a1608');px(x+1,yy,hsh(x,yy)<.2?'#7a5228':'#5a3a1a');px(x+2,yy,'#7a5228');px(x+3,yy,'#3a2210');}
+    function post(x){const hh=ri(12,16);for(let yy=B-hh;yy<B;yy++){px(x,yy,'#2a1608');px(x+1,yy,hsh(x,yy)<.2?'#7a5228':'#5a3a1a');px(x+2,yy,'#7a5228');px(x+3,yy,'#3a2210');}
       hl(x,B-hh,4,'#8a6234');px(x+1,B-hh-1,'#6a4420');px(x+2,B-hh-1,'#6a4420');
       const ry=B-hh+5;for(let i=-5;i<9;i++){px(x+i,ry+Math.round(Math.sin((i+5)*.5)),'#c8a060');px(x+i,ry+1+Math.round(Math.sin((i+5)*.5)),'#8a6a3a');}
       px(x+1,ry+3,'#b8b8b8');}
     for(let x=-12;x<w;){const q=rnd();
-      if(q<.07){const s=ri(8,11);bale(x+s,s);x+=s*2+ri(6,14);}
+      if(q<.07){const s=ri(6,8);bale(x+s,s);x+=s*2+ri(6,14);}
       else if(q<.11){post(x);x+=ri(12,18);}
       else if(q<.0){blob([{x:x+9,y:B-2,rx:11,ry:5},{x:x+16,y:B-1,rx:7,ry:3,z:1}],['#5a3810','#8a5e1c','#b8862e','#d8a84a','#ecc46a'],{rough:.5,amb:.2});for(let i=0;i<14;i++){const sx=x+r(0,22),sy=B-r(1,6);hl(sx,sy,ri(2,4),pick(['#ecc46a','#f8dc88','#b8862e']));}x+=ri(24,30);}
-      else{const lean=rnd()<.8?1:-1;rice(x+8,ri(18,27),lean*r(.6,1));if(rnd()<.6)blades(x+ri(14,18),ri(3,5),3,7,['#3e260c','#6a4416','#8a5a1e','#a8722a'],2);x+=ri(14,21);}}
+      else{const lean=rnd()<.8?1:-1;rice(x+8,rnd()<.08?ri(17,21):ri(9,15),lean*r(.6,1));if(rnd()<.6)blades(x+ri(14,18),ri(3,5),3,7,['#3e260c','#6a4416','#8a5a1e','#a8722a'],2);x+=ri(14,21);}}
   }
   else if(LV===4){
     const FS=env.fireX;
