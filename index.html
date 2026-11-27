@@ -59,6 +59,7 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rend
 .tmenu .mi{font-size:max(17px,4cqw)}
 .tmenu .note{font-size:.7em;opacity:.8}
 .mi .note{font-size:.62em;opacity:.8}
+#llist.cuts{display:grid;grid-template-columns:1fr 1fr;gap:.4cqw 1.2cqw;min-width:min(94%,640px)}#llist.cuts .mi{font-size:max(13px,3cqw);flex-direction:column;gap:0;line-height:1.05}#llist.cuts .mi .note{font-size:.8em}#llist.cuts .mi[data-a=back]{grid-column:1/-1;flex-direction:row}
 #llist .empty{font-size:max(14px,3.2cqw);color:var(--muted);margin:0}
 .mi .lab{min-width:5.2em;text-align:left}
 .bar{display:inline-flex;gap:2px;align-items:flex-end}
@@ -133,6 +134,7 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rend
       <button class="mi sel" type="button" id="btnStart" data-a="new">Chơi mới</button>
       <button class="mi" type="button" id="btnCont" data-a="cont">Chơi tiếp</button>
       <button class="mi" type="button" id="btnLevels" data-a="levels">Chọn màn</button>
+      <button class="mi" type="button" id="btnCuts" data-a="cuts">Xem lại cutscene</button>
       <button class="mi" type="button" id="btnOpt" data-a="opt">Cài đặt</button>
     </div>
     <p class="keys">A D hoặc ← → để chạy · W / Space để nhảy · nhảy lên đầu để hạ kẻ địch</p>
@@ -152,7 +154,7 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rend
       <button class="mi" type="button" data-a="resume">Tiếp tục</button>
       <button class="mi" type="button" data-a="levels">Chọn màn</button>
       <button class="mi" type="button" data-a="sound">Âm thanh</button>
-      <button class="mi" type="button" data-a="cuts">Xem lại cutscene</button>
+      <button class="mi" type="button" data-a="home">Quay về màn hình chính</button>
       <button class="mi" type="button" data-a="cheat">Cheat</button>
       <div id="cheatBox" hidden><input id="cheatIn" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="Nhập mã"><button class="btn" type="button" id="cheatOk">OK</button></div>
       <p id="cheatMsg"></p>
@@ -161,7 +163,6 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rend
     <div class="mlist" id="slist" hidden>
       <div class="mi vol" data-a="mus"><span class="lab">Nhạc nền</span><button type="button" data-d="-1" aria-label="Giảm">◀</button><b class="bar" id="barMus"></b><button type="button" data-d="1" aria-label="Tăng">▶</button></div>
       <div class="mi vol" data-a="sfx"><span class="lab">Hiệu ứng</span><button type="button" data-d="-1" aria-label="Giảm">◀</button><b class="bar" id="barSfx"></b><button type="button" data-d="1" aria-label="Tăng">▶</button></div>
-      <button class="mi" type="button" data-a="cuts" id="sCuts">Xem lại cutscene</button>
       <button class="mi" type="button" data-a="back">Quay lại</button>
     </div>
     <div class="mlist" id="llist" hidden></div>
@@ -2382,18 +2383,34 @@ function buildLevels(){const done=completedLevels();let h='';
   h+='<button class="mi" type="button" data-a="back">Quay lại</button>';$('llist').innerHTML=h;}
 // cutscene gallery: replay the story scenes; each one unlocks once it has been reached
 let cutView=false;
-const CUTS=[{a:'cut1',name:'Mở đầu',note:'Chuyến xe buýt',ok:()=>true},{a:'cut5',name:'Màn 5',note:'Con hẻm phố đêm',ok:d=>d.includes(2)||d.includes(5)},{a:'cutEnd',name:'Kết thúc',note:'Về đến nhà',ok:d=>d.includes(5)}];
+const reached=(d,id)=>{const i=ORDER.indexOf(id);return i<=0||d.includes(ORDER[i-1])||d.includes(id);};
+const CUTS=[{a:'cut1',name:'Mở đầu',note:'Chuyến xe buýt',ok:()=>true},
+  {a:'boss1',name:'Màn 1',note:'Ong Chúa xuất hiện',ok:d=>reached(d,1)},
+  {a:'boss3',name:'Màn 2',note:'Quạ và chuột',ok:d=>reached(d,3)},
+  {a:'boss4',name:'Màn 3',note:'Chó hoang giữa rừng cháy',ok:d=>reached(d,4)},
+  {a:'out4',name:'Màn 3',note:'Mưa dập lửa',ok:d=>d.includes(4)},
+  {a:'boss2',name:'Màn 4',note:'Ếch Chúa',ok:d=>reached(d,2)},
+  {a:'out2',name:'Màn 4',note:'Hồ sen sạch lại',ok:d=>d.includes(2)},
+  {a:'cut5',name:'Màn 5',note:'Con hẻm phố đêm',ok:d=>reached(d,5)},
+  {a:'boss5',name:'Màn 5',note:'Mèo hoang',ok:d=>reached(d,5)},
+  {a:'cutEnd',name:'Kết thúc',note:'Về đến nhà',ok:d=>d.includes(5)}];
+let cvT=0,cvEnd=0;
+// replay a boss's entrance, or the scene after a boss, straight in the arena
+function replayArena(id,out){LV=id;seenIntro={};lastCheck=56;resetLevel();cutView=false;startPlay(false);show('banner',false);bannerT=0;
+  p.x=ARENA_X+(out?40:62);p.y=GROUND_Y;p.vx=p.vy=0;p.onGround=true;p.face=1;p.ctrl=false;keys.L=keys.R=keys.J=false;cam=ARENA_X;cvT=0;cvEnd=0;
+  if(out){cutView='out';winLevel();}else cutView='boss';show('skip',true);}
+function updCutView(dt){if(cutView!=='boss')return;cvT+=dt;if(boss&&boss.state!=='intro'&&!boss.intro){cvEnd+=dt;if(cvEnd>1.4){endCutView();return;}}if(cvT>25)endCutView();}
 function buildCuts(){const d=completedLevels();let h='';
   for(const C of CUTS)h+=C.ok(d)||cheat?`<button class="mi" type="button" data-a="${C.a}">${C.name} <span class="note">${C.note}</span></button>`:`<div class="mi locked" data-a="none">🔒 ${C.name} <span class="note">chưa mở khoá</span></div>`;
   h+='<button class="mi" type="button" data-a="back">Quay lại</button>';$('llist').innerHTML=h;}
-function endCutView(){cutView=false;LV=1;lastCheck=140;resetLevel();setState('title');}
+function endCutView(){cutView=false;boss=null;$('bossBar').hidden=true;LV=1;lastCheck=140;resetLevel();setState('title');}
 const bars=v=>Array.from({length:10},(_,i)=>`<i class="${i<v?'on':''}" style="height:${.35+i*.07}em"></i>`).join('');
 function drawVol(){$('barMus').innerHTML=bars(musVol);$('barSfx').innerHTML=bars(vol);}
 function saveAudio(){try{localStorage.setItem('meo-ve-nha-audio',JSON.stringify({sfx:vol,mus:musVol}));}catch(e){}}
 function adjVol(which,d){if(which==='mus')musVol=clamp(musVol+d,0,10);else{vol=clamp(vol+d,0,10);}
   if(muted&&d>0){muted=false;$('mute').textContent='♪ on';}applyVol();drawVol();saveAudio();if(which==='sfx')tone(660,660,.06,'square',.05);}
 function menuMark(){MI().forEach((el,i)=>el.classList.toggle('sel',i===menuSel));}
-function setPage(pg){menuPage=pg;if(pg==='levels')buildLevels();if(pg==='cuts')buildCuts();$('mlist').hidden=pg!=='main';$('slist').hidden=pg!=='sound';$('llist').hidden=pg!=='levels'&&pg!=='cuts';$('sCuts').hidden=!fromTitle;$('menuKeys').textContent=pg==='main'?'↑ ↓ chọn · Enter xác nhận · Esc đóng':'↑ ↓ chọn · ← → chỉnh âm lượng · Esc quay lại';
+function setPage(pg){menuPage=pg;if(pg==='levels')buildLevels();if(pg==='cuts')buildCuts();$('llist').classList.toggle('cuts',pg==='cuts');$('mlist').hidden=pg!=='main';$('slist').hidden=pg!=='sound';$('llist').hidden=pg!=='levels'&&pg!=='cuts';$('menuKeys').textContent=pg==='main'?'↑ ↓ chọn · Enter xác nhận · Esc đóng':'↑ ↓ chọn · ← → chỉnh âm lượng · Esc quay lại';
   menuSel=0;drawVol();menuMark();document.querySelector('#ovMenu h2').textContent=pg==='main'?'Cài đặt':pg==='sound'?'Âm thanh':pg==='cuts'?'Cutscene':'Chọn màn';
   if(pg==='cuts'){$('menuKeys').textContent='↑ ↓ chọn · Enter xem · Esc quay lại';}
   if(pg==='levels'){$('menuKeys').textContent='↑ ↓ chọn · Enter chơi · Esc quay lại';const it=MI();const k=it.findIndex(e=>!e.classList.contains('locked'));menuSel=Math.max(0,k);menuMark();}}
@@ -2409,19 +2426,21 @@ function titleDo(a){ensureAudio();
   if(a==='new')startCut();
   else if(a==='cont'){const n=contLevel();if(!n){tone(200,120,.15,'square',.05);return;}startLevel(n);}
   else if(a==='levels')openTitleSub('levels');
+  else if(a==='cuts')openTitleSub('cuts');
   else if(a==='opt')openTitleSub('sound');}
 $('tlist').addEventListener('click',e=>{const it=e.target.closest('.mi');if(!it)return;titleSel=TI().indexOf(it);titleMark();titleDo(it.dataset.a);it.blur();});
 function menuDo(a){
   if(a==='resume')closeMenu();
   else if(a==='sound')setPage('sound');
   else if(a==='levels')setPage('levels');
-  else if(a==='cuts')setPage('cuts');
-  else if(a==='back'&&fromTitle&&menuPage==='cuts'){setPage('sound');document.querySelector('#ovMenu h2').textContent='Cài đặt';menuSel=MI().length-2;menuMark();}
+  else if(a==='home'){closeMenu();cutView=false;LV=1;lastCheck=140;resetLevel();setState('title');}
   else if(a==='back'&&fromTitle){closeMenu();}
   else if(a==='cut1'){closeMenu();cutView=true;lastCheck=140;startCut();}
   else if(a==='cut5'){closeMenu();cutView=true;startLevel(5);}
   else if(a==='cutEnd'){closeMenu();cutView=true;LV=5;startEnding();}
-  else if(a==='back'){const from=menuPage;setPage('main');menuSel=from==='levels'?1:from==='cuts'?3:2;menuMark();}
+  else if(/^boss[1-5]$/.test(a)){closeMenu();ensureAudio();replayArena(+a[4],false);}
+  else if(/^out[1-5]$/.test(a)){closeMenu();ensureAudio();replayArena(+a[3],true);}
+  else if(a==='back'){const from=menuPage;setPage('main');menuSel=from==='levels'?1:2;menuMark();}
   else if(a==='play1'){closeMenu();lastCheck=140;startCut();}
   else if(/^play[2345]$/.test(a)){closeMenu();startLevel(+a[4]);}
   else if(a==='cheat'){$('cheatBox').hidden=false;$('cheatIn').value='';$('cheatMsg').textContent='';$('cheatIn').focus();}
@@ -2467,7 +2486,7 @@ function startPlay(fromSkip){if(cutView){endCutView();return;}
   if(fromSkip){resetLevel();if(LV===1){bus.door=0;bus.leaving=true;bus.vx=60;}}
   p.ctrl=!(LV===1&&!bus.gone);setState('play');show('banner',true);bannerT=2.4;
 }
-function skipCut(){if(state==='ending'&&cutView){endCutView();return;}if(state==='ending'){skipEnding();show('skip',false);return;}if(LV===5){p.x=START5[0];p.y=START5[1];p.vx=p.vy=0;p.onGround=true;p.stalk=0;cam=CAMMIN5;fadeIn5=.8;startPlay(false);return;}if(LV!==1){p.x=56;p.y=144;startPlay(false);return;}startPlay(true);}
+function skipCut(){if(cutView==='boss'||cutView==='out'){endCutView();return;}if(state==='ending'&&cutView){endCutView();return;}if(state==='ending'){skipEnding();show('skip',false);return;}if(LV===5){p.x=START5[0];p.y=START5[1];p.vx=p.vy=0;p.onGround=true;p.stalk=0;cam=CAMMIN5;fadeIn5=.8;startPlay(false);return;}if(LV!==1){p.x=56;p.y=144;startPlay(false);return;}startPlay(true);}
 function startLevel(n){ensureAudio();seenIntro={};if(n===1){lastCheck=140;startCut();return;}LV=n;lastCheck=56;resetLevel();p.x=-20;p.ctrl=false;$('banner').innerHTML=bannerFor(n);setState('arrive');show('banner',true);}
 $('skip').onclick=()=>{ensureAudio();skipCut();$('skip').blur();};
 $('btnAgain').onclick=()=>{ensureAudio();lastCheck=140;startPlay(true);};
@@ -2589,7 +2608,7 @@ function updOutro(dt){
   else if(o.ph==='groom'){P=poseSit(gt,1);P.k='groom';P.eye='closed';if(o.t>3.6)go('look');}
   else if(o.ph==='look'){P=poseSit(gt,1);P.k='sit';p.face=1;if(o.t>.7)go('rise');}
   else if(o.ph==='rise'){P.k='crouch';p.face=1;if(o.t>.18)go('exit');}
-  else if(o.ph==='exit'){p.face=1;p.vx=Math.min(130,p.vx+260*dt);p.x+=p.vx*dt;p.ph+=p.vx*dt*.19;P=poseRun(p.ph,gt);if(p.x>cam+W+26){p.x=cam+W+60;setState('saving');o.t=0;}}
+  else if(o.ph==='exit'){p.face=1;p.vx=Math.min(130,p.vx+260*dt);p.x+=p.vx*dt;p.ph+=p.vx*dt*.19;P=poseRun(p.ph,gt);if(p.x>cam+W+26){if(cutView){endCutView();return;}p.x=cam+W+60;setState('saving');o.t=0;}}
   if(sprout)sprout.t+=dt;
   p.pose=lerpV(p.pose,P,1-Math.exp(-dt*24));
 }
@@ -3104,25 +3123,44 @@ const endSurf=x=>{ // top of the blanket over the sleeper (feet at the left, hea
   const hump=(c,w,h)=>Math.max(0,h*(1-((x-c)/w)**2));
   return 117-Math.max(hump(214,14,4),hump(236,16,8),hump(254,16,10+k*1.1),2);};
 function startEnding(){parts.length=0;$('bossBar').hidden=true;endS={t:0,ph:'sill',pt:0,x:52,y:112,face:1,pose:poseSit(0,0),ph2:0,bub:null,fade:1,done:false,purrT:0};setState('ending');}
-function updEnding(dt){const e=endS;if(!e)return;e.t+=dt;e.pt+=dt;const t=e.pt;let P=poseStand(gt);
-  const go=n=>{e.ph=n;e.pt=0;};const arc=(x0,y0,x1,y1,hgt,dur)=>{const k=clamp(t/dur,0,1);e.x=lerp(x0,x1,k);e.y=lerp(y0,y1,k)-Math.sin(k*Math.PI)*hgt;return k;};
-  e.fade=Math.max(0,e.fade-dt/1.4);
-  if(e.ph==='sill'){P=poseSit(gt,t>.9&&t<1.6?1:0);e.bub=t>1.1&&t<1.9?'?':null;if(t>1.2&&!e.mw){e.mw=1;SFX.meow();}if(t>2.6){e.bub=null;go('hop1');}}
-  else if(e.ph==='hop1'){const k=arc(52,112,100,EFL,16,.62);P=lerpV(AIR_UP,AIR_DN,k);if(k>=1){puff(100,EFL,3,'#c8a070',18,6,.3);tone(300,420,.08,'triangle',.025);go('land');}}
-  else if(e.ph==='land'){P=poseStand(gt);P.k='crouch';if(t>.25)go('walk');}
-  else if(e.ph==='walk'){e.ph2+=dt*22*.115;e.x+=22*dt;e.y=EFL;P=lerpV(poseStand(gt),poseRun(e.ph2,gt),.4);if(e.x>=178){e.x=178;go('ready');}}
-  else if(e.ph==='ready'){P=poseSit(gt,1);if(t>.7){P=poseStand(gt);P.k='crouch';}if(t>1.0)go('hop2');}
-  else if(e.ph==='hop2'){const k=arc(178,EFL,206,endSurf(206),24,.6);P=lerpV(AIR_UP,AIR_DN,k);if(k>=1){tone(240,300,.08,'triangle',.02);go('pad');}}
-  else if(e.ph==='pad'){e.ph2+=dt*12*.115;e.x+=12*dt;e.y=endSurf(e.x);P=lerpV(poseStand(gt),poseRun(e.ph2,gt),.3);if(e.x>=222){e.x=222;go('look');}}
-  else if(e.ph==='look'){P=poseSit(gt,1);e.face=1;if(t>1.6)go('turn');}
-  else if(e.ph==='turn'){P=poseStand(gt);e.face=[1,-1,1,-1][Math.min(3,Math.floor(t/.4))];e.x=222+Math.sin(t*7.8)*1.5;e.y=endSurf(e.x);if(t>1.6){e.face=-1;go('curl');}}
-  else if(e.ph==='curl'){P=lerpV(poseStand(gt),poseSleep(gt),clamp(t/.7,0,1));if(t>.7)go('sleep');}
-  else if(e.ph==='sleep'){P=poseSleep(gt);e.purrT-=dt;if(e.purrT<=0){e.purrT=1.1;tone(52,46,.5,'sine',.035);tone(50,44,.4,'sine',.03,.55);}
-    if(t>3.5)e.fade=clamp((t-3.5)/3,0,1);if(t>7&&cutView){endCutView();return;}if(t>7&&!e.done){e.done=true;show('ovL2',true);show('skip',false);$('btnL2Again').focus({preventScroll:true});}}
-  e.y=e.ph==='turn'||e.ph==='pad'||e.ph==='curl'||e.ph==='sleep'||e.ph==='look'?endSurf(e.x):e.y;
-  e.pose=lerpV(e.pose,P,1-Math.exp(-dt*(e.ph==='curl'||e.ph==='sleep'?5:18)));
+// gentle poses just for the ending: an unhurried walk, crouches, kneading
+function poseWalkE(ph,t){const P=poseStand(t),bob=-Math.abs(Math.sin(ph))*.35;
+  const L=(i,off)=>{const g=P.legs[i],phi=ph+off;return [g[0],g[1]+bob,g[2]+Math.sin(phi)*2.4,-Math.max(0,Math.cos(phi))*1.7];};
+  P.k='walk';P.hip=[P.hip[0],P.hip[1]+bob];P.chest=[P.chest[0],P.chest[1]+bob];P.haunch=[P.haunch[0],P.haunch[1]+bob,P.haunch[2]];P.head=[P.head[0]+.3,P.head[1]+bob*.6+.4];
+  P.legs=[L(0,0),L(1,Math.PI*.5),L(2,Math.PI),L(3,Math.PI*1.5)];P.tail={x:-10,y:-8.4,a:-1.55,curl:.28,sway:.14,len:14};return P;}
+function lowerE(P,k){const Q=JSON.parse(JSON.stringify(P));Q.hip[1]+=k;Q.chest[1]+=k*1.05;Q.haunch[1]+=k;Q.head[1]+=k*1.1;Q.legs=Q.legs.map(g=>[g[0],g[1]+k*.75,g[2],g[3]]);return Q;}
+function poseKneadE(ph,t){const P=lowerE(poseStand(t),1.2),s=Math.sin(ph);P.legs[1][3]=-Math.max(0,s)*2.2;P.legs[1][2]+=Math.max(0,s)*.8;P.legs[3][3]=-Math.max(0,-s)*2.2;P.legs[3][2]+=Math.max(0,-s)*.8;
+  P.head=[P.head[0]+.4,P.head[1]+.8];P.eye='happy';P.tail={x:-10,y:-8,a:-1.5,curl:.3,sway:.05,len:14};return P;}
+function updEnding(dt){const e=endS;if(!e)return;e.t+=dt;e.pt+=dt;const t=e.pt;let P=poseStand(gt);let rate=7;
+  const go=n=>{e.ph=n;e.pt=0;};const arc=(x0,y0,x1,y1,hgt,dur)=>{const k=clamp(t/dur,0,1),q=ease(k);e.x=lerp(x0,x1,q);e.y=lerp(y0,y1,q)-Math.sin(k*Math.PI)*hgt;return k;};
+  const blink=(at,len=.3)=>t>at&&t<at+len;
+  e.fade=Math.max(0,e.fade-dt/1.8);
+  if(e.ph==='sill'){ // sits outside, looks around, peers into the warm room
+    const hf=t<.9?0:t<1.8?-1:t<2.6?0:1;P=poseSit(gt,hf);if(blink(.5)||blink(3.1,.35))P.eye='closed';if(t>3.4)P.eye='happy';
+    e.bub=t>2.7&&t<3.5?'?':null;if(t>2.9&&!e.mw){e.mw=1;tone(560,760,.14,'triangle',.035);tone(760,520,.3,'triangle',.035,.14);}
+    if(t>4.2)go('stretch');}
+  else if(e.ph==='stretch'){const k=t<.6?ease(t/.6):t<1.5?1:1-ease((t-1.5)/.6);P=lerpV(poseStand(gt),STRETCH,k);rate=10;if(t>2.1)go('prep');}
+  else if(e.ph==='prep'){P=lowerE(poseStand(gt),2.4*ease(clamp(t/.5,0,1)));P.head[1]-=.6;if(t>.9){go('hop1');tone(300,420,.06,'triangle',.015);}}
+  else if(e.ph==='hop1'){const k=arc(52,112,98,EFL,14,.9);P=lerpV(AIR_UP,AIR_DN,clamp(k*1.2-.1,0,1));rate=12;if(k>=1){puff(98,EFL,2,'#c8a070',12,4,.35);tone(200,260,.06,'triangle',.015);go('land');}}
+  else if(e.ph==='land'){P=lowerE(poseStand(gt),2.6*(1-ease(clamp(t/.6,0,1))));if(t>.8)go('walk');}
+  else if(e.ph==='walk'){e.ph2+=dt*13*.17;e.x+=13*dt;e.y=EFL;P=poseWalkE(e.ph2,gt);if(e.x>=140&&!e.paused1){e.paused1=1;go('pause');}if(e.x>=178){e.x=178;go('ready');}}
+  else if(e.ph==='pause'){P=poseStand(gt);P.hf=1;P.head=[P.head[0]+.4,P.head[1]-.8];if(blink(.8,.35))P.eye='closed';if(t>1.6)go('walk');}
+  else if(e.ph==='ready'){if(t<1.4){P=poseSit(gt,1);P.head=[P.head[0]+.6,P.head[1]-1.2];if(blink(.7,.35))P.eye='closed';}
+    else{P=lowerE(poseStand(gt),2.6*ease(clamp((t-1.4)/.4,0,1)));P.hip=[P.hip[0]+Math.sin(t*16)*.5,P.hip[1]];P.haunch=[P.haunch[0]+Math.sin(t*16)*.5,P.haunch[1],P.haunch[2]];P.head[1]-=1;}
+    if(t>2.5){go('hop2');tone(300,420,.06,'triangle',.015);}}
+  else if(e.ph==='hop2'){const k=arc(178,EFL,206,endSurf(206),22,.85);P=lerpV(AIR_UP,AIR_DN,clamp(k*1.2-.1,0,1));rate=12;if(k>=1){tone(220,260,.06,'triangle',.012);go('land2');}}
+  else if(e.ph==='land2'){P=lowerE(poseStand(gt),2.2*(1-ease(clamp(t/.6,0,1))));if(t>.8)go('pad');}
+  else if(e.ph==='pad'){e.ph2+=dt*7*.17;e.x+=7*dt;P=lowerE(poseWalkE(e.ph2,gt),.5);if(e.x>=222){e.x=222;go('look');}}
+  else if(e.ph==='look'){P=poseSit(gt,1);e.face=1;if(blink(1.1,.45)||blink(2.3,.45))P.eye='closed';if(t>2.8)P.eye='happy';if(t>3.4)go('knead');}
+  else if(e.ph==='knead'){e.ph2+=dt*5.5;P=poseKneadE(e.ph2,gt);e.purrT-=dt;if(e.purrT<=0){e.purrT=1.1;tone(52,46,.5,'sine',.03);}if(t>3)go('turn');}
+  else if(e.ph==='turn'){const n=Math.floor(t/.95);e.face=n%2?-1:1;e.ph2+=dt*8*.17;P=lowerE(poseWalkE(e.ph2,gt),.4);e.x=222+Math.sin(t/.95*Math.PI)*2;if(t>2.85){e.face=-1;go('curl');}}
+  else if(e.ph==='curl'){const k=ease(clamp(t/1.8,0,1));P=k<.5?lowerE(poseStand(gt),k*2*3):lerpV(lowerE(poseStand(gt),3),poseSleep(gt),(k-.5)*2);rate=6;if(t>1.9)go('sleep');}
+  else if(e.ph==='sleep'){P=poseSleep(gt);rate=4;if(Math.sin(gt*.9)>.97)P.tail={...P.tail,curl:P.tail.curl-.1};e.purrT-=dt;if(e.purrT<=0){e.purrT=1.2;tone(52,46,.5,'sine',.035);tone(50,44,.4,'sine',.03,.6);}
+    if(t>4.5)e.fade=clamp((t-4.5)/3.5,0,1);if(t>8.5&&cutView){endCutView();return;}if(t>8.5&&!e.done){e.done=true;show('ovL2',true);show('skip',false);$('btnL2Again').focus({preventScroll:true});}}
+  if(['pad','look','knead','turn','curl','sleep','land2'].includes(e.ph))e.y=endSurf(e.x);
+  e.pose=lerpV(e.pose,P,1-Math.exp(-dt*rate));
 }
-function skipEnding(){if(!endS)return;endS.ph='sleep';endS.pt=7;endS.x=222;endS.face=-1;endS.pose=poseSleep(gt);endS.fade=1;if(!endS.done){endS.done=true;show('ovL2',true);}}
+function skipEnding(){if(!endS)return;endS.ph='sleep';endS.pt=8.5;endS.x=222;endS.face=-1;endS.pose=poseSleep(gt);endS.fade=1;if(!endS.done){endS.done=true;show('ovL2',true);}}
 const END_STARS=(()=>{const r=mulberry(77);return Array.from({length:18},()=>[22+r()*60,32+r()*26,r()]);})();
 const END_DUST=(()=>{const r=mulberry(31);return Array.from({length:70},()=>({x:r()*W,y:r()*150,s:r(),z:r()}));})();
 const FAIRY=[[86,38],[94,42],[102,45],[110,47],[118,47],[126,45],[134,42],[142,38],[150,35]];
@@ -3256,12 +3294,6 @@ function drawEnding(){const e=endS;if(!e)return;const T0=e.t;if(!ROOM_CV)ROOM_CV
   for(let x=198;x<268;x+=3)rect(x,139+((x/3)%2),3,1,'#9a4a38');
   rect(262,Math.round(endSurf(262))-1,7,3,'#f0d8b0');rect(248,Math.round(endSurf(248))-2,6,3,'#e0b090');rect(249,Math.round(endSurf(248))-2,1,1,'#f0c8a8');
   for(let i=0;i<3;i++){const q=(T0*.35+i/3)%1;alpha(Math.min(1,(1-q)*1.4)*.8,()=>blit(GLY.z,262-q*8,96-q*22,1));}
-  // the cat
-  if(e.y>=EFL-1)catShadow(e.x,EFL,8);
-  drawCatAt(e.pose,gt,e.x,e.y,e.face);
-  if(e.x<90)glow(e.x+4,e.y-8,20,'rgb(255,190,120)',.2);
-  if(e.bub)bubble(e.x+8,e.y-20,GLY.q);
-  if(e.ph==='sleep')for(let i=0;i<2;i++){const q=(T0*.4+i/2)%1;alpha(Math.min(1,(1-q)*1.4)*.7,()=>blit(GLY.z,e.x-6-q*6,e.y-12-q*16,1));}
   // light: a dusky warm grade, then the lamps, the fairy lights, moonlight falling through the window, dust drifting in the beams
   ctx.save();ctx.globalCompositeOperation='multiply';const gr=ctx.createRadialGradient(240,80,30,200,90,280);gr.addColorStop(0,'#fff0e0');gr.addColorStop(.5,'#c89880');gr.addColorStop(1,'#6a4a50');ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);ctx.restore();
   glow(267,66,150,'rgb(255,160,80)',.2);glow(267,62,22,'rgb(255,200,130)',.25);glow(127,108,40,'rgb(255,200,120)',.3);glow(102,109,16,'rgb(120,190,230)',.18);
@@ -3270,6 +3302,12 @@ function drawEnding(){const e=endS;if(!e)return;const T0=e.t;if(!ROOM_CV)ROOM_CV
   ctx.globalAlpha=.06;ctx.fillStyle='#a8c0f0';ctx.beginPath();ctx.moveTo(WX,WY+30);ctx.lineTo(WX+WW,WY+30);ctx.lineTo(WX+WW+70,EFL+8);ctx.lineTo(WX+30,EFL+8);ctx.closePath();ctx.fill();
   ctx.globalAlpha=.05;ctx.beginPath();ctx.moveTo(126,106);ctx.lineTo(130,106);ctx.lineTo(140,116);ctx.lineTo(116,116);ctx.closePath();ctx.fillStyle='#ffe0a0';ctx.fill();
   ctx.restore();
+  // the cat goes on after the light grade so it stays truly black, with only a faint warm rim from the lamp
+  if(e.y>=EFL-1)catShadow(e.x,EFL,8);
+  if(e.x<90)glow(e.x+4,e.y-8,20,'rgb(255,190,120)',.16);
+  drawCatAt(e.pose,gt,e.x,e.y,e.face);
+  if(e.bub)bubble(e.x+8,e.y-20,GLY.q);
+  if(e.ph==='sleep')for(let i=0;i<2;i++){const q=(T0*.4+i/2)%1;alpha(Math.min(1,(1-q)*1.4)*.7,()=>blit(GLY.z,e.x-6-q*6,e.y-12-q*16,1));}
   ctx.strokeStyle='rgba(40,24,16,.9)';ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(FAIRY[0][0],FAIRY[0][1]);for(const [fx,fy] of FAIRY)ctx.lineTo(fx+.5,fy+.5);ctx.stroke();
   FAIRY.forEach(([fx,fy],i)=>{const col=['255,200,90','255,120,90','140,220,255','255,160,200'][i%4],on=.55+.45*Math.sin(gt*2.2+i*1.7);rect(fx,fy+1,1,2,`rgb(${col})`);glow(fx+.5,fy+2,6,`rgb(${col})`,.35*on);});
   for(const d of END_DUST){const x=(d.x+gt*(2+d.s*3))%W,y=(d.y+Math.sin(gt*.6+d.z*9)*6+150)%150;
@@ -3297,7 +3335,7 @@ function update(dt){
   else if(state==='arrive'){updArrive(dt);updBus(dt);updParts(dt);}
   else if(state==='play'){
     if(!p.ctrl&&LV===1&&bus.gone&&!boss)p.ctrl=true; // the cat waits until the bus has driven off screen
-    updPlayer(dt);if(state==='play'){updEnemies(dt);updFish();updBoss(dt);updFires4();updHoppers(dt);updCity5(dt);if(LV===2){updPads(dt);updWaves(dt);updJumpers(dt);}}updBus(dt);updParts(dt);
+    updCutView(dt);if(state!=='play')return;updPlayer(dt);if(state==='play'){updEnemies(dt);updFish();updBoss(dt);updFires4();updHoppers(dt);updCity5(dt);if(LV===2){updPads(dt);updWaves(dt);updJumpers(dt);}}updBus(dt);updParts(dt);
     const target=boss?ARENA_X:p.x-W*.42;cam+=(target-cam)*Math.min(1,dt*(boss?4:7));cam=clamp(cam,LV===5?CAMMIN5:0,LW-W);
     if(bannerT>0){bannerT-=dt;if(bannerT<=0)show('banner',false);}
   }
