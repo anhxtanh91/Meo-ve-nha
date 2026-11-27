@@ -1423,7 +1423,7 @@ const LAMPS5=[{x:112,d:1},{x:236,d:-1},{x:3520,d:1},{x:3702,d:1},{x:3958,d:-1}];
 const CAMMIN5=24*16,START5=[26*16+8,6*16];let streak5=null,throws5=[],bags5=[],throwT5=3,fadeIn5=0;
 let SMOKE5=null,HAZE5=null,FAC5=[],ROOF5=[],STREET5=null,CITY5L=null,SKY5=null,FOG5=null,walkers5=[],bins5=[],rats5=[],arr5=null;
 function buildCity5(ground,plat){
-  ground(0,23);plat(19,22,4); // the street and its alley (cutscene only); a balcony over the alley fence
+  ground(0,23); // the street and its alley (cutscene only)
   plat(25,28,6);plat(31,34,5);plat(37,40,6);
   ground(43,50,7);
   plat(53,56,5);plat(59,62,3);plat(65,68,5);plat(71,74,7);
@@ -1470,14 +1470,15 @@ function makeFacade(w,h,kind,seed,opt={}){const [c,g]=mkCanvas(w,h);const r=mulb
   // a darker band of damp along the bottom
   const gr=g.createLinearGradient(0,h-40,0,h);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(10,14,16,.55)');g.fillStyle=gr;g.fillRect(0,h-40,w,40);
   if(!opt.noCornice){F(0,0,w,4,P.dark);F(0,4,w,1,P.lite);F(0,0,w,1,'#7a7c80');}
-  if(!opt.noWin)for(let fy=opt.winY||14;fy<h-26;fy+=32)for(let x=6+Math.floor(r()*4);x<w-12;x+=22){if(r()<.14)continue;const lit=r()<.4;
-    F(x-1,fy-1,12,17,'#140e0e');
-    if(lit){const gg=g.createLinearGradient(0,fy,0,fy+15);gg.addColorStop(0,'#f6d48c');gg.addColorStop(1,'#c27a3a');g.fillStyle=gg;g.fillRect(x,fy,10,15);}
-    else F(x,fy,10,15,r()<.5?'#1c2630':'#24303a');
-    F(x+4,fy,2,15,'#140e0e');F(x,fy+6,10,1,'#140e0e');
-    if(lit&&r()<.3){F(x+6,fy+6,3,9,'rgba(50,24,20,.75)');F(x+6,fy+3,3,3,'rgba(50,24,20,.75)');}
-    if(!lit&&r()<.3)F(x,fy,4,6,'#3a4a58');
-    F(x-2,fy+16,14,1,P.lite);F(x-2,fy+17,14,1,P.dark);}
+  if(!opt.noWin)for(let fy=opt.winY||8;fy<h-30;fy+=32)for(let x=5+Math.floor(r()*4);x<w-16;x+=28){if(r()<.14)continue;const lit=r()<.4;
+    F(x-2,fy-2,18,26,'#140e0e');F(x-3,fy-4,20,2,P.dark);
+    if(lit){const gg=g.createLinearGradient(0,fy,0,fy+22);gg.addColorStop(0,'#f6d48c');gg.addColorStop(1,'#c27a3a');g.fillStyle=gg;g.fillRect(x,fy,14,22);}
+    else F(x,fy,14,22,r()<.5?'#1c2630':'#24303a');
+    F(x+6,fy,2,22,'#140e0e');F(x,fy+9,14,1,'#140e0e');
+    if(lit&&r()<.3){F(x+9,fy+9,4,13,'rgba(50,24,20,.75)');F(x+9,fy+5,4,4,'rgba(50,24,20,.75)');}
+    if(lit&&r()<.4)F(x,fy,6,22,'rgba(120,40,40,.35)');
+    if(!lit&&r()<.3)F(x,fy,5,8,'#3a4a58');
+    F(x-3,fy+23,20,1,P.lite);F(x-3,fy+24,20,1,P.dark);}
   if(!opt.noPipe){const px=4+Math.floor(r()*(w-10));F(px,5,2,h,'#24262a');F(px,5,1,h,'#44484e');for(let y=20;y<h;y+=30)F(px-1,y,4,1,'#1a1c20');}
   for(let i=0;i<w/70;i++){const x=Math.floor(r()*(w-14)),y=20+Math.floor(r()*Math.max(1,h-70));F(x,y,13,9,'#4e5256');F(x,y,13,1,'#7a7e82');for(let k=1;k<12;k+=2)F(x+k,y+2,1,6,'#33363a');F(x+2,y+9,1,3,'#33363a');F(x+10,y+9,1,3,'#33363a');}
   const GC=['#c04a6a','#4aa0c0','#e0c050','#7ac060','#e07040','#b070d0'];
@@ -1491,8 +1492,8 @@ function makeFacade(w,h,kind,seed,opt={}){const [c,g]=mkCanvas(w,h);const r=mulb
 function makeStreet5(){const w=24*T,h=GROUND_Y;const [c,g]=mkCanvas(w,h);const F=(x,y,ww,hh,col)=>{g.fillStyle=col;g.fillRect(x,y,ww,hh);};
   g.drawImage(makeFacade(236,h,0,91),0,0);
   // shop door with steps
-  F(48,92,34,52,'#2a1a14');F(51,95,28,46,'#5a3a26');F(53,97,11,20,'#1c2630');F(66,97,11,20,'#1c2630');F(53,120,11,19,'#4a2e1e');F(66,120,11,19,'#4a2e1e');F(64,95,2,46,'#2a1a14');
-  F(74,126,2,3,'#c8a060');F(44,88,42,4,'#3a2a22');F(44,88,42,1,'#6a5040');
+  F(40,64,48,80,'#2a1a14');F(43,67,42,77,'#5a3a26');F(46,70,17,32,'#1c2630');F(65,70,17,32,'#1c2630');F(46,106,17,34,'#4a2e1e');F(65,106,17,34,'#4a2e1e');F(63,67,2,77,'#2a1a14');
+  F(78,116,2,4,'#c8a060');F(34,58,60,6,'#3a2a22');F(34,58,60,1,'#6a5040');F(48,72,6,10,'#2e3a46');
   for(let i=0;i<3;i++){F(40-i*3,136+i*0+(i*3)-6,50+i*6,3,'#5a5c60');F(40-i*3,136+(i*3)-6,50+i*6,1,'#7a7e82');}
   F(30,138,66,6,'#4a4c50');F(30,138,66,1,'#6a6e72');
   // big graffiti tag
@@ -1555,8 +1556,8 @@ function drawNeon5(cx){for(const [nx,ny,txt,rgb] of NEON5){const x=nx-cx;if(x<-9
   for(let i=0;i<txt.length;i++){const G=GLYPH5[txt[i]];const off=dead||(i===txt.length-2&&Math.sin(gt*13+s0)>.3);if(G)for(let j=0;j<5;j++)for(let k=0;k<5;k++)if(G[j][k]==='1')rect(lx+k*2,ny+j*2,2,2,off?'#3a2a34':`rgb(${rgb})`);
     if(!off&&G)glow(lx+5,ny+5,12,`rgb(${rgb})`,.28);lx+=12;}}}
 function drawBalcony(x,y,w,seed){x=R(x);
-  const lit=balLit5(seed);const dx=x+Math.floor(w/2)-7;
-  rect(dx-1,y-21,16,21,'#120e0e');if(lit){rect(dx,y-20,14,20,'#c88a48');rect(dx,y-20,14,4,'#f2c678');}else rect(dx,y-20,14,20,'#1c2630');rect(dx+6,y-20,2,20,'#120e0e');rect(dx,y-11,14,1,'#120e0e');
+  const lit=balLit5(seed);const dx=x+Math.floor(w/2)-9;
+  rect(dx-2,y-31,22,31,'#120e0e');if(lit){rect(dx,y-29,18,29,'#c88a48');rect(dx,y-29,18,6,'#f2c678');}else rect(dx,y-29,18,29,'#1c2630');rect(dx+8,y-29,2,29,'#120e0e');rect(dx,y-16,18,1,'#120e0e');
   // hanging fire-escape ladder
   const lx=hashD(seed*3)<.5?x+3:x+w-9;rect(lx,y+3,1,24,'#202228');rect(lx+5,y+3,1,24,'#202228');for(let j=y+6;j<y+27;j+=4)rect(lx,j,6,1,'#202228');
   // slab and brackets
@@ -1593,7 +1594,7 @@ function walkerFrame(f,v){return shapeSprite(18,44,'#08090b',m=>{const C='#161a1
   m.rect(12,9,2,4,'#bfe0ff');m.px(12,9,'#ffffff');});}
 const WALKER=[0,1].map(v=>[0,1,2,3].map(f=>walkerFrame(f,v)));
 function updCity5(dt){if(LV!==5)return;
-  for(const w of walkers5){w.x+=w.dir*w.sp*dt;w.ph+=w.sp*dt*.13;if(w.x>360){w.x=-50;w.dir=1;w.sp=19+Math.random()*9;}else if(w.x<-60){w.x=350;w.dir=-1;w.sp=19+Math.random()*9;}}
+  for(const w of walkers5){w.x+=w.dir*w.sp*dt;w.ph+=w.sp*dt*.13;if(w.x>420){w.x=-50;w.dir=1;w.sp=19+Math.random()*9;}else if(w.x<-60){w.x=410;w.dir=-1;w.sp=19+Math.random()*9;}}
   if(streak5){streak5.t+=dt;if(streak5.t>.3)streak5=null;}
   updThrows5(dt);fadeIn5=Math.max(0,fadeIn5-dt);
   if(state==='play'&&p.x<CAMMIN5+8){p.x=CAMMIN5+8;p.vx=Math.max(0,p.vx);}
@@ -1602,7 +1603,7 @@ function updCity5(dt){if(LV!==5)return;
   if(p.onGround&&Math.abs(p.vx)>30&&p.y>=GROUND_Y-1&&Math.random()<dt*14)for(const [px,w] of PUDDLES5)if(p.x>px&&p.x<px+w){puff(p.x,GROUND_Y,2,'#8aa0b8',30,30,.3,300);if(Math.random()<.2)tone(1800,900,.04,'sine',.015);}
 }
 function drawWalkers5(cx){for(const w of walkers5){const x=w.x-cx;if(x<-30||x>W+30)continue;const fr=WALKER[w.v][Math.floor(w.ph)%4];
-  const s=1.35,ww=fr.w*s,hh=fr.h*s;ctx.drawImage(w.dir>0?fr.r:fr.l,R(x-ww/2),R(w.y-hh),R(ww),R(hh));}}
+  const s=1.1,ww=fr.w*s,hh=fr.h*s;ctx.drawImage(w.dir>0?fr.r:fr.l,R(x-ww/2),R(w.y-hh),R(ww),R(hh));}}
 function drawDeco5(cx){
   drawPuddles5(cx);{const x=R(170-cx);rect(x,GROUND_Y,14,1,'#0c0e10');rect(x+1,GROUND_Y+1,12,1,'#3a3e44');}
   for(let i=0;i<3;i++){const x=R(296+i*7-cx);rect(x,GROUND_Y-8+(i%2)*2,9,8-(i%2)*2,'#1c242c');rect(x+1,GROUND_Y-8+(i%2)*2,4,1,'#4a5a68');rect(x+3,GROUND_Y-10+(i%2)*2,2,2,'#1c242c');}
@@ -1663,7 +1664,7 @@ function drawCity5Light(cx){
   drawNeon5(cx);
   // low mist rolling along the street and the canal
   for(let i=0;i<7;i++){const x=((i*83-cx*.7+gt*(5+i%3*3))%(W+160)+W+160)%(W+160)-80,y=128+(i%4)*12;alpha(.22,()=>ctx.drawImage(HAZE5,R(x-70),R(y-14),140,28));}
-  for(const w of walkers5){const x=w.x-cx;if(x<-30||x>W+30)continue;const px=R(x+(w.dir>0?1:-1)*4.5),py=R(w.y-44*1.35+14);glow(px,py,7,'rgb(150,200,255)',.45);}
+  for(const w of walkers5){const x=w.x-cx;if(x<-30||x>W+30)continue;const px=R(x+(w.dir>0?1:-1)*3.7),py=R(w.y-44*1.1+11);glow(px,py,7,'rgb(150,200,255)',.45);}
   for(const bn of bins5)if(bn.eyes>0){const x=bn.x-cx;glow(x-3,GROUND_Y-21,4,'rgb(200,255,80)',.6);glow(x+3,GROUND_Y-21,4,'rgb(200,255,80)',.6);}
   if(boss&&boss.kind==='stray'&&!boss.hidden){const b=boss,sc=1.25;glow(b.x-cx+b.dir*7*sc,b.y-11*sc,5,'rgb(200,255,80)',.35);}
 }
@@ -1679,21 +1680,21 @@ function updArrive5(dt){const t=st;if(!arr5){arr5={ph:'walk1',t:0,fade:0};p.x=8;
     p.pose=lerpV(p.pose,k<.5?AIR_UP:AIR_DN,1-Math.exp(-dt*18));if(k>=1){p.y=ty;p.onGround=true;p.landT=.14;puff(p.x,p.y,4,'#6a7078',30,10,.3);go(next);}return true;};
   let scripted=false;
   switch(a.ph){
-    case 'walk1':p.vx=38;p.face=1;if(p.x>=104)go('look');break;
+    case 'walk1':p.vx=26+DEC*dt;p.face=1;if(p.x>=104)go('look');break;
     case 'look':p.vx=0;if(lead.x-p.x<44){go('flinch');p.vy=JV*.42;p.vx=-60;p.onGround=false;p.jumping=false;SFX.meow();}break;
     case 'flinch':if(!p.onGround)p.vx=-60;else{p.vx=0;p.stalk=1;go('cower');}break;
     case 'cower':p.vx=0;p.stalk=1;if(lead.x<p.x-40&&a.t>.8){p.stalk=0;go('walk2');}break;
-    case 'walk2':p.vx=42;p.face=1;if(p.x>=238){p.vx=0;go('eye');}break;
+    case 'walk2':p.vx=28+DEC*dt;p.face=1;if(p.x>=238){p.vx=0;go('eye');}break;
     case 'eye':p.vx=0;if(a.t>.7){go('j1');SFX.jump();}break;               // looks up at the fence
     case 'j1':scripted=hop(238,GROUND_Y,272,104,.5,20,'fence');break;          // onto the chain-link fence
     case 'fence':scripted=true;p.y=104;p.onGround=true;p.pose=lerpV(p.pose,poseStand(gt),1-Math.exp(-dt*16));if(a.t>.8){go('j2');SFX.jump();}break;
-    case 'j2':scripted=hop(272,104,330,64,.55,22,'bal');break;                // and up to the balcony above
-    case 'bal':scripted=true;p.y=64;p.onGround=true;p.pose=lerpV(p.pose,poseStand(gt),1-Math.exp(-dt*16));if(a.t>.6)a.fade=Math.min(1,a.fade+dt*1.4);
-      if(a.fade>=1&&a.t>1.5){p.x=START5[0];p.y=START5[1];p.vx=p.vy=0;p.onGround=true;cam=CAMMIN5;fadeIn5=1;startPlay(false);p.ctrl=true;return;}break;
+    case 'j2':scripted=hop(272,104,304,128,.6,16,'gone');p.fadeA=clamp(1-a.t/.6,0,1);break;   // over the fence and swallowed by the dark
+    case 'gone':scripted=true;p.fadeA=0;if(a.t>.7)a.fade=Math.min(1,a.fade+dt*1.2);
+      if(a.fade>=1&&a.t>1.8){p.fadeA=1;p.x=START5[0];p.y=START5[1];p.vx=p.vy=0;p.onGround=true;cam=CAMMIN5;fadeIn5=1;startPlay(false);p.ctrl=true;return;}break;
   }
-  if(t>30){skipCut();return;}
+  if(t>45){skipCut();return;}
   if(!scripted)updPlayer(dt);else{p.vx=0;p.vy=0;p.prevY=p.y;}
-  updCity5(dt);cam=clamp(p.x-W*.42,0,LW-W);
+  updCity5(dt);cam=clamp(p.x-W*.42,0,64); // the camera stays on the street: the ground never ends on screen
 }
 /* ================= boss: Mèo Hoang — a scarred stray who hides in the trash cans ================= */
 const STRAY_PAL={o:'#120e0c',y:'#8e8472',l:'#b8ac94',s:'#4a4236',c:'#d0c4aa',n:'#3a2420',E:'#c8f040',p:'#6a3a34',L:'#c0b6a0'};
@@ -2730,8 +2731,8 @@ function drawTiles(cx){
 }
 function drawPlayer(cx){
   if(p.inv>0&&Math.floor(p.inv*14)%2)return;
-  if(p.onGround)catShadow(p.x-cx,p.y,7);
-  drawCatAt(p.pose,gt,p.x-cx,p.y,p.face);
+  if(p.onGround&&!(p.fadeA<1))catShadow(p.x-cx,p.y,7);
+  if(p.fadeA!==undefined&&p.fadeA<1){if(p.fadeA>0)alpha(p.fadeA,()=>drawCatAt(p.pose,gt,p.x-cx,p.y,p.face));}else drawCatAt(p.pose,gt,p.x-cx,p.y,p.face);
   if(p.idleT>13.4){for(let i=0;i<3;i++){const p2=(gt*.5+i/3)%1;alpha(Math.min(1,(1-p2)*1.5),()=>blit(GLY.z,p.x-cx-p.face*6+p.face*p2*8,p.y-14-p2*16,1));}}
 }
 function drawWorld(){
