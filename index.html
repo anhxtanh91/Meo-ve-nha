@@ -59,7 +59,7 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rend
 .tmenu .mi{font-size:max(16px,3.6cqw)}
 .tmenu .note{font-size:.7em;opacity:.8}
 .mi .note{font-size:.62em;opacity:.8}
-#llist.cuts{display:grid;grid-template-columns:1fr 1fr;gap:.4cqw 1.2cqw;min-width:min(94%,640px)}#llist.cuts .mi{font-size:max(13px,3cqw);flex-direction:column;gap:0;line-height:1.05}#llist.cuts .mi .note{font-size:.8em}#llist.cuts .mi.open{color:#fff6dc;text-shadow:0 0 .4em rgba(255,214,120,.45)}#llist.cuts .mi.open .note{opacity:1}#llist.cuts .mi.dim,#llist.cuts .mi.locked{opacity:.32}#llist.cuts .mi.locked:hover:not(.sel){background:none;color:var(--ink)}#llist.cuts .mi.sel,#llist.cuts .mi:not(.locked):hover{opacity:1;color:#1b1622;text-shadow:none}#llist.cuts .mi[data-a=back]{grid-column:1/-1;flex-direction:row}
+#llist.cuts{display:grid;grid-template-columns:1fr 1fr;gap:.4cqw 1.2cqw;min-width:min(94%,640px)}#llist.cuts .mi{font-size:max(13px,3cqw);flex-direction:column;gap:0;line-height:1.05}#llist.cuts .mi .note{font-size:.8em}#llist.cuts .mi.open{color:#fff6dc;text-shadow:0 0 .4em rgba(255,214,120,.45)}#llist.cuts .mi.open .note{opacity:1}#llist.cuts .mi.dim,#llist.cuts .mi.locked{opacity:.32}#llist.cuts .mi.locked:hover:not(.sel){background:none;color:var(--ink)}#llist.cuts .mi.sel,#llist.cuts .mi:not(.locked):hover{opacity:1;color:#1b1622;text-shadow:none}#llist.cuts .mi[data-a=back]{grid-column:1/-1;flex-direction:row}#llist.cuts{display:flex;flex-direction:column;align-items:stretch;gap:.55cqw;min-width:min(94%,700px)}#llist.cuts .crow{display:flex;align-items:center;gap:.8cqw;border-bottom:1px solid rgba(255,240,210,.12);padding-bottom:.45cqw}#llist.cuts .clab{flex:0 0 6.2em;text-align:right;font-family:var(--pix);font-size:max(11px,2.2cqw);color:var(--accent);opacity:.9;padding-right:.4em}#llist.cuts .crow .mi{font-size:max(10px,2.05cqw);flex:0 1 auto;padding:.25em .55em;line-height:1.1;white-space:nowrap}#llist.cuts .crow .mi.fb .note{display:block;font-size:.78em;opacity:.85}#llist.cuts .crow .mi.fb{border:1px dashed rgba(255,214,120,.35)}#llist.cuts .mi[data-a=back]{align-self:center;font-size:max(12px,2.6cqw);margin-top:.3cqw}
 #llist .empty{font-size:max(14px,3.2cqw);color:var(--muted);margin:0}
 #llist.lv{display:grid;grid-template-columns:1fr 1fr;gap:.4cqw 1.2cqw;min-width:min(94%,640px)}#llist.lv .mi{font-size:max(13px,3.2cqw);line-height:1.1}#llist.lv .mi .lab{min-width:0}#llist.lv .empty,#llist.lv .mi[data-a=back]{grid-column:1/-1}#llist.lv .empty{font-size:max(12px,2.6cqw)}
 .mi .lab{min-width:5.2em;text-align:left}
@@ -681,7 +681,6 @@ const BIGTREE=[makeTree(110,150,5,64,LEAF),makeTree(96,140,9,60,LEAF)];
 const FARTREE=[makeTree(70,100,13,40,LEAF_FAR),makeTree(60,90,17,36,LEAF_FAR)];
 function tintCv(src,col){const [c,g]=mkCanvas(src.width,src.height);g.drawImage(src,0,0);g.globalCompositeOperation='multiply';g.fillStyle=col;g.fillRect(0,0,c.width,c.height);g.globalCompositeOperation='destination-in';g.drawImage(src,0,0);return c;}
 const BIGTREE_T=BIGTREE.map(t=>tintCv(t,'#ffe0c8')),FARTREE_T=FARTREE.map(t=>tintCv(t,'#ffe0c8'));
-// wind: background trees sway — slices drawn with an offset that grows toward the crown, base stays rooted
 // wind: a steady breeze with gusts rolling through every so often (0 = calm, 1 = strong gust)
 function windNow(){const g=Math.max(0,Math.sin(gt*.42)*Math.sin(gt*.13+1.3));return .25+.4*Math.min(1,g*1.4);}
 function swayK(seed){const w=windNow();return (Math.sin(gt*1.25+seed)*.6+Math.sin(gt*.55+seed*1.7)*.4)*(.7+w*.25)+w*.08;}
@@ -693,11 +692,14 @@ function grassFringe(X,Y,c,wx){const P=GRASS_PAL[LV];if(!P)return;const w=windNo
     rect(bx,Y-Math.ceil(h/2),1,Math.ceil(h/2),P[0]);rect(bx+Math.round(bend/2),Y-h+1,1,Math.floor(h/2),P[1]);if(h>4)rect(bx+bend,Y-h,1,1,P[2]);}}
 function imgTop(img){if(img._top!==undefined)return img._top;let t=0;try{const d=img.getContext('2d').getImageData(0,0,img.width,img.height).data;
   outer:for(let y=0;y<img.height;y++)for(let x=0;x<img.width;x++)if(d[(y*img.width+x)*4+3]>0){t=y;break outer;}}catch(e){}return img._top=t;}
-function swayImg(img,x,y,seed,amp=3){const h=img.height,t0=imgTop(img),k=swayK(seed)*amp,span=h-t0;
-  for(let j=t0;j<h;j+=2){const b=Math.min(2,h-j),d=1-(j-t0)/span;ctx.drawImage(img,0,j,img.width,b,x+Math.round(k*d*d),y+j,img.width,b);}}
-function wrapSway(img,off,y,seed,amp=2){const o=((Math.floor(off)%LWID)+LWID)%LWID,h=img.height,t0=imgTop(img),span=h-t0;
-  for(let u0=Math.floor(o/32)*32;u0<o+W;u0+=32){const su=u0%LWID,sx=u0-o,k=swayK(seed+su*.012)*amp;
-    for(let j=t0;j<h;j+=3){const b=Math.min(3,h-j),d=1-(j-t0)/span;ctx.drawImage(img,su,j,32,b,sx+Math.round(k*d*d),y+j,32,b);}}}
+// trees sway in three bands drawn without overlap: trunk and lower crown stay put, the middle of the crown shifts at most 1px,
+// the top at most 2px — whole bands move together so the crown never tears into a staircase
+function swayBands(img){const t0=imgTop(img),span=img.height-t0;return [t0,t0+Math.round(span*.3),t0+Math.round(span*.58),img.height];}
+function swayOffs(k){return [clamp(Math.round(k),-2,2),clamp(Math.round(k*.5),-1,1),0];}
+function swayImg(img,x,y,seed,amp=3){const B=swayBands(img),O=swayOffs(swayK(seed)*amp*.55),w=img.width;
+  for(let b=0;b<3;b++){const h=B[b+1]-B[b];if(h>0)ctx.drawImage(img,0,B[b],w,h,x+O[b],y+B[b],w,h);}}
+function wrapSway(img,off,y,seed,amp=2){const o=((Math.floor(off)%LWID)+LWID)%LWID,B=swayBands(img),O=swayOffs(swayK(seed)*amp*.5),w=img.width;
+  for(let b=0;b<3;b++){const h=B[b+1]-B[b];if(h<=0)continue;for(const bx of [-o,LWID-o])ctx.drawImage(img,0,B[b],w,h,bx+O[b],y+B[b],w,h);}}
 function wrapDraw(img,off,y){const o=((Math.floor(off)%LWID)+LWID)%LWID;ctx.drawImage(img,-o,y);ctx.drawImage(img,LWID-o,y);}
 
 
@@ -3182,8 +3184,11 @@ function replayArena(id,out){LV=id;seenIntro={};lastCheck=56;resetLevel();cutVie
 function updCutView(dt){if(cutView!=='boss')return;cvT+=dt;if(boss&&boss.state!=='intro'&&!boss.intro){cvEnd+=dt;if(cvEnd>.6){endCutView();return;}}if(cvT>25)endCutView();}
 function buildCuts(){const d=completedLevels();let h='';
   // unlocked scenes are bright; locked ones stay faded (with cheats on they can still be played)
-  for(const C of CUTS){const ok=C.ok(d);h+=ok||cheat?`<button class="mi${ok?' open':' dim'}" type="button" data-a="${C.a}">${C.name} <span class="note">${C.note}</span></button>`:`<div class="mi locked" data-a="none">🔒 ${C.name} <span class="note">chưa mở khoá</span></div>`;}
-  h+='<button class="mi" type="button" data-a="back">Quay lại</button>';$('llist').innerHTML=h;}
+  // one row per level, in story order: the level's scenes first, then its flashback
+  let row=null;const chip=C=>{const ok=C.ok(d),fb=C.name.startsWith('Flashback'),txt=fb?`✦ ${C.name}<span class="note">${C.note}</span>`:C.note;
+    return ok||cheat?`<button class="mi${ok?' open':' dim'}${fb?' fb':''}" type="button" data-a="${C.a}">${txt}</button>`:`<div class="mi locked${fb?' fb':''}" data-a="none">🔒 ${fb?C.name:C.note}</div>`;};
+  for(const C of CUTS){if(!C.name.startsWith('Flashback')&&C.name!==row){if(row!==null)h+='</div>';row=C.name;h+=`<div class="crow"><span class="clab">${row}</span>`;}h+=chip(C);}
+  h+='</div><button class="mi" type="button" data-a="back">Quay lại</button>';$('llist').innerHTML=h;}
 // every cutscene ends by dimming to black instead of cutting off
 const SF={a:0,dir:0,cb:null,spd:1};
 function fadeThen(cb,dur=.8){if(SF.dir===1)return;SF.dir=1;SF.cb=cb;SF.spd=1/dur;}
