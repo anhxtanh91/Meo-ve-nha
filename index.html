@@ -3314,7 +3314,7 @@ function saveGame(){try{const done=new Set(completedLevels());done.add(LV);local
 let bedS=null;
 function bedSpot(){const key=LV+':'+LW;if(bedS&&bedS.key===key)return bedS;const kind={1:'roots',4:'roots',6:'box',5:'box',3:'sweater',2:'sweater'}[LV]||'box';
   let c=Math.floor((ARENA_X+(LV===6?205:LV===2?236:248))/T);for(let k=0;k<12&&groundY(c)>H;k++)c--;
-  const gy=groundY(c),x=c*T+8;bedS={key,kind,x,gy,y:gy-(kind==='sweater'?3:kind==='box'?4:1)};return bedS;}
+  const gy=groundY(c),x=c*T+8;bedS={key,kind,x,gy,y:gy-(kind==='sweater'?3:kind==='box'?3:1)};return bedS;}
 // finely drawn sleeping spots, painted once into canvases: [back layer, front layer] drawn around the sleeping cat
 const BEDART={};
 function bedArt(kind){const key=kind+(kind==='roots'?LV:'');if(BEDART[key])return BEDART[key];
@@ -3348,7 +3348,9 @@ function bedArt(kind){const key=kind+(kind==='roots'?LV:'');if(BEDART[key])retur
     Fp(6,22,1,4,'#8a6a3a');Fp(5,24,2,3,'#7e5e32'); // water stain where it once got wet (now dry)
     for(let x=-2;x<4;x++){Fp(x+2,28,1,1,'#b48c56');Fp(x+2,29,1,1,'#8a6a3a');}Fp(0,28,1,2,'#6a4c26');
     Fp(13,7,1,1,'#7a7a7a');Fp(26,7,1,1,'#7a7a7a'); // staples
-    out={back:{c:bc,ox:19,h:H0},front:{c:fc,ox:19,h:H0}};}
+    // shrink to fit the curled-up cat snugly (painted large for detail, scaled down with crisp pixels)
+    const SC=.78,sw=Math.round(W0*SC),shh=Math.round(H0*SC),sm=src=>{const [c2,g2]=mkCanvas(sw,shh);g2.imageSmoothingEnabled=false;g2.drawImage(src,0,0,sw,shh);return c2;};
+    out={back:{c:sm(bc),ox:Math.round(19*SC),h:shh},front:{c:sm(fc),ox:Math.round(19*SC),h:shh}};}
   else{const W0=84,H0=66,char=LV===4;const [bc,bg,B]=mk(W0,H0),[fc,fg,Fp]=mk(W0,H0);const rnd=mulberry(91+LV);const G0=H0-1,cx0=42;
     B(4,G0-1,76,2,'rgba(0,0,0,.25)');
     // roots flaring out, each with its own light and dark side and moss on top
