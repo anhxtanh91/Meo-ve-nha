@@ -3322,37 +3322,33 @@ const BEDART={};
 function bedArt(kind){const key=kind+(kind==='roots'?LV:'');if(BEDART[key])return BEDART[key];
   const mk=(w,h)=>{const [c,g]=mkCanvas(w,h);const P=(x,y,ww,hh,col)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),ww,hh);};return [c,g,P];};
   let out;
-  if(kind==='box'){const W0=46,H0=31;const [bc,bg,B]=mk(W0,H0),[fc,fg,Fp]=mk(W0,H0);const rnd=mulberry(77);
-    // ground shadow
-    B(6,29,38,2,'rgba(0,0,0,.28)');B(36,27,8,2,'rgba(0,0,0,.18)');
-    // top face (seen a little from above), corrugation streaks, tape, a fragile sticker
-    for(let y=2;y<=8;y++){const x0=4+(8-y),x1=33+(8-y);for(let x=x0;x<=x1;x++){let c=(x+y*2)%5===0?'#b8905a':'#c9a26b';if(y===2)c='#dcb67e';B(x,y,1,1,c);}}
-    for(let y=2;y<=8;y++){const x=17+(8-y);B(x,y,5,1,y%2?'#e2d29a':'#d6c48a');}B(22+2,4,3,1,'#c0ae76');B(25,3,2,1,'#f0e2b0'); // tape, peeling corner
-    B(28,4,3,3,'#e8e0d0');B(29,4,1,2,'#c8282a');B(28,6,3,1,'#c8282a'); // tiny wine-glass "fragile" sticker
-    // right side face in perspective, darker, with "this way up" arrows and a shipping label + barcode
-    for(let x=34;x<=40;x++){const k=x-33,y0=8-k,y1=29-k;for(let y=y0;y<=y1;y++){let c=y===y0?'#b48a52':'#9a7444';if((y+x)%6===0)c='#8e6a3c';B(x,y,1,1,c);}}
-    B(35,10,1,3,'#3a2a1a');B(34,11,3,1,'#3a2a1a');B(37,9,1,3,'#3a2a1a');B(36,10,3,1,'#3a2a1a');
-    B(35,16,4,6,'#ece6d6');B(35,16,4,1,'#ffffff');for(let i=0;i<4;i++)B(35+i,18,1,(i%2)?2:3,'#1a1a1a');B(35,21,3,1,'#9a9488');
-    B(39,24,1,3,'#7a5a30'); // a seam
-    // opening: dark inside, inner walls catching a little light, old newspaper + a rag on the floor
-    for(let y=10;y<=27;y++){const t=(y-10)/17;B(6,y,26,1,t<.25?'#24160a':t<.5?'#2e1c0c':t<.8?'#3a2410':'#462c14');}
-    for(let y=10;y<=27;y++){B(26+Math.round((27-y)*.0),y,0,0,'#000');}
-    for(let y=11;y<=27;y++){const w=Math.max(1,Math.round((y-10)*.25));B(32-w,y,w,1,'#5a3c1e');}B(6,10,26,2,'#1a1008');
-    B(6,26,26,2,'#5e4020');B(6,26,26,1,'#6e4c26');
-    B(8,24,15,3,'#d8d0bc');B(8,24,15,1,'#ece4d0');for(let i=0;i<5;i++)B(9+i*3,25,2,1,'#6a6a6a');B(9,26,6,1,'#8a8a8a');B(16,26,5,1,'#a8a090');B(22,24,1,3,'#b8b0a0');
-    B(23,25,7,2,'#6e6e80');B(24,24,4,1,'#8a8a9e');B(26,26,3,1,'#54546a');
-    // ---- front layer: cut edges showing the corrugated core, sagging top flap, front lip, a tear, a water stain, a ground flap
-    for(let y=8;y<=29;y++){Fp(4,y,2,1,(y%2)?'#d8b078':'#a87e48');Fp(32,y,2,1,(y%2)?'#c09a62':'#94703e');}Fp(3,8,1,22,'#5a3e1e');Fp(34,9,1,20,'#6a4c26');
-    for(let x=4;x<=33;x++){Fp(x,8,1,2,(x%2)?'#e0bc84':'#b08850');}Fp(4,7,30,1,'#e8c890');
-    for(let k=0;k<5;k++){const x0=7+k,x1=19-Math.floor(k/2);for(let x=x0;x<=x1;x++)Fp(x,10+k,1,1,k===4?'#7a5a30':(x+k)%4===0?'#a07a44':'#b8905a');}Fp(19,11,1,2,'#d0a870');Fp(12,14,3,1,'#5a3e1e');
-    for(let x=4;x<=33;x++){Fp(x,27,1,1,(x%2)?'#d0aa72':'#b08850');Fp(x,28,1,2,'#9a7444');}Fp(4,29,30,1,'#6a4c26');
-    Fp(4,15,2,1,'#f0d8a8');Fp(5,16,1,2,'#6a4c26'); // a small tear on the left edge
-    Fp(6,22,1,4,'#8a6a3a');Fp(5,24,2,3,'#7e5e32'); // water stain where it once got wet (now dry)
-    for(let x=-2;x<4;x++){Fp(x+2,28,1,1,'#b48c56');Fp(x+2,29,1,1,'#8a6a3a');}Fp(0,28,1,2,'#6a4c26');
-    Fp(13,7,1,1,'#7a7a7a');Fp(26,7,1,1,'#7a7a7a'); // staples
-    // shrink to fit the curled-up cat snugly (painted large for detail, scaled down with crisp pixels)
-    const SC=.78,sw=Math.round(W0*SC),shh=Math.round(H0*SC),sm=src=>{const [c2,g2]=mkCanvas(sw,shh);g2.imageSmoothingEnabled=false;g2.drawImage(src,0,0,sw,shh);return c2;};
-    out={back:{c:sm(bc),ox:Math.round(19*SC),h:shh},front:{c:sm(fc),ox:Math.round(19*SC),h:shh}};}
+  if(kind==='box'){const W0=40,H0=26;const [bc,bg,B]=mk(W0,H0),[fc,fg,Fp]=mk(W0,H0);
+    // flat 2D, seen straight on: a box lying on its side, open end facing us, just big enough for a curled-up cat
+    const CB='#c9a26b',CL='#dcb67e',CS='#a87e48',CD='#5a3e1e',CO='#3e2a14';
+    B(2,25,36,1,'rgba(0,0,0,.3)');B(0,25,2,1,'rgba(0,0,0,.15)');B(38,25,2,1,'rgba(0,0,0,.15)');
+    // top flaps standing open: left one tipped back, right one upright and a little bent
+    for(let y=2;y<=6;y++){const o=Math.round((6-y)*.6);B(4-o,y,15,1,y===2?CL:(y+o)%3===0?CS:CB);}B(4-2,2,15,1,CL);for(let y=2;y<=6;y++)B(18-Math.round((6-y)*.6),y,1,1,CS);
+    for(let y=3;y<=6;y++)B(3-Math.round((6-y)*.6),y,1,1,CD);B(2,1,15,1,CD);
+    B(8,3,3,3,'#e8e0d0');B(9,3,1,2,'#c8282a');B(8,5,3,1,'#c8282a'); // tiny "fragile" glass sticker
+    for(let y=3;y<=6;y++){B(21,y,14,1,y===3?CL:CB);if(y>4)B(28,y,7,1,CS);}B(21,2,14,1,CD);B(20,3,1,4,CD);B(35,3,1,4,CD);B(28,4,1,1,CS); // fold crease
+    // dark inside: back wall gets a little light toward the floor, an old newspaper and a rag to lie on
+    for(let y=10;y<=22;y++){const t=(y-10)/12;B(6,y,28,1,t<.3?'#1e1208':t<.6?'#2a1a0c':t<.85?'#36220f':'#422a13');}
+    for(let y=10;y<=22;y++){B(6,y,1,1,'#4a3218');B(33,y,1,1,'#20140a');}B(6,10,28,1,'#140c06');
+    B(8,20,13,3,'#d8d0bc');B(8,20,13,1,'#ece4d0');for(let i=0;i<4;i++)B(9+i*3,21,2,1,'#6a6a6a');B(9,22,5,1,'#8a8a8a');B(15,22,5,1,'#a8a090');
+    B(22,21,9,2,'#6e6e80');B(23,20,5,1,'#8a8a9e');B(26,22,3,1,'#54546a');
+    // ---- front layer: the open end's cardboard frame (top, sides, low bottom lip) with cut corrugated edges
+    const wall=(x,y,w,h)=>{for(let j=0;j<h;j++)for(let i=0;i<w;i++){const xx=x+i,yy=y+j;let c=CB;if((xx*2+yy)%7===0)c=CS;Fp(xx,yy,1,1,c);}};
+    wall(3,7,34,3);wall(3,10,3,13);wall(34,10,3,13);wall(3,23,34,2);
+    Fp(3,7,34,1,CL);Fp(2,7,1,18,CD);Fp(37,7,1,18,CD);Fp(3,6,34,1,CD);Fp(3,24,34,1,CS);
+    for(let x=6;x<34;x++)Fp(x,9,1,1,x%2?'#e8c890':'#9a7444'); // corrugated core showing on the cut edge
+    for(let y=10;y<23;y++){Fp(5,y,1,1,y%2?'#e8c890':'#9a7444');Fp(34,y,1,1,y%2?'#d8b078':'#8a6a3a');}
+    for(let x=6;x<34;x++)Fp(x,23,1,1,x%2?'#e0bc84':'#a87e48');
+    Fp(16,7,6,3,'#e2d29a');Fp(16,7,6,1,'#f0e2b0');Fp(21,9,1,1,'#c0ae76'); // packing tape across the top
+    Fp(26,7,6,2,'#ece6d6');for(let i=0;i<5;i++)Fp(26+i,8,1,1,i%2?'#ece6d6':'#1a1a1a'); // shipping label + barcode
+    Fp(3,13,2,1,'#f0d8a8');Fp(4,14,1,2,CO); // small tear on the left side
+    Fp(35,17,1,4,'#9a7444');Fp(34,19,2,3,'#94703e'); // old water stain, long dry
+    Fp(10,24,1,1,'#7a7a7a');Fp(29,24,1,1,'#7a7a7a'); // staples
+    out={back:{c:bc,ox:20,h:H0},front:{c:fc,ox:20,h:H0}};}
   else{const W0=84,H0=66,char=LV===4;const [bc,bg,B]=mk(W0,H0),[fc,fg,Fp]=mk(W0,H0);const rnd=mulberry(91+LV);const G0=H0-1,cx0=42;
     B(4,G0-1,76,2,'rgba(0,0,0,.25)');
     // roots flaring out, each with its own light and dark side and moss on top
