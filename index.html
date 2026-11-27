@@ -1582,11 +1582,11 @@ function buildMapN(){
 let fires4=[];
 function resetLevelN(){
   buildMapN();hoppers=[];pads=[];waves=[];enemies=[];drops=[];fishes=[];parts=[];fireK=1;rainK=0;
-  const beetles=LV===6?[20,38,45,57,68,76,98,116,126,142,150,170,186,203,210,224]:LV===5?[45,48,80,84,115,121,160,165,198,202]:LV===3?[18,32,49,58,78,94,100,106,120,134,151,165,173,187,200,214]:[12,28,46,57,66,84,104,114,135,148,166,180,194,210];
+  const beetles=LV===6?[14,30,38,60,70,86,105,122,130,152,162,176,186,205,224]:LV===5?[45,48,80,84,115,121,160,165,198,202]:LV===3?[18,32,49,58,78,94,100,106,120,134,151,165,173,187,200,214]:[12,28,46,57,66,84,104,114,135,148,166,180,194,210];
   beetles.forEach(c=>enemies.push({type:'beetle',x:c*T+8,y:groundY(c),vx:-18,vy:0,hw:6,h:8,dir:-1,alive:true,dead:0,onGround:true}));
   const fly=LV===6?[[30,3],[58,2],[90,3],[120,2],[150,3],[175,2],[200,3],[216,2]]:LV===5?[[34,2],[58,1],[94,2],[132,3],[150,1],[182,2],[212,3]]:LV===3?[[50,5],[84,3],[105,5],[130,2],[152,4],[200,5],[212,4]]:[[42,4],[62,4],[96,3],[118,5],[146,2],[171,4],[207,3],[216,4]];
   fly.forEach(([c,r])=>enemies.push({type:'bee',x0:c*T+8,y0:r*T+12,x:c*T+8,y:r*T+12,hw:5,h:8,t:hash(c)*6,dir:-1,alive:true,dead:0,vy:0}));
-  flags=(LV===6?[36,80,113,168,202]:LV===5?[46,81,118,162,200]:LV===3?[38,88,126,167,206]:[34,70,110,150,212]).map(c=>({x:c*T+8,y:groundY(c),on:false}));
+  flags=(LV===6?[22,52,95,113,146,168,196]:LV===5?[46,81,118,162,200]:LV===3?[38,88,126,167,206]:[34,70,110,150,212]).map(c=>({x:c*T+8,y:groundY(c),on:false}));
   fires4=LV===4?[124,129,138,141,147,154,159,166,175,181,193,202,211,219].map((c,i)=>({x:c*T+8,ph:i*1.37,c})):[];
   if(LV===4)for(const [dx,ph] of [[105,0],[215,Math.PI]])fires4.push({x:ARENA_X+dx,ph,c:Math.floor((ARENA_X+dx)/T),arena:true});scareWob=0;if(LV===5)reset5();
   stats={fish:0,total:0,stomps:0};
@@ -2169,42 +2169,66 @@ SFX.crackle=()=>hiss(.18,.035,3200);
 const FENCE6_C=112,FENCE6_X=FENCE6_C*16;
 let heaps6=[];
 const zone6=x=>clamp((x-FENCE6_X+60)/120,0,1);
+let ridges6=[],tyres6=[];
 function buildDump6(ground,plat){
-  heaps6=[];
-  const heap=(c0,c1,top,bot)=>{for(let c=c0;c<=c1;c++)for(let r=top;r<=bot;r++)map[r][c]='J';heaps6.push({c0,c1,top,bot,cur:top,st:'ok',t:0});};
+  heaps6=[];ridges6=[];tyres6=[];
   const pit=(c0,c1)=>{for(let c=c0;c<=c1;c++)for(let r=0;r<ROWS;r++)map[r][c]=' ';};
+  // a ridge: a row of 2-column heaps with stepped tops, so the cat walks up and over it like a hill
+  const ridge=(c0,tops,o={})=>{const R0={segs:[],chain:!!o.chain,fired:false};ridges6.push(R0);const bot=o.bot||8;
+    tops.forEach((top,i)=>{const a=c0+i*2,b2=a+1;for(let c=a;c<=b2;c++)for(let r=top;r<=bot;r++)map[r][c]='J';const h={c0:a,c1:b2,top,bot,cur:top,st:'ok',t:0,ridge:R0,ri:i};heaps6.push(h);R0.segs.push(h);});};
   ground(0,COLS-1);
-  // the sparse dump
-  heap(10,12,8,8);plat(16,19,6);heap(22,24,7,8);
-  pit(29,33);heap(29,33,8,10);                        // a heap bridging a pit: linger and it gives way
-  heap(40,43,7,8);plat(46,49,5);heap(52,53,6,8);
-  pit(61,63);plat(61,63,6);
-  heap(70,73,8,8);heap(78,82,7,8);plat(84,87,5);
-  pit(89,93);heap(89,93,8,10);
-  heap(100,102,7,8);
-  // past the iron fence: the scrapyard — taller junk, rusty beams
-  heap(118,121,6,8);plat(123,126,4);heap(128,130,6,8);
-  pit(131,136);plat(132,135,6);
-  heap(140,145,6,8);plat(147,150,4);heap(152,155,6,8);plat(157,160,5);
-  pit(161,166);heap(161,166,7,10);
-  heap(172,175,7,8);heap(176,179,5,8);plat(184,187,5);heap(189,191,6,8);
-  pit(196,199);plat(196,199,6);
-  heap(205,208,7,8);plat(212,215,5);heap(218,221,6,8);
+  // the dump: rolling hills of rubbish
+  ridge(10,[8,7,6,7,8]);
+  ridge(25,[8,7,6,5,6,7,6,7,8]);
+  pit(44,49);ridge(44,[8,7,8],{bot:10});              // over a pit: linger and you drop in
+  ridge(55,[8,7,7,6,6,5,5,6,7,8],{chain:true});         // a loose ridge: step on it and the whole thing slides
+  ridge(81,[8,7,6,6,7,8]);plat(84,87,3);
+  pit(98,101);
+  // past the iron fence: the scrapyard, taller and looser
+  ridge(117,[8,7,6,5,4,5,6,7,8]);
+  pit(136,143);ridge(136,[7,6,6,7],{chain:true,bot:10}); // a sliding bridge: run!
+  ridge(150,[8,7,6,5,5,6,7,8]);plat(156,159,2);
+  ridge(171,[8,7,6,6,5,5,4,5,6,7,8],{chain:true});
+  ridge(200,[8,7,6,7,6,7,8]);
+  pit(215,218);plat(215,218,7);
 }
 function heapAt(c,r){for(const h of heaps6)if(c>=h.c0&&c<=h.c1&&(r===undefined||(r>=h.top&&r<=h.bot)))return h;return null;}
+const heapDust=(x0,x1,y)=>{if(Math.random()<.5)parts.push({x:x0+Math.random()*(x1-x0),y:y+1,vx:(Math.random()*2-1)*20,vy:-20-Math.random()*30,life:.5,max:.5,c:['#6a5a44','#3a3a44','#c8c0a8','#8a4a3a'][Math.floor(Math.random()*4)],g:300});};
+function shakeHeap(h,t0){if(h.st!=='ok')return;h.st='shake';h.t=t0||0;tone(140,90,.25,'sawtooth',.03);}
+function killByJunk(e,how){if(!e.alive)return;e.alive=false;e.dead=.5;e.hid=false;if(!cutView)addKill(enemyName(e));puff(e.x,e.y-4,10,'#c8c0a8',60,50,.5);tone(1600,700,.12,'square',.04);if(how)puff(e.x,e.y-2,6,'#5a4a38',50,40,.5);}
+function spawnTyre(x,y,dir){tyres6.push({x,y,vx:dir*(70+Math.random()*25),vy:-120,hw:5,h:10,a:0,life:5,onGround:false});}
 function updHeaps6(dt){if(LV!==6)return;
+  for(const R0 of ridges6){if(R0.fired&&R0.segs.every(h=>h.st==='ok'))R0.fired=false;}
   for(const h of heaps6){const x0=h.c0*T,x1=(h.c1+1)*T,topY=h.cur*T;
     const on=state==='play'&&p.onGround&&p.x+p.hw>x0+1&&p.x-p.hw<x1-1&&Math.abs(p.y-topY)<2&&h.cur<=h.bot;
-    const onE=enemies.some(e=>e.alive&&e.type==='beetle'&&e.onGround&&e.x>x0&&e.x<x1&&Math.abs(e.y-topY)<2&&e.st!=='hide');
-    if(h.st==='ok'){if(on||(onE&&false)){h.t+=dt;if(h.t>.55){h.st='shake';h.t=0;tone(140,90,.25,'sawtooth',.03);}}else h.t=Math.max(0,h.t-dt*.6);}
-    else if(h.st==='shake'){h.t+=dt;if(Math.random()<.5)parts.push({x:x0+Math.random()*(x1-x0),y:topY+1,vx:(Math.random()*2-1)*20,vy:-20-Math.random()*30,life:.5,max:.5,c:['#6a5a44','#3a3a44','#c8c0a8','#8a4a3a'][Math.floor(Math.random()*4)],g:300});
-      if(h.t>.5){h.st='sink';h.t=.2;}}
+    if(h.st==='ok'){
+      if(h.delay!==undefined){h.delay-=dt;if(h.delay<=0){h.delay=undefined;shakeHeap(h,.2);}}
+      else if(on&&h.ridge.chain&&!h.ridge.fired){ // a loose ridge: the slide starts here and runs both ways along it
+        h.ridge.fired=true;shakeHeap(h,.15);tone(90,50,.8,'sawtooth',.05);shakeT=.5;shakeA=1.5;
+        for(const o of h.ridge.segs)if(o!==h)o.delay=.25+Math.abs(o.ri-h.ri)*.27;}
+      else if(on){h.t+=dt;if(h.t>.55)shakeHeap(h);}else h.t=Math.max(0,h.t-dt*.6);}
+    else if(h.st==='shake'){h.t+=dt;heapDust(x0,x1,topY);if(h.t>.5){h.st='sink';h.t=.2;
+        // a tall heap sheds a tyre that rolls off downhill
+        const nb=h.ridge.segs,L=nb[h.ri-1],Rn=nb[h.ri+1];if(h.bot-h.top>=2&&Math.random()<(h.ridge.chain?.45:.7)){const dl=L?L.cur:9,dr=Rn?Rn.cur:9;const dir=dl===dr?(Math.random()<.5?-1:1):dl>dr?-1:1;spawnTyre((x0+x1)/2,topY-2,dir);}}}
     else if(h.st==='sink'){h.t+=dt;if(h.t>.2){h.t=0;for(let c=h.c0;c<=h.c1;c++)map[h.cur][c]=' ';
         for(let i=0;i<10;i++)parts.push({x:x0+Math.random()*(x1-x0),y:topY+4+Math.random()*10,vx:(Math.random()*2-1)*40,vy:-30-Math.random()*50,life:.6,max:.6,c:['#5a4a38','#2a2a34','#e8e0c8','#9a4a3a','#3a6ad0'][Math.floor(Math.random()*5)],g:500});
-        tone(110,60,.18,'square',.035);hiss(.25,.05,500);shakeT=Math.max(shakeT,.12);shakeA=1;h.cur++;if(h.cur>h.bot){h.st='gone';h.t=0;}}}
+        tone(110,60,.18,'square',.035);hiss(.25,.05,500);shakeT=Math.max(shakeT,.12);shakeA=1;
+        // rats on (or hiding in) the heap get buried
+        for(const e of enemies)if(e.alive&&e.type==='beetle'&&e.x>x0-2&&e.x<x1+2&&Math.abs(e.y-topY)<4)killByJunk(e,1);
+        h.cur++;if(h.cur>h.bot){h.st='gone';h.t=0;}}}
     else if(h.st==='gone'){h.t+=dt;const inside=p.x+p.hw>x0&&p.x-p.hw<x1&&p.y>h.top*T&&p.y-p.h<(h.bot+1)*T;
-      if(h.t>4.5&&!inside){for(let c=h.c0;c<=h.c1;c++)for(let r=h.top;r<=h.bot;r++)map[r][c]='J';h.cur=h.top;h.st='ok';h.t=0;puff((x0+x1)/2,h.top*T+4,10,'#7a6a52',50,30,.5);}}}
+      if(h.t>4.5&&!inside&&!enemies.some(e=>e.alive&&e.x>x0-4&&e.x<x1+4&&e.y>h.top*T)){for(let c=h.c0;c<=h.c1;c++)for(let r=h.top;r<=h.bot;r++)map[r][c]='J';h.cur=h.top;h.st='ok';h.t=0;puff((x0+x1)/2,h.top*T+4,10,'#7a6a52',50,30,.5);}}}
+  // rolling tyres: bowl over rats, bounce off walls, hurt the cat unless it hops on top
+  for(const y of tyres6){y.life-=dt;y.vy=Math.min(y.vy+G*dt,FALLMAX);const wasG=y.onGround;moveX(y,y.vx*dt);if(y.hitWall){y.vx*=-.7;}moveY(y,y.vy*dt);
+    if(y.onGround&&!wasG&&Math.abs(y.vy)<1){}if(y.onGround)y.vx*=Math.pow(.85,dt);y.a+=y.vx*dt/5;if(y.y>H+30)y.life=0;
+    if(Math.abs(y.vx)<12&&y.onGround)y.life=Math.min(y.life,.6);
+    for(const e of enemies)if(e.alive&&e.type==='beetle'&&Math.abs(e.x-y.x)<e.hw+5&&Math.abs(e.y-y.y)<8)killByJunk(e,0);
+    if(state==='play'&&y.life>.3&&overlap(p,y)){if(p.vy>30&&p.prevY<=y.y-y.h+5){p.vy=keys.J?-330:-250;p.safe=.5;SFX.stomp();}else if(p.inv<=0&&!(p.safe>0)&&Math.abs(y.vx)>25)hurt(y.x,false);}}
+  tyres6=tyres6.filter(y=>y.life>0);
 }
+function drawTyres6(cx){for(const y of tyres6){const x=R(y.x-cx),yy=R(y.y-6);if(x<-10||x>W+10)continue;const k=y.life<.6?y.life/.6:1;
+  alpha(k,()=>{disc(x,yy,6,'#0a0a0c');disc(x,yy,5,'#26262c');disc(x,yy,3,'#0a0a0c');disc(x,yy,2,'#6a6a74');
+    for(let i=0;i<4;i++){const a=y.a+i*Math.PI/2;rect(R(x+Math.cos(a)*4.4),R(yy+Math.sin(a)*4.4),1,1,'#4a4a54');}rect(x-3,yy-5,3,1,'#5a5a64');});}}
 // each heap is painted once as a whole pile; it is drawn sliding down into the ground as it sinks
 function paintHeap6(h){const wd=(h.c1-h.c0+1)*T,hd=(h.bot-h.top+1)*T,[c,g]=mkCanvas(wd+4,hd+4),rnd=mulberry(h.c0*131+h.top*7),Z=h.c0*T>FENCE6_X;
   const F=(x,y,w,hh,col)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),w,hh);};
@@ -2275,7 +2299,10 @@ let SKY6=null,FAR6=null,MOUNT6=null,MID6=null,SCRAP6=null,CRANE6=null;
 function initBack6(){if(SKY6)return;
   {const [c,g]=mkCanvas(W,H);const C=['#8a96a4','#a4aab0','#c0bcb0','#d8ccb0','#e6d6b4'].map(hex);ditherFill(g,W,H,(x,y)=>{const t=clamp(y/130,0,1)*(C.length-1);const i=Math.min(C.length-2,Math.floor(t));return [C[i],C[i+1],t-i];});SKY6=c;}
   const L=(h,fn)=>{const [c,g]=mkCanvas(LWID,H);const P=(x,y,w,hh,col)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),w,hh);};fn(P,g,mulberry(h));return c;};
-  FAR6=L(61,(P,g,rnd)=>{for(let x=0;x<LWID;){const w=10+Math.floor(rnd()*26),h=14+Math.floor(rnd()*34);P(x,110-h,w,h+40,'#a4a8b2');if(rnd()<.35){P(x+w/2,110-h-16,3,16,'#9aa0aa');}for(let k=0;k<w*h/40;k++)P(x+1+Math.floor(rnd()*(w-2)),110-h+2+Math.floor(rnd()*(h-3)),1,1,'#b4b8c0');x+=w+Math.floor(rnd()*6);}});
+  FAR6=L(61,(P,g,rnd)=>{ // distant trash mountains, pale in the haze
+    const hill=(x0,w,h,base,c1,c2)=>{for(let x=0;x<w;x++){const u=x/w,hh=Math.round(h*Math.pow(Math.sin(u*Math.PI),.9)+Math.sin(x*.35+x0)*1.2+Math.sin(x*.09)*2);P(x0+x,base-hh,1,hh+60,c1);if(hh>3&&rnd()<.18)P(x0+x,base-hh+1+Math.floor(rnd()*(hh-2)),2,1,c2);}};
+    for(let x=-60;x<LWID;x+=90+Math.floor(rnd()*70))hill(x,140+Math.floor(rnd()*80),40+Math.floor(rnd()*30),118,'#b4b6ba','#c2c2c2');
+    for(let x=-30;x<LWID;x+=70+Math.floor(rnd()*60))hill(x,100+Math.floor(rnd()*60),24+Math.floor(rnd()*20),122,'#a6a8ae','#b6b6b8');});
   const mound=(P,rnd,x0,w,h,base,cols,spk)=>{for(let x=0;x<w;x++){const u=x/w,hh=Math.round(h*Math.sin(u*Math.PI)**.8+Math.sin(x*.7+rnd())*1.4);for(let y=0;y<hh;y++){const c=y>hh-2?cols[2]:y>hh*.6?cols[1]:cols[0];P(x0+x,base-y,1,1,c);if(rnd()<spk*.3&&y<hh-2&&x<w-2){const cl=['#b8b0a0','#7a6060','#5a6a80','#8a8a64','#a09888'][Math.floor(rnd()*5)];P(x0+x,base-y,2,1,cl);P(x0+x,base-y+1,2,1,cols[0]);}}}};
   MOUNT6=L(62,(P,g,rnd)=>{for(let x=-40;x<LWID;x+=60+Math.floor(rnd()*50))mound(P,rnd,x,110+Math.floor(rnd()*60),30+Math.floor(rnd()*24),132,['#8a8070','#968c7a','#a89e88'],.12);P(0,132,LWID,44,'#8a8070');});
   MID6=L(63,(P,g,rnd)=>{for(let x=-30;x<LWID;x+=70+Math.floor(rnd()*60)){mound(P,rnd,x,60+Math.floor(rnd()*40),18+Math.floor(rnd()*14),146,['#5a5244','#6a6050','#7a705c'],.3);
@@ -2287,11 +2314,26 @@ function initBack6(){if(SKY6)return;
         P(cx,cy,26,9,col);P(cx+5,cy-5,15,5,col);P(cx+7,cy-4,5,3,'#8aa0b0');P(cx+13,cy-4,5,3,'#7a90a0');P(cx+3,cy+7,5,4,'#1a1a1e');P(cx+18,cy+7,5,4,'#1a1a1e');P(cx,cy,26,1,'rgba(255,255,255,.15)');} // crushed cars
       if(rnd()<.5){const bx=x+60;for(let k=0;k<4;k++)P(bx-k*2,146-40+k*10,30,2,'#3a2a26');}}});
 }
+
+// silhouettes of machines working on the far mountains: an excavator digging, a crane swinging its grab
+const MACH6=[{k:'ex',x:70,y:96},{k:'cr',x:200,y:84},{k:'ex',x:330,y:100,f:-1},{k:'cr',x:470,y:90}];
+function drawMach6(cx){const C='#8c909a',off=cx*.05;
+  for(const m of MACH6){const X=R(((m.x-off)%LWID+LWID)%LWID-30);if(X<-50||X>W+50)continue;const f=m.f||1,ph=gt*.5+m.x;
+    if(m.k==='ex'){const y=m.y;rect(X-9,y-2,18,3,C);rect(X-8,y-7,13,5,C);rect(X-3*f-2,y-11,6,4,C); // tracks, body, cab
+      const a1=-.9+Math.sin(ph)*.35,a2=a1+1.6+Math.sin(ph+.8)*.4,L1=12,L2=10;
+      let x1=X+3*f,y1=y-8;const x2=x1+Math.cos(a1)*L1*f,y2=y1+Math.sin(a1)*L1;const x3=x2+Math.cos(a2)*L2*f,y3=y2+Math.sin(a2)*L2;
+      for(let t=0;t<=1;t+=.08){rect(R(x1+(x2-x1)*t),R(y1+(y2-y1)*t),2,2,C);rect(R(x2+(x3-x2)*t),R(y2+(y3-y2)*t),1,2,C);}rect(R(x3)-2,R(y3),4,3,C);
+      if(Math.sin(ph)>.85)alpha(.35,()=>disc(R(x3),R(y3)+3,3,'#b8b4aa'));}
+    else{const y=m.y;rect(X-1,y-46,3,46,C);for(let k=y-44;k<y;k+=5){rect(X-2,k,5,1,C);}rect(X-4,y-2,9,3,C);
+      const sw=Math.sin(gt*.25+m.x)*.12,L=34,Lb=10;const jx=X+Math.cos(sw)*L,jy=y-46+Math.sin(sw)*L;
+      for(let t=0;t<=1;t+=.05){rect(R(X+(jx-X)*t),R(y-46+(jy-y+46)*t),1,2,C);rect(R(X-(Lb)*t),R(y-46-sw*Lb*t),1,2,C);}rect(X-Lb-2,y-46,4,4,C);rect(X-1,y-50,3,4,C);
+      const drop=18+Math.sin(gt*.4+m.x)*10;rect(R(jx-3),R(jy),1,R(drop),C);rect(R(jx-5),R(jy+drop),5,3,C);}}}
 function drawBack6(cx){initBack6();
   ctx.drawImage(SKY6,0,0);
   // a pale sun behind the haze
   glow(232,40,40,'rgb(255,240,200)',.25);disc(232,40,9,'#f4ecd8');disc(232,40,7,'#fff8e8');
   wrapDraw(FAR6,cx*.05,0);
+  drawMach6(cx);
   // smoke from the incinerator chimneys, slow
   for(let i=0;i<3;i++){const bx=((i*170+60-cx*.05)%LWID+LWID)%LWID-40;for(let k=0;k<6;k++){const q=((gt*.05+k/6+i*.3)%1);alpha(.18*(1-q),()=>disc(bx+q*30+Math.sin(q*6+i)*4,70-q*50,3+q*6,'#9a9aa0'));}}
   wrapDraw(MOUNT6,cx*.12,0);
@@ -2339,8 +2381,8 @@ function drawJunkRat(e,cx){if(!e.alive)return false;const x=R(e.x-cx),y=R(e.y),s
   if(st==='hide'){ // a little pile of rubbish with two eyes blinking in it
     rect(x-6,y-3,12,3,'#3a3228');rect(x-5,y-5,10,2,'#4a4034');rect(x-3,y-6,6,1,'#5a4e40');rect(x-6,y-3,3,2,'#2a5aa0');rect(x+3,y-4,3,3,'#c8c0a8');rect(x-1,y-6,2,1,'#8a2a24');
     if(Math.floor(gt*.9+e.x)%4!==0){const ox=e.dir<0?-2:1;rect(x+ox-1,y-4,1,1,'#ffd84a');rect(x+ox+1,y-4,1,1,'#ffd84a');}return true;}
-  const fr=st==='scurry'||st==='burst'?RAT_RUN[Math.floor(gt*20)%RAT_RUN.length]:st==='pant'?RAT_IDLE[Math.floor(gt*6)%RAT_IDLE.length]:RAT_RUN[Math.abs(e.vx||0)>1?Math.floor(gt*10)%RAT_RUN.length:0];
-  blit(fr,e.x-cx,e.y+1,-e.dir);
+  if(e.stepV)e.stepV=e.stepV<.5?0:e.stepV*.62;const fr=st==='scurry'||st==='burst'?RAT_RUN[Math.floor(gt*20)%RAT_RUN.length]:st==='pant'?RAT_IDLE[Math.floor(gt*6)%RAT_IDLE.length]:RAT_RUN[Math.abs(e.vx||0)>1?Math.floor(gt*10)%RAT_RUN.length:0];
+  blit(fr,e.x-cx,e.y+1+(e.stepV||0),-e.dir);
   if(st==='burst'&&e.st_t<.5)bubble(e.x-cx,e.y-12,GLY.ex);
   if(st==='scurry'&&e.onGround&&Math.random()<.4)puff(e.x-e.dir*6,e.y,1,'#7a6a52',20,6,.25);
   if(st==='pant'){const k=Math.floor(gt*6)%2;rect(x+e.dir*8,y-4+k,1,1,'#ffffff');}
@@ -2989,6 +3031,10 @@ function drawParts(cx){for(const q of parts){const big=q.life>q.max*.5;rect(q.x-
 /* ================= physics ================= */
 function moveX(e,dx){
   e.x+=dx;e.hitWall=0;
+  if(LV===6&&e.onGround&&!(e.vy<0)&&dx){ // trash hills: walk up a one-row step without jumping
+    const c=Math.floor((e.x+Math.sign(dx)*e.hw)/T),rf=Math.floor((e.y-.5)/T);
+    if(tileAt(c,rf)==='J'){let ok=true;for(let r=Math.floor((rf*T-e.h+.5)/T);r<rf;r++)if(SOLID.has(tileAt(c,r))||SOLID.has(tileAt(Math.floor(e.x/T),r)))ok=false;
+      if(ok){e.y=rf*T;e.stepV=(e.stepV||0)+T;}}}
   const r0=Math.floor((e.y-e.h+.5)/T),r1=Math.floor((e.y-.5)/T);
   if(dx>0){const c=Math.floor((e.x+e.hw)/T);for(let r=r0;r<=r1;r++)if(SOLID.has(tileAt(c,r))){e.x=c*T-e.hw-.01;e.vx=0;e.hitWall=1;break;}}
   else if(dx<0){const c=Math.floor((e.x-e.hw)/T);for(let r=r0;r<=r1;r++)if(SOLID.has(tileAt(c,r))){e.x=(c+1)*T+e.hw+.01;e.vx=0;e.hitWall=-1;break;}}
@@ -3190,7 +3236,7 @@ function winLevel(){if(!cutView)finishLevelStats();waves=[];clearK=0;sprout=null
 
 // ---- each regular enemy has its own way of fighting (ladybug, frog and carp keep theirs) ----
 let drops=[]; // pigeon droppings
-const edgeAhead=(e,d)=>{const ahead=Math.floor((e.x+d*(e.hw+1))/T),below=Math.floor((e.y+1)/T);const t=tileAt(ahead,below);return !SOLID.has(t)&&t!=='p';};
+const edgeAhead=(e,d)=>{const ahead=Math.floor((e.x+d*(e.hw+1))/T),below=Math.floor((e.y+1)/T);const t=tileAt(ahead,below);if(LV===6&&!SOLID.has(t)&&SOLID.has(tileAt(ahead,below+1)))return false;return !SOLID.has(t)&&t!=='p';};
 function walkStep(e,v,dt){e.vy=Math.min(e.vy+G*dt,FALLMAX);moveX(e,v*dt);if(e.hitWall){e.dir*=-1;e.hit=1;}moveY(e,e.vy*dt);if(e.onGround&&edgeAhead(e,e.dir)){e.dir*=-1;e.hit=1;}}
 const SNAKE_SC=.5; // snakes are drawn at half size
 function updWalker(e,dt){if(LV===6){updJunkRat(e,dt);return;}e.t=(e.t||0)+dt;e.st=e.st||'idle';e.st_t=(e.st_t||0)+dt;const go=s=>{e.st=s;e.st_t=0;e.hit=0;};
@@ -3503,10 +3549,10 @@ function drawTiles(cx){
     }
   }
 }
-function drawPlayer(cx){
+function drawPlayer(cx){if(p.stepV)p.stepV=p.stepV<.5?0:p.stepV*.62;
   if(p.inv>0&&Math.floor(p.inv*14)%2)return;
   if(p.onGround&&!(p.fadeA<1))catShadow(p.x-cx,p.y,7);
-  if(p.fadeA!==undefined&&p.fadeA<1){if(p.fadeA>0)alpha(p.fadeA,()=>drawCatAt(p.pose,gt,p.x-cx,p.y,p.face));}else drawCatAt(p.pose,gt,p.x-cx,p.y,p.face);
+  if(p.fadeA!==undefined&&p.fadeA<1){if(p.fadeA>0)alpha(p.fadeA,()=>drawCatAt(p.pose,gt,p.x-cx,p.y+(p.stepV||0),p.face));}else drawCatAt(p.pose,gt,p.x-cx,p.y+(p.stepV||0),p.face);
   if(p.idleT>13.4||(p.pose&&p.pose.k==='curl'&&p.zzz)){for(let i=0;i<3;i++){const p2=(gt*.5+i/3)%1;alpha(Math.min(1,(1-p2)*1.5),()=>blit(GLY.z,p.x-cx-p.face*6+p.face*p2*8,p.y-14-p2*16,1));}}
 }
 /* ================= foreground strip: a parallax band in front of the ground, themed per level ================= */
@@ -3835,9 +3881,9 @@ function drawWorld(){
   drawSign(cx);
   drawArenaTree(cx);
   if(!bus.gone)drawBus(bus.x-cx,144,bus.door,bus.leaving,bus.dist);
-  if(LV===2){drawDockPosts(cx);for(const d of pads)if(!padSolid(d))drawPad(d,cx);}else if(LV===5)drawBalc5(cx);else if(LV===6)drawFence6(cx);else drawCanopyTrees(cx);
+  if(LV===2){drawDockPosts(cx);for(const d of pads)if(!padSolid(d))drawPad(d,cx);}else if(LV===5)drawBalc5(cx);else if(LV===6){}else drawCanopyTrees(cx);
   drawTiles(cx);
-  if(LV===6)drawHeaps6(cx);
+  if(LV===6){drawHeaps6(cx);drawTyres6(cx);}
   drawDecay(cx);
   drawSprout(cx);
   if(LV===5)drawDeco5(cx);
