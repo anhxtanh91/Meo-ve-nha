@@ -1605,7 +1605,8 @@ function updCity5(dt){if(LV!==5)return;
   for(const r of rats5){r.t+=dt;r.x+=r.dir*120*dt;}rats5=rats5.filter(r=>r.t<2.5);
   if(p.onGround&&Math.abs(p.vx)>30&&p.y>=GROUND_Y-1&&Math.random()<dt*14)for(const [px,w] of PUDDLES5)if(p.x>px&&p.x<px+w){puff(p.x,GROUND_Y,2,'#8aa0b8',30,30,.3,300);if(Math.random()<.2)tone(1800,900,.04,'sine',.015);}
 }
-function drawWalkers5(cx){for(const w of walkers5){const x=w.x-cx;if(x<-30||x>W+30)continue;const fr=WALKER[w.v][Math.floor(w.ph)%4];
+function drawWalkers5(cx){if(state!=='arrive')return; // passers-by only belong to the street cutscene
+  for(const w of walkers5){const x=w.x-cx;if(x<-30||x>W+30)continue;const fr=WALKER[w.v][Math.floor(w.ph)%4];
   const s=1.1,ww=fr.w*s,hh=fr.h*s;ctx.drawImage(w.dir>0?fr.r:fr.l,R(x-ww/2),R(w.y-hh),R(ww),R(hh));}}
 // rubbish bags: shiny blue-black plastic, knotted at the top
 function bagS(w,h,seed){return shapeSprite(w+2,h+4,'#05070a',m=>{const r=mulberry(seed);m.disc(w/2+1,h/2+3.5,Math.min(w,h)/2,'#253042');m.cap(w*.3+1,h*.62+3,w*.7+1,h*.62+3,h*.38,'#253042');
@@ -1700,7 +1701,7 @@ function drawCity5Light(cx){
   drawNeon5(cx);
   // low mist rolling along the street and the canal
   for(let i=0;i<7;i++){const x=((i*83-cx*.7+gt*(5+i%3*3))%(W+160)+W+160)%(W+160)-80,y=128+(i%4)*12;alpha(.22,()=>ctx.drawImage(HAZE5,R(x-70),R(y-14),140,28));}
-  for(const w of walkers5){const x=w.x-cx;if(x<-30||x>W+30)continue;const px=R(x+(w.dir>0?1:-1)*3.7),py=R(w.y-44*1.1+11);glow(px,py,7,'rgb(150,200,255)',.45);}
+  if(state==='arrive')for(const w of walkers5){const x=w.x-cx;if(x<-30||x>W+30)continue;const px=R(x+(w.dir>0?1:-1)*3.7),py=R(w.y-44*1.1+11);glow(px,py,7,'rgb(150,200,255)',.45);}
   for(const bn of bins5)if(bn.eyes>0){const x=bn.x-cx;glow(x-3,GROUND_Y-21,4,'rgb(200,255,80)',.6);glow(x+3,GROUND_Y-21,4,'rgb(200,255,80)',.6);}
   if(boss&&boss.kind==='stray'&&!boss.hidden){const b=boss,sc=1.25;glow(b.x-cx+b.dir*7*sc,b.y-11*sc,5,'rgb(200,255,80)',.35);}
 }
