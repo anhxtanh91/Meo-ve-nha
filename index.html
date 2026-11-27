@@ -3510,7 +3510,7 @@ function drawPlayer(cx){
   if(p.idleT>13.4||(p.pose&&p.pose.k==='curl'&&p.zzz)){for(let i=0;i<3;i++){const p2=(gt*.5+i/3)%1;alpha(Math.min(1,(1-p2)*1.5),()=>blit(GLY.z,p.x-cx-p.face*6+p.face*p2*8,p.y-14-p2*16,1));}}
 }
 /* ================= foreground strip: a parallax band in front of the ground, themed per level ================= */
-const FK=1.35,FB=24,FH=40+FB; // FB: a band of near ground below the props that hides most of the dirt // scrolls a bit faster than the play layer, so it reads as closer to us
+const FK=1.35,FB=16,FH=40+FB; // FB: a band of near ground below the props that hides most of the dirt // scrolls a bit faster than the play layer, so it reads as closer to us
 let foreCv=null,foreKey='',foreLive=[];
 const foreWX=fx=>(fx-W/2)/FK+W/2; // world x of the play layer behind a foreground x when it is mid-screen
 // detailed foreground painter: returns {cv, live}. env: {LV,w,FH,T,wx:fx=>worldX,decay:worldX=>0..1,fireX,seed}
