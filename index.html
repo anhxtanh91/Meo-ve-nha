@@ -3431,9 +3431,9 @@ function saveGame(){try{const done=new Set(completedLevels());done.add(LV);local
 let bedS=null;
 function bedSpot(){const key=LV+':'+LW+':'+(LV===5&&boss?boss.bin:'');if(bedS&&bedS.key===key)return bedS;
   if(LV===5){const bn=bins5[boss&&boss.bin>=0?boss.bin:2]||{x:ARENA_X+250};bedS={key,kind:'lid',x:bn.x,gy:GROUND_Y-22,y:GROUND_Y-22};return bedS;} // the city: curls up on the lid of the can the stray hid in
-const kind={1:'roots',4:'roots',6:'box',5:'box',3:'sweater',2:'sweater'}[LV]||'box';
+const kind={1:'roots',4:'roots',6:'box',5:'box',3:'scarecrow',2:'drum'}[LV]||'box';
   let c=Math.floor((ARENA_X+(LV===6?205:LV===2?236:248))/T);for(let k=0;k<12&&groundY(c)>H;k++)c--;
-  const gy=groundY(c),x=c*T+8;bedS={key,kind,x,gy,y:gy-(kind==='sweater'?3:kind==='box'?3:1)};return bedS;}
+  const gy=groundY(c),x=c*T+8;bedS={key,kind,x,gy,y:gy-(kind==='sweater'?3:kind==='box'?3:kind==='drum'?4:kind==='scarecrow'?3:1)};return bedS;}
 // finely drawn sleeping spots, painted once into canvases: [back layer, front layer] drawn around the sleeping cat
 const BEDART={};
 function bedArt(kind){const key=kind+(kind==='roots'?LV:'');if(BEDART[key])return BEDART[key];
@@ -3477,21 +3477,26 @@ function bedArt(kind){const key=kind+(kind==='roots'?LV:'');if(BEDART[key])retur
     const top=10;for(let x=20;x<=63;x++){const u=(x-20)/43,jag=Math.round((rnd()*6+(Math.abs(x-cx0)>16?5:0)+(x>50?3:0)));
       for(let y=top+jag;y<=G0;y++){const ridge=Math.floor((x+Math.sin(y*.13+x*.4)*1.6)/4);const r=((x+Math.round(Math.sin(y*.13+ridge)*1.6))%4+4)%4;
         let base=u<.25?['#6e4e36','#5a3e2a','#4a3222','#2e1e14']:u<.7?['#5a3e2a','#4a3424','#3e2a1c','#24160e']:['#4a3424','#3e2a1c','#33221a','#1e120c'];
-        if(char&&u<.4)base=['#3a2c24','#2a1e18','#20160f','#120c08'];let c=base[r===0?3:r===1?0:r===2?1:2];if(y%9===0&&r===2)c=base[0];B(x,y,1,1,c);}
+        if(char)base=u<.4?['#2e2420','#221a16','#18120e','#0c0806']:u<.7?['#28201a','#1c1612','#140e0a','#0a0604']:['#221a16','#18120e','#100c08','#080402'];let c=base[r===0?3:r===1?0:r===2?1:2];if(y%9===0&&r===2)c=base[0];B(x,y,1,1,c);}
       // broken top: pale splintered wood and the cut rings
       const ty=top+jag;B(x,ty,1,1,'#c8a878');if(rnd()<.35)B(x,ty-1-Math.floor(rnd()*3),1,1+Math.floor(rnd()*2),'#b8986a');if(x%5===0)B(x,ty+1,1,1,'#a08058');}
     for(let i=0;i<3;i++)B(30+i*9,top+5+i,6,1,'#8a6a48');
     // a knot with rings, bracket fungi on the shady side, ivy climbing up the left
+    if(char){// burnt: charcoal cracks glowing faintly, ash on top, no moss or ivy left
+      for(let i=0;i<46;i++){const x=21+Math.floor(rnd()*42),y=top+8+Math.floor(rnd()*(G0-top-10));const L=1+Math.floor(rnd()*3);for(let k=0;k<L;k++)B(x+k,y+(k%2),1,1,rnd()<.25?'#a83a14':'#3a1a0c');}
+      for(let x=20;x<=63;x++)if(rnd()<.6)B(x,top+Math.round(rnd()*7)+2,1,1,rnd()<.5?'#8a8680':'#6a6660');}
+    if(!char){
     for(const [kx,ky] of [[52,26],[30,44]]){B(kx-2,ky-1,5,3,'#2a1a10');B(kx-1,ky,3,1,'#6a4a32');B(kx,ky,1,1,'#1a100a');B(kx-3,ky,1,1,'#3e2a1c');B(kx+3,ky,1,1,'#3e2a1c');}
     for(const [fx,fy,fw] of [[61,30,6],[62,36,5],[60,41,4]]){B(fx,fy,fw,2,'#e2d2a8');B(fx,fy,fw,1,'#a8865a');B(fx+1,fy+2,fw-2,1,'#c8b88e');B(fx+fw-1,fy+1,1,1,'#8a6a42');}
     let vx=22,vy=G0-6;for(let k=0;k<30;k++){vy-=1.2;vx+=Math.sin(k*.5)*.8;B(vx,vy,1,1,'#2e4a1e');if(k%3===0){B(vx-1,vy,2,2,'#4a7a2e');B(vx-1,vy,1,1,'#6aa040');}}
     for(let y=G0-14;y<=G0;y++)for(let x=20;x<=26;x++)if(rnd()<.35)B(x,y,1,1,rnd()<.5?'#4a6a2a':'#5a7a32'); // moss at the foot
+    }
     // new life on top: a slim shoot with leaves (it survived)
     B(33,top-1,1,4,'#4a3424');B(34,top-3,1,3,'#4a3424');B(35,top-5,1,2,'#4a3424');for(const [lx,ly] of [[31,top-2],[35,top-6],[36,top-4],[32,top-4],[47,top+2],[48,top+1]]){B(lx,ly,2,1,'#5a8a3a');B(lx,ly-1,1,1,'#8ac050');}B(47,top+3,1,3,'#4a3424');
     // the hollow: deep and dark at the back, worn lighter rim, a bed of dry leaves and moss
     for(let x=-12;x<=12;x++){const t=G0-23+Math.round((x/12)**2*10);for(let y=t;y<=G0;y++){const d=Math.min(y-t,12-Math.abs(x));B(cx0+x,y,1,1,d<1?'#3a2616':d<2?'#24160c':d<5?'#140c06':'#0c0604');}}
     for(let x=-12;x<=12;x++){const t=G0-23+Math.round((x/12)**2*10);B(cx0+x,t-1,1,1,x<0?'#7a5a3e':'#5a3e2a');}
-    for(let i=0;i<34;i++){const x=cx0-11+Math.floor(rnd()*22),y=G0-Math.floor(rnd()*3);B(x,y,2,1,['#8a6a3a','#a07a3a','#6a4a2a','#b88a4a','#5a6a2a'][Math.floor(rnd()*5)]);}
+    for(let i=0;i<34;i++){const x=cx0-11+Math.floor(rnd()*22),y=G0-Math.floor(rnd()*3);B(x,y,2,1,(char?['#6a6660','#8a8680','#4a4640','#5a5650','#3a3630']:['#8a6a3a','#a07a3a','#6a4a2a','#b88a4a','#5a6a2a'])[Math.floor(rnd()*5)]);}
     // ---- front layer: a root arching across the mouth of the hollow, pebbles, a few leaves
     for(let x=44;x<=64;x++){const y=G0-3-Math.round(Math.sin((x-44)/20*Math.PI)*4);Fp(x,y,1,4,'#4a3424');Fp(x,y,1,1,'#7a5a3e');Fp(x,y+1,1,1,'#5e422e');if(x%4===0)Fp(x,y,1,1,'#5a7a32');}
     for(let x=28;x<=38;x++){const y=G0-1-Math.round(Math.sin((x-28)/10*Math.PI)*2);Fp(x,y,1,2,'#5e422e');Fp(x,y,1,1,'#7a5a3e');}
@@ -3505,13 +3510,56 @@ function drawBed(cx,front){if(state==='title')return;if(LV===5)return; // no box
   if(LV===6&&state!=='outro')return; // in the junkyard the box only turns up once the rat is beaten (the giant heap stands there before)
 const b=bedSpot(),X=R(b.x-cx),G=b.gy;if(X<-50||X>W+50)return;
   if(b.kind==='box'||b.kind==='roots'){const A=bedArt(b.kind)[front?'front':'back'];ctx.drawImage(A.c,X-A.ox,G-A.h+(b.kind==='box'?0:1));
-    if(b.kind==='roots'&&!front){const sw=Math.round(Math.sin(gt*1.5)*.6);rect(X-7+sw,G-A.h+5,2,1,'#7aaa4a');rect(X-6+sw,G-A.h+4,1,1,'#9ac860');}return;}
+    if(b.kind==='roots'&&LV===4&&!front){for(let i=0;i<3;i++){const q=(gt*.35+i/3)%1;alpha((1-q)*.35,()=>rect(R(X-6+i*5+Math.sin(q*6+i)*3),R(G-A.h+4-q*22),2,2,'#8a8a90'));}} // thin smoke still curling off the charred top
+    if(b.kind==='roots'&&LV!==4&&!front){const sw=Math.round(Math.sin(gt*1.5)*.6);rect(X-7+sw,G-A.h+5,2,1,'#7aaa4a');rect(X-6+sw,G-A.h+4,1,1,'#9ac860');}return;}
+  if(b.kind==='drum'){drawDrum(X,G,front);return;}
+  if(b.kind==='scarecrow'){drawScarecrowBed(X,G,front);return;}
   if(b.kind==='sweater'){ // a discarded old wool sweater, maroon knit with a mustard band, a hole and a loose thread
     if(!front){for(let x=-20;x<=20;x++){const h=Math.round(3+1.6*Math.sin(x*.33+1)+(Math.abs(x)<9?2:0)+(Math.abs(x)<4?1:0));for(let y=0;y<h;y++){const yy=G-1-y;let c=((x+y)&1)?'#9a343a':'#7a262c';if(y===h-1)c='#b04a4e';if(y===2||y===3&&Math.abs(x)<12)c=((x+y)&1)?'#d0a848':'#a8822e';rect(X+x,yy,1,1,c);}}
       for(let x=-28;x<=-19;x++){const yy=G-2+Math.round(Math.sin(x*.5)*.5);rect(X+x,yy,1,2,((x)&1)?'#8a2e34':'#6e2228');}for(let k=0;k<3;k++)rect(X-29,G-3+k,1,1,'#5a1a20');rect(X-28,G-3,1,3,'#5a1a20');
       rect(X+6,G-4,2,1,'#2a0e10');rect(X-12,G-3,1,1,'#2a0e10');rect(X+19,G-1,1,1,'#d0a848');rect(X+21,G-2,1,1,'#d0a848');rect(X+22,G-1,2,1,'#d0a848');rect(X+24,G-2,1,1,'#d0a848');return;}
     for(let x=7;x<=21;x++){const yy=G-5+Math.round(Math.abs(x-14)*.35);rect(X+x,yy,1,2,((x)&1)?'#9a343a':'#7a262c');rect(X+x,yy,1,1,'#b04a4e');}for(let k=0;k<2;k++)rect(X+21,G-3+k,1,1,'#5a1a20');return;}
 }
+// an empty chemical drum lying on its side, seen straight down its open end: rusty steel ring, dark inside, its lid with a hazard sign beside it
+function drawDrum(X,G,front){const cx=X,cy=G-13,R0=14,R1=11;
+  if(!front){rect(cx-16,G,32,1,'rgba(0,0,0,.35)');
+    for(let y=-R0;y<=R0;y++)for(let x=-R0;x<=R0;x++){const d=Math.hypot(x,y);if(d>R0+.3)continue;let c;
+      if(d>R1){c=y<-6?'#6a9a4a':y<4?'#5a8a3a':'#3e6a2a';if(d>R0-.8)c='#1e3a16';if(((x*7+y*13)&15)===3)c='#8a5a2a';if(((x*5+y*3)&31)===7)c='#a86a30';} // rim, rust spots
+      else{const k=(y+R1)/(2*R1);c=k<.3?'#0c0e12':k<.6?'#14181e':k<.85?'#1c222a':'#262c34';if(d>R1-1)c='#0a0c10';}
+      rect(cx+x,cy+y,1,1,c);}
+    rect(cx-R0+3,cy-R0+3,3,1,'#a8d07a');rect(cx-R0+2,cy-R0+5,1,2,'#a8d07a'); // a glint on the rim
+    for(let i=0;i<4;i++)rect(cx-8+i*4,G-3-(i%2),4,1,i%2?'#5a6a5a':'#4a5648'); // an old rag on the bottom
+    rect(cx-5,G-2,3,1,'#6a8a3a');rect(cx+4,G-2,2,1,'#7a9a3a'); // a few dry leaves blown in
+    // the lid lying on the ground beside it, a yellow hazard sign on it
+    const lx=cx+22;rect(lx-7,G-2,15,2,'#5a8a3a');rect(lx-7,G-2,15,1,'#7aaa5a');rect(lx-8,G-1,1,1,'#1e3a16');rect(lx+8,G-1,1,1,'#1e3a16');
+    rect(lx-2,G-9,5,1,'#f0c020');rect(lx-3,G-8,7,1,'#f0c020');rect(lx-4,G-7,9,1,'#f0c020');rect(lx-5,G-6,11,1,'#f0c020');rect(lx-6,G-5,13,1,'#f0c020');rect(lx-6,G-4,13,1,'#1a1a1a');
+    rect(lx,G-8,1,2,'#1a1a1a');rect(lx,G-5,1,1,'#1a1a1a'); // "!"
+    rect(lx+4,G-6,2,3,'#7aaa5a'); // the sign stands propped on the lid
+    // a dried green stain where the chemicals leaked
+    rect(cx-18,G-1,6,1,'#5a8a2a');rect(cx-16,G-2,3,1,'#7aaa3a');return;}
+  // front: the lower lip of the rim in front of the sleeping cat
+  for(let x=-R0;x<=R0;x++){const yb=Math.round(Math.sqrt(Math.max(0,R0*R0-x*x)));const yi=Math.round(Math.sqrt(Math.max(0,R1*R1-x*x)));for(let y=Math.max(yi,9);y<=yb;y++){let c=y>yb-1?'#1e3a16':'#3e6a2a';if(((x*7+y*13)&15)===3)c='#8a5a2a';rect(cx+x,cy+y,1,1,c);}}}
+// a scarecrow standing in the stubble, a pile of straw at its feet for the cat to curl up in
+function drawScarecrowBed(X,G,front){const sx=X+12,sw=Math.round(Math.sin(gt*1.3)*.6);
+  if(!front){rect(X-18,G,40,1,'rgba(0,0,0,.3)');
+    rect(sx-1,G-44,3,44,'#6a4a2a');rect(sx-1,G-44,1,44,'#8a6a3a'); // post
+    rect(sx-18,G-31,37,2,'#6a4a2a');rect(sx-18,G-31,37,1,'#8a6a3a'); // crossbar
+    // shirt: a faded red plaid with a blue patch, sleeves along the bar, straw poking out
+    for(let y=G-33;y<=G-17;y++)for(let x=sx-8;x<=sx+8;x++){let c=((x>>1)+(y>>1))&1?'#b04a3a':'#8a3a2e';if((x-sx+20)%5===0||(y-G+40)%5===0)c='#d8a050';rect(x,y,1,1,c);}
+    for(let y=G-32;y<=G-28;y++){for(let x=sx-17;x<sx-8;x++)rect(x,y,1,1,((x+y)&1)?'#b04a3a':'#8a3a2e');for(let x=sx+9;x<=sx+16;x++)rect(x,y,1,1,((x+y)&1)?'#b04a3a':'#8a3a2e');}
+    rect(sx+2,G-26,5,5,'#3a6aa0');rect(sx+2,G-26,5,1,'#5a8ac0');for(let i=0;i<5;i++)rect(sx+2+i,G-22+(i%2?0:-4),1,1,'#e8e0c8'); // patch + stitches
+    for(let k=0;k<4;k++){rect(sx-20+sw,G-32+k*1,3,1,'#e8c060');rect(sx+17+sw,G-32+k*1,3,1,'#e8c060');} // straw hands
+    for(let k=0;k<6;k++)rect(sx-7+k*3+(k%2?sw:0),G-17,1,3+(k%3),'#e8c060'); // straw below the shirt
+    // burlap head with button eyes and a stitched smile, straw hat on top
+    for(let y=-6;y<=6;y++)for(let x=-6;x<=6;x++)if(x*x+y*y<=36)rect(sx+x,G-40+y,1,1,((x+y)&1)?'#c8a870':'#b89860');
+    rect(sx-3,G-42,2,2,'#1a1a1a');rect(sx+2,G-42,2,2,'#1a1a1a');for(let i=-3;i<=3;i++)rect(sx+i,G-37+(Math.abs(i)===3?-1:0),1,1,i%2?'#5a3a1a':'#c8a870');
+    rect(sx-10,G-46,21,2,'#d8a840');rect(sx-10,G-46,21,1,'#f0c860');rect(sx-5,G-51,11,5,'#c89830');rect(sx-5,G-51,11,1,'#e0b850');rect(sx-5,G-48,11,1,'#a83a2a'); // hat with a red band
+    // a crow perched on the arm, keeping it company
+    const cw=sx+14;rect(cw-2,G-36,5,3,'#14141c');rect(cw+3,G-37,3,2,'#14141c');rect(cw+6,G-36,2,1,'#d8a030');rect(cw+4,G-37,1,1,'#f0d040');rect(cw-4,G-35,2,1,'#14141c');rect(cw,G-33,1,2,'#d8a030');
+    // straw pile at its feet
+    for(let x=-16;x<=16;x++){const h=Math.round(4-Math.abs(x)/5+Math.sin(x*1.7)*.8);for(let y=0;y<h;y++)rect(X+x,G-1-y,1,1,y===h-1?'#f0d070':((x+y)&1)?'#d8b050':'#c09838');}
+    return;}
+  for(let k=0;k<7;k++){const x=X-14+k*5;rect(x,G-3-(k%2),1,3,'#e8c060');rect(x+1,G-2,1,2,'#c09838');}}
 function updOutro(dt){
   if(p.y>H+20){p.x=ARENA_X+120;p.y=GROUND_Y;p.vy=0;}
   const o=outro;o.t+=dt;const CXm=ARENA_X+150;let P=poseStand(gt);
@@ -4757,6 +4805,13 @@ function drawDreamRiceBg(g,t,boil,scroll){const HY=100;
   // the golden field: rows of rice getting bigger toward us, each scrolling a little faster
   for(let y=HY+2;y<H-8;y+=2)crayon(g,[[8+((y*5)%6),y],[W-8,y+((y%4)?1:0)]],y<120?'#f0cc60':'#e8b840',1,660+y+boil%3);
   for(let r=0;r<6;r++){const ry=HY+8+r*7,h=4+r*2,sp=6+r*1.6,par=.25+r*.14;for(let x=-((scroll*par)%sp);x<W;x+=sp)dr1Stalk(g,x+(r%2)*3,ry,h,boil,r*97+R(x));}
+  // a scarecrow standing in the rice, as a child draws it: a cross, a round head, a straw hat, a patched shirt
+  {const sx=R(62-scroll*.25),sy=HY+44;crayon(g,[[sx,sy],[sx,sy-34]],'#7a4a22',2,1900+boil%2);crayon(g,[[sx-14,sy-24],[sx+14,sy-24]],'#7a4a22',2,1901+boil%2);
+    dr1Blank(g,sx,sy-20,7,8);scribble(g,sx,sy-20,7,8,'#e05a4a',1902+boil%2,1.4);scribble(g,sx+3,sy-17,2.5,2.5,'#5aa0e0',1903);crayon(g,[[sx-7,sy-27],[sx+7,sy-27],[sx+5,sy-12],[sx-5,sy-12]],'#a83a2a',1,1904+boil%2,true);
+    for(const d of [-1,1])crayon(g,[[sx+d*14,sy-24],[sx+d*18,sy-26],[sx+d*14,sy-22],[sx+d*18,sy-21]],'#e8b020',1,1905+d);
+    dr1Blank(g,sx,sy-34,5,5);scribble(g,sx,sy-34,5,5,'#e8c890',1906+boil%2,1.4);crayon(g,[...Array(10)].map((_,i)=>{const a=i/10*6.283;return [sx+Math.cos(a)*5,sy-34+Math.sin(a)*5];}),'#a87a3a',1,1907,true);
+    g.fillStyle='#1a1a1a';g.fillRect(sx-2,sy-35,1,1);g.fillRect(sx+2,sy-35,1,1);crayon(g,[[sx-2,sy-32],[sx,sy-31],[sx+2,sy-32]],'#7a3a1a',1,1908);
+    crayon(g,[[sx-9,sy-38],[sx+9,sy-38]],'#d89a20',2,1909+boil%2);scribble(g,sx,sy-41,4,3,'#f0c040',1910+boil%2);}
   // crows: kid's black "v" birds, flapping, flying off and shrinking toward the sunset
   for(let i=0;i<6;i++){const u=clamp((t-4.2-i*.5)/6.8,0,1);if(u>=1)continue;const x0=[40,90,20,130,60,110][i],y0=[34,22,48,40,28,52][i];
     const x=lerp(x0,226+i*4,u),y=lerp(y0,HY-18+(i%3)*3,u)+Math.sin(u*9+i)*2,s=lerp(1.4,.35,u),f=t>4?Math.sin(gt*9+i*2)*3*s:2*s;
