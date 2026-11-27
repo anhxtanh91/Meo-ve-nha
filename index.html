@@ -1550,7 +1550,7 @@ const LVINFO={1:{n:1,name:'Trạm xe giữa đồng'},6:{n:2,name:'Bãi rác'},3
 const bannerFor=id=>`<b>Màn ${LVINFO[id].n}</b><span>${LVINFO[id].name}</span>`;
 const nextLevel=id=>{const i=ORDER.indexOf(id);return i>=0&&i<ORDER.length-1?ORDER[i+1]:0;};
 const FIRE_C=117,FIRE_X=FIRE_C*16;
-let fireK=1,rainK=0;
+let fireK=1,rainK=0,ign4=null,ign4Done=false; // the forest only catches fire once the cat has watched it start at the camp
 function fireAt(x){if(LV!==4)return 0;return clamp((x-FIRE_X+40)/260,0,1)*fireK;}
 
 function buildMapN(){
@@ -1586,7 +1586,7 @@ function buildMapN(){
 }
 let fires4=[];
 function resetLevelN(){
-  buildMapN();hoppers=[];pads=[];waves=[];enemies=[];drops=[];fishes=[];parts=[];fireK=1;rainK=0;chase4=null;anim4=[];
+  buildMapN();hoppers=[];pads=[];waves=[];enemies=[];drops=[];fishes=[];parts=[];fireK=LV===4&&!ign4Done?0:1;rainK=0;chase4=null;anim4=[];ign4=null;
   const beetles=LV===6?[14,30,38,60,70,86,122,130,152,162,176,186,205,224]:LV===5?[45,48,80,84,115,121,160,165,198,202]:LV===3?[18,32,49,58,78,94,100,106,120,134,151,165,173,187,200,214]:[12,28,46,57,66,84,104,114,135,148,166,180,194,210];
   beetles.forEach(c=>enemies.push({type:'beetle',x:c*T+8,y:groundY(c),vx:-18,vy:0,hw:6,h:8,dir:-1,alive:true,dead:0,onGround:true}));
   const fly=LV===6?[[30,3],[58,2],[150,3],[175,2],[200,3],[216,2]]:LV===5?[[34,2],[58,1],[94,2],[132,3],[150,1],[182,2],[212,3]]:LV===3?[[50,5],[84,3],[105,5],[130,2],[152,4],[200,5],[212,4]]:[[42,4],[62,4],[96,3],[118,5],[146,2],[171,4],[207,3],[216,4]];
@@ -2806,7 +2806,32 @@ function drawCamp(cx){const x0=FIRE_X-110-R(cx);if(x0<-140||x0>W+20)return;const
   // the campfire nobody put out
   const fx=x0+92;for(let i=0;i<5;i++)rect(fx-9+i*4,gy-2,3,2,'#6a6a70');rect(fx-7,gy-4,14,2,'#4a2a1a');
   rect(fx-8,gy-5,16,2,'#5a3420');rect(fx-6,gy-7,3,4,'#3a2214');rect(fx+3,gy-7,3,4,'#3a2214');{const ff=Math.max(.15,fireK);alpha(.6,()=>glow(fx,gy-10,26,'rgb(255,140,50)',.4));flame(fx-4,gy-4,11*ff,4,7);flame(fx+4,gy-4,10*ff,4,9);flame(fx,gy-4,(15+3*Math.sin(gt*7))*ff,6,3);}if(Math.floor(gt*8)%3===0)rect(fx-2+Math.floor(Math.random()*5),gy-20-Math.random()*8,1,1,'#ffc060');
+  // litter the campers left by the fire: plastic bags, bottles, a heap of dry leaves — this is what catches
+  const tx=fx+22;rect(tx-10,gy-3,22,3,'#7a5a2a');rect(tx-8,gy-5,8,2,'#9a7032');rect(tx+2,gy-4,7,1,'#8a6428');
+  rect(tx-6,gy-9,7,6,'#e8e8f0');rect(tx-5,gy-10,2,1,'#e8e8f0');rect(tx-2,gy-11,2,2,'#e8e8f0');rect(tx-6,gy-4,7,1,'#b8b8c8'); // white plastic bag
+  rect(tx+3,gy-6,8,3,'#6ab0d8');rect(tx+11,gy-5,2,1,'#2a6aa0');rect(tx+5,gy-6,3,1,'#a8daf0'); // a plastic bottle on its side
+  rect(tx-12,gy-3,4,3,'#c83a3a');rect(tx-12,gy-3,4,1,'#e8e8e8'); // a crushed can
+  if(ign4){const t=ign4.t,ig=clamp((t-3.4)/1.2,0,1);
+    if(ig>0){alpha(.6,()=>glow(tx,gy-8,16+ig*16,'rgb(255,130,40)',.45));flame(tx-4,gy-2,ig*12,4,2);flame(tx+3,gy-2,ig*15+Math.sin(gt*9)*2,5,5);flame(tx+8,gy-2,ig*9,3,8);if(ig>.4)rect(tx-6,gy-9,7,6,'#3a2a20');}
+    if(t>1.2&&t<2.2){const k=(t-1.2);for(let i=0;i<5;i++)rect(R(fx-60+((k*120+i*37)%140)),R(gy-30+Math.sin(i*2+t*5)*8+i*4),2,1,i%2?'#9a7032':'#6a8a3a');} // the gust carries dry leaves
+    if(ign4.bub)bubble(p.x-cx+7,p.y-22,ign4.bub==='q'?GLY.q:GLY.ex);}
 }
+// the fire starts: a gust fans the campfire nobody put out, embers land on the plastic and dry leaves, and it spreads into the forest
+function updIgn4(dt){if(LV!==4||state!=='play'||cutView==='boss')return;
+  if(!ign4&&!ign4Done&&p.x>FIRE_X-200&&p.onGround){ign4={t:0,bub:null,sfx:{}};show('skip',true);}
+  const g=ign4;if(!g)return;g.t+=dt;const t=g.t,S=g.sfx,fx=FIRE_X-18;
+  p.ctrl=false;keys.L=keys.R=keys.J=false;
+  if(p.x<FIRE_X-134&&t<1.2){p.vx=55;p.face=1;}else if(t<5.2&&p.onGround)p.vx=0;
+  g.bub=t>.9&&t<2?'q':t>4.2&&t<5.6?'!':null;
+  if(t>1.2&&!S.a){S.a=1;hiss(1.1,.07,900);} // the gust
+  if(t>1.2&&t<2.6){fireK=0;if(Math.random()<dt*14)parts.push({x:fx+(Math.random()*8-4),y:GROUND_Y-12-Math.random()*6,vx:30+Math.random()*30,vy:-14-Math.random()*10,life:1,max:1,c:Math.random()<.5?'#ffc060':'#ff8a30',g:16});}
+  if(t>3.4&&!S.b){S.b=1;SFX.crackle();tone(160,90,.6,'sawtooth',.04);}
+  if(t>4.2&&!S.c){S.c=1;shakeT=.7;shakeA=2;hiss(1.4,.09,600);tone(80,45,1.4,'sawtooth',.06);}
+  if(t>4.2)fireK=clamp((t-4.2)/1.4,0,1);
+  if(t>4.2&&t<4.7&&!S.d){S.d=1;p.vy=-150;p.vx=-60;p.onGround=false;}
+  if(t>5.8)endIgn4();}
+function endIgn4(){if(!ign4)return;ign4=null;ign4Done=true;fireK=1;p.ctrl=true;show('skip',false);if(cutView==='ign'){endCutView();}}
+
 function drawFires4(cx){for(const f of fires4){const x=f.x-R(cx);if(x<-20||x>W+20)continue;const gy=groundY(f.c),h=fireH(f);
   rect(x-11,gy-3,22,3,'#2a1a14');rect(x-10,gy-3,20,1,'#4a2a1a');for(let i=0;i<5;i++)if(Math.sin(gt*7+i*2+f.ph)>-.2)rect(x-9+i*4,gy-2,2,1,i%2?'#ff7a20':'#ffc040');
   alpha(.5,()=>glow(x,gy-h*.4,14+h,'rgb(255,120,40)',.35));for(const [ox,hm,wd] of [[-7,.62,4],[7,.7,4],[-3,.85,5],[3,.9,5],[0,1,6]])flame(x+ox,gy-1,h*hm,wd,f.ph+ox);
@@ -3166,6 +3191,7 @@ const CUTS=[{a:'cut1',name:'Mở đầu',note:'Chuyến xe buýt',ok:()=>true},
   {a:'dream6',name:'Flashback 2',note:'Chuột trong bếp',ok:d=>d.includes(6)},
   {a:'boss3',name:'Màn 3',note:'Quạ và chuột',ok:d=>reached(d,3)},
   {a:'dream3',name:'Flashback 3',note:'Cánh đồng lúa chín',ok:d=>d.includes(3)},
+  {a:'ign4',name:'Màn 4',note:'Đám cháy bắt đầu',ok:d=>reached(d,4)},
   {a:'boss4',name:'Màn 4',note:'Chó hoang giữa rừng cháy',ok:d=>reached(d,4)},
   {a:'out4',name:'Màn 4',note:'Mưa dập lửa',ok:d=>d.includes(4)},
   {a:'dream4',name:'Flashback 4',note:'Chó con đuổi mèo',ok:d=>d.includes(4)},
@@ -3234,6 +3260,7 @@ function menuDo(a){
   else if(a==='cut5'){closeMenu();cutView=true;startLevel(5);}
   else if(a==='cutEnd'){closeMenu();cutView=true;LV=5;startEnding();}
   else if(a==='dream1'){closeMenu();cutView=true;startDream1(null);}
+  else if(a==='ign4'){closeMenu();LV=4;seenIntro={};ign4Done=false;lastCheck=56;resetLevel();cutView=false;startPlay(false);cutView='ign';show('banner',false);bannerT=0;p.x=FIRE_X-199;p.y=GROUND_Y;p.vx=p.vy=0;p.onGround=true;p.face=1;cam=clamp(p.x-W*.42,0,LW-W);}
   else if(a==='dream5'){closeMenu();cutView=true;startDream1(null,'friends');}
   else if(a==='dream6'){closeMenu();cutView=true;startDream1(null,'kitchen');}
   else if(a==='dream4'){closeMenu();cutView=true;startDream1(null,'dog');}
@@ -3288,8 +3315,8 @@ function startPlay(fromSkip){if(cutView){endCutView();return;}wakeS=null;dream=n
   if(fromSkip){resetLevel();if(LV===1){bus.door=0;bus.leaving=true;bus.vx=60;}}
   p.ctrl=!(LV===1&&!bus.gone);setState('play');show('banner',true);bannerT=2.4;
 }
-function skipCut(){if(state==='dream1'){endDream1();return;}if(wakeS&&LV===5){wakeS=null;dream=null;p.zzz=false;}if(cutView==='boss'||cutView==='out'){endCutView();return;}if(state==='ending'&&cutView){endCutView();return;}if(state==='ending'){skipEnding();show('skip',false);return;}if(LV===5){p.x=START5[0];p.y=START5[1];p.vx=p.vy=0;p.onGround=true;p.stalk=0;cam=CAMMIN5;fadeIn5=.8;startPlay(false);return;}if(LV!==1){p.x=56;p.y=144;startPlay(false);return;}startPlay(true);}
-function startLevel(n){ensureAudio();seenIntro={};lvReset();if(n===1){lastCheck=140;startCut();return;}LV=n;lastCheck=56;resetLevel();p.x=-20;p.ctrl=false;$('banner').innerHTML=bannerFor(n);setState('arrive');show('banner',true);wakeS=null;dream=null;if(!cutView)startWake();}
+function skipCut(){if(state==='dream1'){endDream1();return;}if(ign4){endIgn4();return;}if(wakeS&&LV===5){wakeS=null;dream=null;p.zzz=false;}if(cutView==='boss'||cutView==='out'){endCutView();return;}if(state==='ending'&&cutView){endCutView();return;}if(state==='ending'){skipEnding();show('skip',false);return;}if(LV===5){p.x=START5[0];p.y=START5[1];p.vx=p.vy=0;p.onGround=true;p.stalk=0;cam=CAMMIN5;fadeIn5=.8;startPlay(false);return;}if(LV!==1){p.x=56;p.y=144;startPlay(false);return;}startPlay(true);}
+function startLevel(n){ensureAudio();seenIntro={};ign4Done=false;lvReset();if(n===1){lastCheck=140;startCut();return;}LV=n;lastCheck=56;resetLevel();p.x=-20;p.ctrl=false;$('banner').innerHTML=bannerFor(n);setState('arrive');show('banner',true);wakeS=null;dream=null;if(!cutView)startWake();}
 $('skip').onclick=()=>{ensureAudio();skipCut();$('skip').blur();};
 $('btnAgain').onclick=()=>{ensureAudio();lastCheck=140;startPlay(true);};
 $('btnReplay').onclick=()=>{startCut();};
@@ -4324,7 +4351,7 @@ function drawFore(cx){
   const key=LV+':'+LW;if(foreKey!==key){foreKey=key;buildFore();}
   const fx=Math.max(0,R(cx*FK)),y0=H-FH;
   // keep pits and water gaps clear: fade the strip out over any column with no ground, so jumps can be judged
-  const bd=state!=='title'&&cx>ARENA_X-W?bedSpot():null;const pitAt=sx=>{const c=Math.floor((cx+sx)/T);if(bd&&Math.abs(cx+sx-bd.x)<34)return true;if(boss&&boss.state==='intro'&&Math.abs(cx+sx-p.x)<16)return true;return c>=0&&c<COLS&&groundY(c)>H;}; // also keep the sleeping spot in view
+  const bd=state!=='title'&&cx>ARENA_X-W?bedSpot():null;const pitAt=sx=>{const c=Math.floor((cx+sx)/T);if(bd&&Math.abs(cx+sx-bd.x)<34)return true;if(boss&&boss.state==='intro'&&Math.abs(cx+sx-p.x)<16)return true;if(LV===4&&(ign4||Math.abs(cx+sx-(FIRE_X-30))<40)&&(Math.abs(cx+sx-p.x)<16||Math.abs(cx+sx-(FIRE_X-30))<40))return true;return c>=0&&c<COLS&&groundY(c)>H;}; // also keep the sleeping spot in view
   const SW=2,n=Math.ceil(W/SW),pit=[];for(let i=0;i<n;i++)pit.push(pitAt(i*SW+1));
   const fade=[];for(let i=0;i<n;i++){let d=99;if(pit[i])d=0;else for(let k=1;k<=6&&d===99;k++)if(pit[i-k]||pit[i+k])d=k;fade.push(lakeAt6(cx+i*SW+1)?-1:d>=6?1:d/6);} // the turtle's lake stays fully open
   for(let i=0;i<n;){const a=fade[i];let j=i+1;while(j<n&&fade[j]===a)j++;const x0=i*SW,ww=(j-i)*SW;if(a<0){i=j;continue;}if(a<1)ctx.drawImage(foreLow,fx+x0,0,ww,FH,x0,y0,ww,FH);if(a>0){if(a<1)ctx.globalAlpha=a;ctx.drawImage(foreCv,fx+x0,0,ww,FH,x0,y0,ww,FH);ctx.globalAlpha=1;}i=j;}
@@ -5138,8 +5165,8 @@ function update(dt){
   else if(state==='arrive'){updArrive(dt);updBus(dt);updParts(dt);}
   else if(state==='play'){
     if(!p.ctrl&&LV===1&&bus.gone&&!boss)p.ctrl=true; // the cat waits until the bus has driven off screen
-    updCutView(dt);if(state!=='play')return;if(lvS&&!cutView)lvS.t+=dt;updPlayer(dt);if(state==='play'){updEnemies(dt);updHeaps6(dt);updFish();updBoss(dt);updFires4();updChase4(dt);updHoppers(dt);updCity5(dt);if(LV===2){updPads(dt);updWaves(dt);updJumpers(dt);}}updBus(dt);updParts(dt);
-    const target=boss?ARENA_X:p.x-W*.42;cam+=(target-cam)*Math.min(1,dt*(boss?4:7));cam=clamp(cam,LV===5?CAMMIN5:0,LW-W);
+    updCutView(dt);if(state!=='play')return;if(lvS&&!cutView)lvS.t+=dt;updPlayer(dt);if(state==='play'){updEnemies(dt);updHeaps6(dt);updFish();updBoss(dt);updFires4();updIgn4(dt);updChase4(dt);updHoppers(dt);updCity5(dt);if(LV===2){updPads(dt);updWaves(dt);updJumpers(dt);}}updBus(dt);updParts(dt);
+    const target=boss?ARENA_X:ign4?FIRE_X-176:p.x-W*.42;cam+=(target-cam)*Math.min(1,dt*(boss?4:7));cam=clamp(cam,LV===5?CAMMIN5:0,LW-W);
     if(bannerT>0){bannerT-=dt;if(bannerT<=0)show('banner',false);}
   }
   else if(state==='outro'){updOutro(dt);updParts(dt);if(boss)updBoss(dt);}
