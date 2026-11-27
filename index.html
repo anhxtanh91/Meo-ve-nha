@@ -2171,7 +2171,7 @@ let heaps6=[];
 const zone6=x=>clamp((x-FENCE6_X+60)/120,0,1);
 let ridges6=[],tyres6=[];
 function buildDump6(ground,plat){
-  heaps6=[];ridges6=[];tyres6=[];
+  heaps6=[];ridges6=[];tyres6=[];gateFly6=-1;
   const pit=(c0,c1)=>{for(let c=c0;c<=c1;c++)for(let r=0;r<ROWS;r++)map[r][c]=' ';};
   // a ridge: a row of 2-column heaps with stepped tops, so the cat walks up and over it like a hill
   const ridge=(c0,tops,o={})=>{const R0={segs:[],chain:!!o.chain,fired:false};ridges6.push(R0);const bot=10;pit(c0,c0+tops.length*2-1);
@@ -2197,7 +2197,7 @@ const heapDust=(x0,x1,y)=>{if(Math.random()<.5)parts.push({x:x0+Math.random()*(x
 function shakeHeap(h,t0){if(h.st!=='ok')return;h.st='shake';h.t=t0||0;tone(140,90,.25,'sawtooth',.03);}
 function killByJunk(e,how){if(!e.alive)return;e.alive=false;e.dead=.5;e.hid=false;if(!cutView)addKill(enemyName(e));puff(e.x,e.y-4,10,'#c8c0a8',60,50,.5);tone(1600,700,.12,'square',.04);if(how)puff(e.x,e.y-2,6,'#5a4a38',50,40,.5);}
 function spawnTyre(x,y,dir){tyres6.push({x,y,vx:dir*(70+Math.random()*25),vy:-120,hw:5,h:10,a:0,life:5,onGround:false});}
-function updHeaps6(dt){if(LV!==6)return;
+function updHeaps6(dt){if(LV!==6)return;if(gateFly6>=0)gateFly6+=dt;
   for(const R0 of ridges6){if(R0.fired&&R0.segs.every(h=>h.st==='ok'))R0.fired=false;}
   for(const h of heaps6){const x0=h.c0*T,x1=(h.c1+1)*T,topY=h.cur*T;
     const on=state==='play'&&p.onGround&&p.x+p.hw>x0+1&&p.x-p.hw<x1-1&&Math.abs(p.y-topY)<2&&h.cur<=h.bot;
@@ -2338,7 +2338,7 @@ const PERCH6=(()=>{const P={a:'#0e0c12',c:'#26243a',d:'#45466a',q:'#4a4640',e:'#
     preen2:mk(["................","................","..........aaa...","....aaaaaaaaaa..","...aaaacqqaeaa..","..aaaccqqcaaaa..",".aaacddddcaaa...","aaaaacccccaaa...",...tail,...legs]),
     shake:mk(["..........aaa...",".........aaaaa..",".........aaeaqq.","..a.a.a.aaaaaqqq",".aaaaaaaaaaaa...","aaaacccccaaaa...","aaacdddccaaaaa..","aaaaacccccaaaa..","aaaa.aaaaaaaa...","aa.....aaaa.....",...legs])};})();
 // the only fence in the level: a rusty iron fence at the entrance with a hand-painted "BÃI RÁC" board wired to it
-const GATE6_X=88,GATE6_W=120;
+const GATE6_X=88,GATE6_W=120;let gateFly6=-1;
 function drawGate6(cx){const X=R(GATE6_X-cx);if(X<-GATE6_W-10||X>W+10)return;const top=96,Y=144;
   for(let x=0;x<=GATE6_W;x+=5){const lean=Math.round(Math.sin(x*.7)*.6),h=top+((x*7)%3);rect(X+x+lean,h,2,Y-h,'#3a2420');rect(X+x+lean,h,1,Y-h,'#7a4a34');rect(X+x+lean,h-2,2,2,'#5a3426');rect(X+x+lean,h-3,1,1,'#8a5a3a');}
   for(const y of [102,124,140]){rect(X,y,GATE6_W+2,2,'#4a2c22');rect(X,y,GATE6_W+2,1,'#8a5a3a');}
@@ -2359,9 +2359,13 @@ function drawGate6(cx){const X=R(GATE6_X-cx);if(X<-GATE6_W-10||X>W+10)return;con
     x+=g[0].length*2+2;});
   rect(bx+36,by+14,1,3,col);
   // a few crows perched on the top rail, preening, now and then shaking out their feathers
-  for(const [ox,ph,f] of [[14,0,1],[35,2.1,1],[98,4.3,-1]]){const t=(gt*.55+ph)%7;let fr=PERCH6.idle;
+  if(gateFly6<0&&state==='play'&&Math.abs(p.vx)>20){gateFly6=0;SFX.caw();}
+  [[14,0,1],[35,2.1,1],[98,4.3,-1]].forEach(([ox,ph,f],k)=>{
+    if(gateFly6>=0){const t=Math.max(0,gateFly6-k*.12);if(t<=0){blit(PERCH6.shake,X+ox,102,f);return;}
+      const x=X+ox+t*(60+k*14)+Math.sin(t*3+k)*6,y=102-t*(70-k*8)-t*t*20;if(y<-20)return;blit(Math.floor(gt*14+k)%2?CROW_S.a:CROW_S.b,x,y+2,-1);return;}
+    const t=(gt*.55+ph)%7;let fr=PERCH6.idle;
     if(t>1.2&&t<3.4)fr=Math.floor(t*4)%2?PERCH6.preen:PERCH6.preen2;else if(t>5.2&&t<5.6)fr=PERCH6.shake;else if(t>4&&t<4.15)fr=PERCH6.blink;
-    blit(fr,X+ox,102,(t>3.6&&t<5)?-f:f);}}
+    blit(fr,X+ox,102,(t>3.6&&t<5)?-f:f);});}
 function drawBack6(cx){initBack6();
   ctx.drawImage(SKY6,0,0);
   // a pale sun behind the haze
