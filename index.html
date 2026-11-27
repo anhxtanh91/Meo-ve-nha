@@ -2579,16 +2579,47 @@ const BOSS6A=(()=>{const TAU=Math.PI*2,out={run:[],idle:[],bite:[]};
   return out;})();
 const RAT6_ICON=(()=>{const [c,g]=mkCanvas(16,16);g.imageSmoothingEnabled=false;g.drawImage(BOSS6.idle.r,8,6,30,30,0,0,16,16);return c.toDataURL();})();
 const PLATES6=[70,160,250];
+const RAT6_HX=()=>ARENA_X+205;
+let RAT_HEAP_C=null;function RAT_HEAP(){if(RAT_HEAP_C)return RAT_HEAP_C;const w=96,h=52,[c,g]=mkCanvas(w,h),r=mulberry(616);const P=(x,y,ww,hh,col)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),ww,hh);};
+  const top=x=>{const u=(x-w/2)/(w/2);return h-1-(h-4)*Math.max(0,1-u*u)*(.92+.08*Math.sin(x*.5));};
+  // the mound: dark compacted rubbish, lighter toward the lit left
+  for(let x=0;x<w;x++){const t0=Math.round(top(x));for(let y=t0;y<h;y++){const v=(y-t0)/(h-t0+1);P(x,y,1,1,v<.15?(x<w/2?'#7a6a52':'#5e5040'):v<.6?'#4a3c30':'#3a2e24');}}
+  // junk pressed into it: bags, bottles, cans, cardboard, a tyre, an old shoe
+  const J=[['#1e1e22','#3a3a42'],['#3a5a8a','#6a8ac0'],['#8a2a22','#c84a3a'],['#2a5a2a','#4a8a4a'],['#c8a060','#e8c890'],['#d8d0bc','#f4ecd8'],['#d8b048','#f0d070'],['#6a6a72','#a8a8b0']];
+  for(let i=0;i<110;i++){const x=4+r()*(w-8),t0=top(x);if(t0>h-4)continue;const y=t0+1+r()*(h-t0-2);const j=J[Math.floor(r()*J.length)],ww=2+Math.floor(r()*5),hh=1+Math.floor(r()*3);P(x,y,ww,hh,j[0]);P(x,y,ww,1,j[1]);}
+  for(let i=0;i<9;i++){const x=10+r()*(w-20),y=top(x)-1;const j=J[Math.floor(r()*J.length)];P(x,y-2,4,3,j[0]);P(x,y-2,4,1,j[1]);}
+  {const tx=64,ty=30;for(let a=0;a<40;a++){const q=a/40*Math.PI*2;P(tx+Math.cos(q)*6,ty+Math.sin(q)*4,1,1,a<20?'#2a2a2e':'#1a1a1c');}P(tx-2,ty-1,4,2,'#3a2e24');}
+  for(let x=0;x<w;x++){const t0=Math.round(top(x));if(t0<h-1)P(x,t0,1,1,'#2a2018');}
+  g.globalAlpha=.25;g.fillStyle='#000';g.fillRect(0,h-3,w,3);
+  return RAT_HEAP_C=c;}
 function newRatBoss(){return {kind:'rat6',x:ARENA_X+276,y:GROUND_Y,bx:ARENA_X+276,state:'intro',t:0,dir:-1,hits:0,flash:0,hw:24,h:34,spd:1,vx:0,vy:0,shake:0,dents:[0,0,0],intro:true,plateUp:[0,0,0]};}
 function ratSet(s){boss.state=s;boss.t=0;}
 function updRatBoss(dt){const b=boss;b.t+=dt;b.flash=Math.max(0,b.flash-dt);for(let i=0;i<3;i++)b.plateUp[i]=Math.max(0,b.plateUp[i]-dt*3);
   const L=ARENA_X+20,Rr=ARENA_X+W-20,hitP=()=>{if(state==='play'&&p.inv<=0&&!(p.safe>0)&&Math.abs(p.x-b.x)<b.hw+p.hw-2&&p.y>b.y-b.h&&p.y-p.h<b.y)hurt(b.x,false);};
   switch(b.state){
-    case 'intro':{const t=b.t;if(!b.seen){b.seen=1;if(seenIntro[6])b.t=1;seenIntro[6]=1;}p.ctrl=false;keys.L=keys.R=false;if(p.x<ARENA_X+70){p.vx=60;p.face=1;}else if(p.onGround){p.vx=0;p.face=1;}
-      if(t<1){b.y=GROUND_Y+30;b.mq=1;if(Math.random()<.4)parts.push({x:b.bx+(Math.random()*2-1)*20,y:GROUND_Y-10-Math.random()*10,vx:(Math.random()*2-1)*30,vy:-40-Math.random()*40,life:.5,max:.5,c:['#5a4a38','#c8c0a8','#3a5a8a'][Math.floor(Math.random()*3)],g:400});}
-      else if(!b.sq){b.sq=1;b.mq=0;b.y=GROUND_Y+16;b.vy=-300;b.x=b.bx-6;tone(1200,1800,.2,'square',.05);tone(1700,900,.3,'sawtooth',.04,.2);shakeT=.4;shakeA=2;puff(b.x,GROUND_Y-12,16,'#5a4a38',90,90,.7);}
-      else if(b.vy!==0||b.y<GROUND_Y){b.vy+=G*dt;b.y+=b.vy*dt;b.x-=40*dt;if(b.y>=GROUND_Y&&b.vy>0){b.y=GROUND_Y;b.vy=0;shakeT=.2;shakeA=1.5;SFX.stomp();}}
-      if(t>3.4){b.intro=false;p.ctrl=true;bossBar();ratSet('dive');}break;}
+    case 'intro':{ // the cat walks in, sees a giant heap of rubbish, creeps closer; the heap shakes, bursts apart, the cat jumps back, the rat rises out of it and roars
+      const t=b.t,HX=RAT6_HX();if(!b.seen){b.seen=1;b.x=b.bx=HX;b.y=GROUND_Y+40;b.chunks=[];if(seenIntro[6]){b.t=3.6;p.x=ARENA_X+100;}seenIntro[6]=1;}
+      p.ctrl=false;keys.L=keys.R=false;$('bossBar').hidden=true;const CAT=ARENA_X+70;
+      if(t<2.6){if(p.x<CAT){p.vx=60;p.face=1;}else if(p.onGround){p.vx=0;p.face=1;}}
+      else if(t<3.8){p.face=1;if(p.onGround&&p.x<ARENA_X+108){p.vx=45;}else if(p.onGround)p.vx=0;} // creeps up for a closer look
+      else if(t<4.3){if(p.onGround)p.vx=0;p.face=1;}
+      if(t>=3.7&&t<4.6){b.heapSh=clamp((t-3.7)/.9,0,1);shakeT=Math.max(shakeT,.05);shakeA=.6+b.heapSh*1.4;if(Math.random()<dt*10)tone(60+Math.random()*30,40,.12,'sawtooth',.03);
+        if(Math.random()<b.heapSh*.5)parts.push({x:HX+(Math.random()*2-1)*36,y:GROUND_Y-20-Math.random()*24,vx:(Math.random()*2-1)*30,vy:-30-Math.random()*50,life:.5,max:.5,c:['#5a4a38','#c8c0a8','#3a5a8a','#8a2a22'][Math.floor(Math.random()*4)],g:400});}
+      if(t>=4.6&&!b.burst){b.burst=1;b.heapSh=0;shakeT=.6;shakeA=3;hiss(.5,.12,1800);tone(140,40,.5,'square',.06);SFX.stomp();puff(HX,GROUND_Y-18,22,'#5a4a38',120,110,.8);
+        const C=['#5a4a38','#7a6a52','#c8c0a8','#3a5a8a','#8a2a22','#2a5a2a','#d8b048','#6a6a72','#e8e0cc'];
+        for(let i=0;i<40;i++){const a=-Math.PI*(.06+Math.random()*.88),sp=120+Math.random()*200;b.chunks.push({x:HX+(Math.random()*2-1)*24,y:GROUND_Y-12-Math.random()*26,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-40,c:C[Math.floor(Math.random()*C.length)],w:2+Math.floor(Math.random()*4),h:2+Math.floor(Math.random()*3),t:0,b:0});}
+        // the cat startles and leaps back
+        p.vy=-200;p.vx=-55;p.onGround=false;p.face=1;p.wary=false;p.startle=1;}
+      if(b.burst&&t<5.1&&p.onGround&&t>4.75){p.vx=0;p.face=1;p.wary=true;}
+      if(t>=4.6&&t<5.4){const k=ease(clamp((t-4.75)/.6,0,1));b.y=GROUND_Y+40-40*k;}
+      if(t>=5.4){b.y=GROUND_Y;}
+      if(t>=5.5&&t<7.3){ // the roar: mouth wide, spit spraying everywhere
+        if(!b.roared){b.roared=1;tone(220,70,1.3,'sawtooth',.07);tone(330,110,1.2,'square',.035,.05);hiss(1.2,.06,900);}
+        shakeT=Math.max(shakeT,.05);shakeA=1.2;const mx=b.x+b.dir*24,my=b.y-24;
+        for(let i=0;i<3;i++)if(Math.random()<.85)parts.push({x:mx+(Math.random()*2-1)*3,y:my+(Math.random()*2-1)*3,vx:b.dir*(40+Math.random()*130)+(Math.random()*2-1)*30,vy:-70-Math.random()*110,life:.8,max:.8,c:Math.random()<.6?'#d8f0b0':'#a8d878',g:520});}
+      if(t>=5.5)p.wary=true;
+      for(const c of b.chunks){c.t+=dt;if(c.b<2){c.vy+=G*dt;c.x+=c.vx*dt;c.y+=c.vy*dt;if(c.y>=GROUND_Y-1&&c.vy>0){c.y=GROUND_Y-1;c.vy*=-.3;c.vx*=.5;c.b++;}}}
+      if(t>7.5){b.intro=false;p.ctrl=true;p.wary=false;bossBar();ratSet('dive');}break;}
     case 'dive':{if(b.t<.6&&Math.random()<.6)puff(b.x,GROUND_Y,2,'#5a4436',50,50,.5);b.y=GROUND_Y+b.t*30;if(b.t>.6){b.bx=b.x;ratSet('tunnel');tone(90,60,.4,'sawtooth',.03);}break;}
     case 'tunnel':{const sp=(70+30*b.hits)*b.spd;b.bx+=clamp(p.x-b.bx,-sp*dt,sp*dt);b.bx=clamp(b.bx,L,Rr);b.x=b.bx;if(Math.random()<.35)parts.push({x:b.bx+(Math.random()*2-1)*10,y:GROUND_Y,vx:(Math.random()*2-1)*20,vy:-40-Math.random()*40,life:.4,max:.4,c:['#5a4436','#3a2a24','#8a7a5a'][Math.floor(Math.random()*3)],g:400});
       if(b.t>2.4-b.hits*.3)ratSet('rumble');break;}
@@ -2618,17 +2649,23 @@ function drawArena6(cx){
     rect(x-18,y-5,36,7,'#16181c');rect(x-17,y-4,34,2,'#a8b0bc');rect(x-17,y-4,34,1,'#e0e6ee');for(let k=0;k<34;k++)rect(x-17+k,y-2,1,3,((k>>1)&1)?'#f2c43a':'#1a1a1a');for(const rx of [-15,-6,5,14])rect(x+rx,y-4,1,1,'#4a525e');if(up<.05)rect(x-18,y+2,36,1,'rgba(0,0,0,.4)');
     for(let k=0;k<d&&k<3;k++)rect(x-3+k*3,y,2,1,'#4a5058');}}
 function drawRatBoss(cx){const b=boss;if(b.state==='gone')return;const x=b.x-cx;
+  if(b.chunks&&b.chunks.length){for(const c of b.chunks){const a=c.t>2.2?1-(c.t-2.2)/.8:1;if(a<=0)continue;alpha(a,()=>{rect(R(c.x-cx),R(c.y-c.h),c.w,c.h,c.c);rect(R(c.x-cx),R(c.y-c.h),c.w,1,'rgba(255,255,255,.25)');});}if(b.state!=='intro')b.chunks=b.chunks.filter(c=>c.t<3);}
+  if(b.state==='intro'&&!b.burst){const H6=RAT_HEAP(),sh=b.heapSh?Math.round(Math.sin(gt*55)*b.heapSh*2):0,sq=b.heapSh?Math.round(Math.abs(Math.sin(gt*20))*b.heapSh*2):0;
+    ctx.drawImage(H6,R(RAT6_HX()-cx-H6.width/2)+sh,GROUND_Y+2-H6.height+sq,H6.width,H6.height-sq);
+    if(b.heapSh>.4&&Math.floor(gt*8)%2){rect(R(RAT6_HX()-cx)-6+sh,GROUND_Y-26,3,2,'#ffd84a');rect(R(RAT6_HX()-cx)+4+sh,GROUND_Y-26,3,2,'#ffd84a');} // two eyes glinting inside
+    if(b.t>2.2&&b.t<3.6)bubble(p.x-cx,p.y-22,GLY.q);
+    return;}
   if(b.state==='tunnel'||b.state==='rumble'||(b.state==='dive'&&b.t>.4)){const sh=b.state==='rumble'?Math.round(Math.sin(gt*60)*1.5):0;const X=R(b.bx-cx)+sh;
     for(let i=-18;i<=18;i++){const hh=Math.round(5*Math.cos(i/18*Math.PI/2)*(b.state==='rumble'?1.5:1));for(let y=0;y<hh;y++)rect(X+i,GROUND_Y-y,1,1,y===hh-1?'#7a6a52':'#4a3c30');}
     if(b.state==='rumble'){rect(X-1,GROUND_Y-10,3,6,'#ffd84a');rect(X,GROUND_Y-3,1,1,'#ffd84a');}return;}
-  let spr,y=b.y;const A=BOSS6A;if(b.state==='dizzy'||b.state==='bonk'||b.state==='recover')spr=A.idle[Math.floor(gt*7)%A.idle.length];else if(b.state==='leap'||(b.state==='intro'&&b.t>1.9&&b.t<3.3)||(b.state==='run'&&Math.abs(p.x-b.x)<46&&Math.sign(p.x-b.x)===b.dir))spr=A.bite[Math.floor(gt*10)%A.bite.length];else if(b.state==='intro'&&b.t>3.3)spr=A.idle[Math.floor(gt*7)%A.idle.length];else spr=A.run[Math.floor(gt*(b.state==='run'||b.state==='flee'?18:9))%A.run.length];
+  let spr,y=b.y;const A=BOSS6A;if(b.state==='dizzy'||b.state==='bonk'||b.state==='recover')spr=A.idle[Math.floor(gt*7)%A.idle.length];else if(b.state==='leap'||(b.state==='intro'&&b.t>5.4&&b.t<7.3)||(b.state==='run'&&Math.abs(p.x-b.x)<46&&Math.sign(p.x-b.x)===b.dir))spr=A.bite[Math.floor(gt*10)%A.bite.length];else if(b.state==='intro')spr=A.idle[Math.floor(gt*7)%A.idle.length];else spr=A.run[Math.floor(gt*(b.state==='run'||b.state==='flee'?18:9))%A.run.length];
   const fy=(A.idle.includes(spr)||A.bite.includes(spr))?4:0; // the tail curls below the paws in these poses: drop them so the paws stand on the ground
   const draw=()=>blit(spr,x,y+1+fy,-b.dir);
   if(b.state==='intro'||b.state==='dive'){ctx.save();ctx.beginPath();ctx.rect(0,0,W,GROUND_Y+1);ctx.clip();draw();ctx.restore();}
   else if(b.flash>0&&Math.floor(b.flash*20)%2)alpha(.5,draw);else draw();
   if(b.state==='dizzy'||b.state==='bonk'){const px0=R(x),py=R(b.y-b.h+2-(b.state==='bonk'?Math.max(0,10-b.t*40):0));rect(px0-18,py-1,36,7,'#16181c');rect(px0-17,py,34,2,'#a8b0bc');rect(px0-17,py,34,1,'#e0e6ee');for(let k=0;k<34;k++)rect(px0-17+k,py+2,1,3,((k>>1)&1)?'#f2c43a':'#1a1a1a');for(let k=0;k<(b.dents[b.plate]||0);k++)rect(px0-3+k*3,py,2,1,'#4a5058');
     for(let i=0;i<3;i++){const a=gt*5+i*2.1;blit(STAR,x+Math.cos(a)*16,b.y-b.h-6+Math.sin(a)*3,1);}}
-  if(b.state==='intro'&&b.t>2&&b.t<3.2)bubble(x-8,b.y-30,GLY.ex);}
+  if(b.state==='intro'&&b.t>4.65&&b.t<5.5)bubble(p.x-cx,p.y-22,GLY.ex);}
 
 /* ---------- Màn 2: sunset over the rice fields ---------- */
 const SKY_SUN=(()=>{const [c,g]=mkCanvas(W,H);const C=['#2c2c6a','#5a3e82','#a04e86','#e66e6e','#ff9e5e','#ffd08a'].map(hex);
@@ -3419,6 +3456,7 @@ function bedArt(kind){const key=kind+(kind==='roots'?LV:'');if(BEDART[key])retur
     out={back:{c:sm(bc),ox:Math.round(cx0*SC),h:shh},front:{c:sm(fc),ox:Math.round(cx0*SC),h:shh}};}
   BEDART[key]=out;return out;}
 function drawBed(cx,front){if(state==='title')return;if(LV===5)return; // no box in the city: the cat sleeps on a trash-can lid
+  if(LV===6&&state!=='outro')return; // in the junkyard the box only turns up once the rat is beaten (the giant heap stands there before)
 const b=bedSpot(),X=R(b.x-cx),G=b.gy;if(X<-50||X>W+50)return;
   if(b.kind==='box'||b.kind==='roots'){const A=bedArt(b.kind)[front?'front':'back'];ctx.drawImage(A.c,X-A.ox,G-A.h+(b.kind==='box'?0:1));
     if(b.kind==='roots'&&!front){const sw=Math.round(Math.sin(gt*1.5)*.6);rect(X-7+sw,G-A.h+5,2,1,'#7aaa4a');rect(X-6+sw,G-A.h+4,1,1,'#9ac860');}return;}
@@ -4267,7 +4305,7 @@ function drawFore(cx){
   const key=LV+':'+LW;if(foreKey!==key){foreKey=key;buildFore();}
   const fx=Math.max(0,R(cx*FK)),y0=H-FH;
   // keep pits and water gaps clear: fade the strip out over any column with no ground, so jumps can be judged
-  const bd=state!=='title'&&cx>ARENA_X-W?bedSpot():null;const pitAt=sx=>{const c=Math.floor((cx+sx)/T);if(bd&&Math.abs(cx+sx-bd.x)<34)return true;return c>=0&&c<COLS&&groundY(c)>H;}; // also keep the sleeping spot in view
+  const bd=state!=='title'&&cx>ARENA_X-W?bedSpot():null;const pitAt=sx=>{const c=Math.floor((cx+sx)/T);if(bd&&Math.abs(cx+sx-bd.x)<34)return true;if(boss&&boss.state==='intro'&&Math.abs(cx+sx-p.x)<16)return true;return c>=0&&c<COLS&&groundY(c)>H;}; // also keep the sleeping spot in view
   const SW=2,n=Math.ceil(W/SW),pit=[];for(let i=0;i<n;i++)pit.push(pitAt(i*SW+1));
   const fade=[];for(let i=0;i<n;i++){let d=99;if(pit[i])d=0;else for(let k=1;k<=6&&d===99;k++)if(pit[i-k]||pit[i+k])d=k;fade.push(lakeAt6(cx+i*SW+1)?-1:d>=6?1:d/6);} // the turtle's lake stays fully open
   for(let i=0;i<n;){const a=fade[i];let j=i+1;while(j<n&&fade[j]===a)j++;const x0=i*SW,ww=(j-i)*SW;if(a<0){i=j;continue;}if(a<1)ctx.drawImage(foreLow,fx+x0,0,ww,FH,x0,y0,ww,FH);if(a>0){if(a<1)ctx.globalAlpha=a;ctx.drawImage(foreCv,fx+x0,0,ww,FH,x0,y0,ww,FH);ctx.globalAlpha=1;}i=j;}
