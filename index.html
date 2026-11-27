@@ -1471,7 +1471,8 @@ function makeFacade(w,h,kind,seed,opt={}){const [c,g]=mkCanvas(w,h);const r=mulb
   const gr=g.createLinearGradient(0,h-40,0,h);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(10,14,16,.55)');g.fillStyle=gr;g.fillRect(0,h-40,w,40);
   if(!opt.noCornice){F(0,0,w,4,P.dark);F(0,4,w,1,P.lite);F(0,0,w,1,'#7a7c80');}
   c._wins=[];
-  if(!opt.noWin)for(let fy=opt.winY||10;fy<h-50;fy+=64)for(let x=7+Math.floor(r()*6);x<w-32;x+=46){if(r()<.12)continue;const lit=r()<.4;const WW=28,WH=44;
+  const wx0=7+Math.floor(r()*6),hit=(x,y)=>(opt.avoid||[]).some(a=>x-6<a[0]+a[2]&&x+28+6>a[0]&&y-8<a[1]+a[3]&&y+44+6>a[1]);
+  if(!opt.noWin)for(let fy=opt.winY||10;fy<h-50;fy+=64)for(let x=wx0;x<w-32;x+=46){if(r()<.12||hit(x,fy))continue;const lit=r()<.4;const WW=28,WH=44;
     F(x-3,fy-3,WW+6,WH+6,'#140e0e');F(x-5,fy-7,WW+10,4,P.dark);F(x-5,fy-7,WW+10,1,P.lite);
     if(lit){const gg=g.createLinearGradient(0,fy,0,fy+WH);gg.addColorStop(0,'#f6d48c');gg.addColorStop(1,'#c27a3a');g.fillStyle=gg;g.fillRect(x,fy,WW,WH);}
     else F(x,fy,WW,WH,r()<.5?'#1c2630':'#24303a');
@@ -1541,7 +1542,17 @@ function drawBack5(cx){initCity5();
   for(const L of LAMPS5){const x=L.x+L.d*9-cx;if(x<-20||x>W+20)continue;for(let y=162;y<176;y+=2)rect(x-2+Math.round(Math.sin(gt*3+y)*1.5),y,4,1,'#6a6040');}
   if(cx<24*T)ctx.drawImage(STREET5,-cx,0);
 }
-function getFac5(i){if(!FAC5[i]){const [c0,c1,top,kind]=CITY_BLD[i];FAC5[i]=makeFacade((c1-c0+1)*T+12,162-top*T,kind,i*7+3);}return FAC5[i];}
+// balconies as rects on the wall: the slab and rail, plus the window above them (a window, raised off the floor, not a door)
+let BR5=null,BR5map=null;
+function balcRects5(){if(BR5&&BR5map===map)return BR5;const out=[];for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){if(map[r][c]!=='p'||tileAt(c-1,r)==='p')continue;let e=c;while(tileAt(e+1,r)==='p')e++;
+  const x=c*T,w=(e-c+1)*T,y=r*T;out.push({x,w,y,wx:x+Math.floor(w/2)-14,wy:y-BWIN_UP5-BWIN_H5});}BR5map=map;return BR5=out;}
+const BWIN_UP5=22,BWIN_H5=38;
+function getFac5(i){if(!FAC5[i]){const [c0,c1,top,kind]=CITY_BLD[i];const X0=c0*T-6,Y0=top*T,fw=(c1-c0+1)*T+12;
+  const bs=balcRects5().filter(b=>b.x+b.w>X0&&b.x<X0+fw);
+  const avoid=bs.flatMap(b=>[[b.wx-X0,b.wy-Y0,28,BWIN_H5],[b.x-X0-2,b.y-Y0-12,b.w+4,18]]);
+  // line the floors up with the first balcony window, so storeys read as storeys
+  let winY=10;if(bs.length){winY=((bs[0].wy-Y0)%64+64)%64;if(winY<8)winY+=64;}
+  FAC5[i]=makeFacade(fw,162-top*T,kind,i*7+3,{avoid,winY});}return FAC5[i];}
 function drawBalc5(cx){
   for(let i=0;i<CITY_BLD.length;i++){const [c0,c1,top,kind]=CITY_BLD[i];const x=c0*T-6-cx,w=(c1-c0+1)*T+12;if(x>W||x+w<0)continue;ctx.drawImage(getFac5(i),R(x),top*T);}
   for(let i=0;i<CITY_ROOFS.length;i++){const [c0,c1,top]=CITY_ROOFS[i];const x=c0*T-cx,w=(c1-c0+1)*T;if(x>W||x+w<0)continue;if(!ROOF5[i])ROOF5[i]=makeFacade(w,162-(top+1)*T,(i+1)%3,i*11+5,{noCornice:1,winY:6});ctx.drawImage(ROOF5[i],R(x),(top+1)*T);
@@ -1559,8 +1570,12 @@ function drawNeon5(cx){for(const [nx,ny,txt,rgb] of NEON5){const x=nx-cx;if(x<-9
   for(let i=0;i<txt.length;i++){const G=GLYPH5[txt[i]];const off=dead||(i===txt.length-2&&Math.sin(gt*13+s0)>.3);if(G)for(let j=0;j<5;j++)for(let k=0;k<5;k++)if(G[j][k]==='1')rect(lx+k*2,ny+j*2,2,2,off?'#3a2a34':`rgb(${rgb})`);
     if(!off&&G)glow(lx+5,ny+5,12,`rgb(${rgb})`,.28);lx+=12;}}}
 function drawBalcony(x,y,w,seed){x=R(x);
-  const lit=balLit5(seed);const dx=x+Math.floor(w/2)-14;
-  rect(dx-3,y-47,34,47,'#120e0e');if(lit){rect(dx,y-44,28,44,'#c88a48');rect(dx,y-44,28,8,'#f2c678');}else rect(dx,y-44,28,44,'#1c2630');rect(dx+13,y-44,2,44,'#120e0e');rect(dx,y-26,28,1,'#120e0e');rect(dx-4,y-49,36,2,'#2a2228');
+  const lit=balLit5(seed);const dx=x+Math.floor(w/2)-14,wb=y-BWIN_UP5,wt=wb-BWIN_H5;
+  rect(dx-3,wt-3,34,BWIN_H5+6,'#120e0e');
+  if(lit){rect(dx,wt,28,BWIN_H5,'#c88a48');rect(dx,wt,28,8,'#f2c678');if(hashD(seed*21)<.5){rect(dx,wt,7,BWIN_H5,'rgba(120,40,40,.45)');rect(dx+21,wt,7,BWIN_H5,'rgba(120,40,40,.45)');}}
+  else{rect(dx,wt,28,BWIN_H5,'#1c2630');rect(dx+2,wt+2,8,12,'#2c3a4a');}
+  rect(dx+13,wt,2,BWIN_H5,'#120e0e');rect(dx,wt+16,28,2,'#120e0e');rect(dx,wb-11,28,1,'#120e0e');
+  rect(dx-5,wt-7,38,4,'#2a2228');rect(dx-5,wt-7,38,1,'#4a4048');rect(dx-6,wb+3,40,2,'#6a5a50');rect(dx-6,wb+5,40,1,'#2a2228');
   // hanging fire-escape ladder
   const lx=hashD(seed*3)<.5?x+3:x+w-9;rect(lx,y+3,1,24,'#202228');rect(lx+5,y+3,1,24,'#202228');for(let j=y+6;j<y+27;j+=4)rect(lx,j,6,1,'#202228');
   // slab and brackets
@@ -1607,7 +1622,7 @@ function updCity5(dt){if(LV!==5)return;
 }
 function drawWalkers5(cx){if(state!=='arrive')return; // passers-by only belong to the street cutscene
   for(const w of walkers5){const x=w.x-cx;if(x<-30||x>W+30)continue;const fr=WALKER[w.v][Math.floor(w.ph)%4];
-  const s=1.1,ww=fr.w*s,hh=fr.h*s;ctx.drawImage(w.dir>0?fr.r:fr.l,R(x-ww/2),R(w.y-hh),R(ww),R(hh));}}
+  const s=1.1,ww=fr.w*s,hh=fr.h*s;ctx.save();ctx.globalAlpha=.76;ctx.drawImage(w.dir>0?fr.r:fr.l,R(x-ww/2),R(w.y-hh),R(ww),R(hh));ctx.restore();}}
 // rubbish bags: shiny blue-black plastic, knotted at the top
 function bagS(w,h,seed){return shapeSprite(w+2,h+4,'#05070a',m=>{const r=mulberry(seed);m.disc(w/2+1,h/2+3.5,Math.min(w,h)/2,'#253042');m.cap(w*.3+1,h*.62+3,w*.7+1,h*.62+3,h*.38,'#253042');
   m.cap(w/2+1,4,w/2+1,1.5,1,'#253042');m.cap(w/2,2,w/2-2.5,0,.6,'#253042');m.cap(w/2+2,2,w/2+4.5,0,.6,'#253042');
@@ -1640,7 +1655,6 @@ function drawStreetJunk5(cx){
 function drawDeco5(cx){
   drawPuddles5(cx);drawStreetJunk5(cx);{const x=R(102-cx);rect(x,GROUND_Y,14,1,'#0c0e10');rect(x+1,GROUND_Y+1,12,1,'#3a3e44');}
   for(const L of LAMPS5)drawLamp5(L,cx);
-  drawWalkers5(cx);
   for(const bn of bins5)drawBin5(bn,cx);
   for(const r of rats5)blit(RAT_RUN[Math.floor(gt*14)%5],r.x-cx,GROUND_Y+1,-r.dir);
   drawThrows5(cx);
@@ -1653,9 +1667,12 @@ function updThrows5(dt){if(LV!==5||state!=='play'||fadeIn5>.3)return;
     const cand=[];for(let i=0;i<CITY_BLD.length;i++){const [c0,c1,top]=CITY_BLD[i];const X0=c0*T-6;if(X0>cam+W||(c1+1)*T+6<cam)continue;
       for(const wn of getFac5(i)._wins){const x=X0+wn.x,y=top*T+wn.y;if(x<cam+4||x+wn.w>cam+W-4||y<4||y+wn.h>p.y-14||Math.abs(x+wn.w/2-p.x)>150)continue;
         if(throws5.some(o=>o.x===x&&o.y===y))continue;cand.push({x,y,w:wn.w,h:wn.h,score:(x+wn.w/2-p.x)*(p.vx>=-5?1:-1)});}}
+    // the windows above the balconies have tenants too
+    for(const bw of balcRects5()){const x=bw.wx,y=bw.wy;if(x<cam+4||x+28>cam+W-4||y<4||y+BWIN_H5>p.y-14||Math.abs(x+14-p.x)>150)continue;
+      if(throws5.some(o=>o.x===x&&o.y===y))continue;cand.push({x,y,w:28,h:BWIN_H5,score:(x+14-p.x)*(p.vx>=-5?1:-1)});}
     if(cand.length){cand.sort((a,b)=>b.score-a.score);const pick=cand[Math.floor(Math.random()*Math.min(3,cand.length))];
-      throws5.push({x:pick.x,y:pick.y,w:pick.w,h:pick.h,t:0,thrown:false,dir:p.x<pick.x+pick.w/2?-1:1});tone(300,340,.18,'square',.015);}else throwT5=.8;}}
-  for(const w of throws5){w.t+=dt;if(!w.thrown&&w.t>1.05){w.thrown=true;const mx=w.x+w.w/2+w.dir*(w.w/2+4),my=w.y+w.h*.55;const vx=clamp((p.x-mx)/.75,-70,70);bags5.push({x:mx,y:my,vx,vy:-50,r:0});hiss(.15,.04,1600);}}
+      throws5.push({x:pick.x,y:pick.y,w:pick.w,h:pick.h,v:Math.random()<.5?0:1,t:0,thrown:false,dir:p.x<pick.x+pick.w/2?-1:1});tone(300,340,.18,'square',.015);}else throwT5=.8;}}
+  for(const w of throws5){w.t+=dt;if(!w.thrown&&w.t>1.05){w.thrown=true;const mx=w.x+w.w/2+w.dir*22,my=w.y+24;const vx=clamp((p.x-mx)/.75,-70,70);bags5.push({x:mx,y:my,vx,vy:-50,r:0});hiss(.15,.04,1600);}}
   throws5=throws5.filter(w=>w.t<1.9);
   for(const g of bags5){g.vy+=620*dt;g.x+=g.vx*dt;const py=g.y;g.y+=g.vy*dt;g.r+=dt*8*Math.sign(g.vx||1);
     if(Math.abs(g.x-p.x)<9&&g.y>p.y-15&&g.y<p.y+3&&state==='play'){g.dead=1;splat5(g.x,g.y);if(p.inv<=0&&!(p.safe>0))hurt(g.x,false);continue;}
@@ -1664,16 +1681,59 @@ function updThrows5(dt){if(LV!==5||state!=='play'||fadeIn5>.3)return;
     if(g.y>H+20)g.dead=1;}
   bags5=bags5.filter(g=>!g.dead);}
 function splat5(x,y){puff(x,y,10,'#2a2c30',60,50,.5);puff(x,y,5,'#8a7a4a',50,40,.5);puff(x,y,3,'#c8c0a0',40,30,.4);tone(140,70,.15,'square',.05);hiss(.18,.06,900);}
+// the person at the window: backlit silhouette, faces right in the data (flipped toward the cat)
+const THROW_HAND={idle:[17,33],lean:[25,19],wind:[9,4],throw:[33,12],follow:[31,30]};
+function throwerFrame(pose,v){return shapeSprite(36,36,'#060406',m=>{const B='#120c0e',A='#3a2624',S='#5a3a30',RIM='#8a4c2c';
+  // torso and shoulders (v0: vest over bare arms, v1: baggy hoodie)
+  m.cap(8,20,20,20,4.2,B);m.rect(5,20,19,16,B);m.cap(14,14,14,18,2.3,B);
+  if(v===0){m.cap(10,20,9,36,1,'#241a18');m.cap(18,20,19,36,1,'#241a18');}
+  else{m.cap(9,17,19,17,2.4,B);m.cap(14,23,14,26,.6,'#241a18');m.px(13,22,'#241a18');m.px(15,22,'#241a18');}
+  // head with a nose and chin in profile
+  m.disc(14,9.5,4.7,B);m.px(19,9,B);m.px(19,10,B);m.px(18,13,B);m.px(17,14,B);
+  if(v===0){m.cap(10,5.2,17,5.2,2.8,B);m.cap(16,6.6,22.5,6.6,1,B);}            // peaked cap
+  else{m.disc(8.5,4,3,B);m.cap(10,6,8,13,1.4,B);m.px(7,1,B);m.px(11,1,B);}      // messy bun, strands down the neck
+  // back arm rests on the sill
+  m.cap(7,21,5,29,2.1,A);m.cap(5,29,9,33,1.9,A);
+  // throwing arm: shoulder, elbow, hand, a shade lighter than the body so it reads
+  const E={idle:[21,28],lean:[24,25],wind:[17,12],throw:[27,15],follow:[28,24]}[pose],H=THROW_HAND[pose];
+  m.cap(19,20,E[0],E[1],2.3,A);m.cap(E[0],E[1],H[0],H[1],1.9,A);m.disc(H[0],H[1],2,S);
+  // warm rim light from the room lamp behind them
+  m.recolor((x,y,c)=>(c===B||c===A)&&(!m.get(x,y-1)||!m.get(x-1,y)&&y<22),RIM);
+  m.recolor((x,y,c)=>c===A&&(m.get(x+1,y)!==A&&m.get(x+1,y)!==S||m.get(x,y+1)!==A&&m.get(x,y+1)!==S),'#6a3c2c');      // the arm is lit along its edge so the swing reads
+  m.px(17,8,'#3a2420');m.px(18,12,'#2a1a18');                                     // eye and mouth catch a little light
+});}
+const THROWER=[0,1].map(v=>{const o={};for(const k of Object.keys(THROW_HAND))o[k]=throwerFrame(k,v);return o;});
+function throwPose5(t){return t<.5?'idle':t<.75?'lean':t<.95?'wind':t<1.15?'throw':t<1.45?'follow':'idle';}
 function drawThrows5(cx){
-  for(const w of throws5){const x=R(w.x-cx),y=w.y,ww=w.w,hh=w.h;if(x+ww<-20||x>W+20)continue;const k=clamp(w.t/.25,0,1),out=w.t>1.55?clamp((1.9-w.t)/.35,0,1):1;const mx=x+ww/2;
-    rect(x,y,ww,hh,'#e8b468');rect(x,y,ww,8,'#ffd890');
-    // the figure rises into the window, leans out with the bag, then pulls back
-    const rise=Math.round((1-k*out)*22);ctx.save();ctx.beginPath();ctx.rect(x,y,ww,hh);ctx.clip();
-    disc(mx,y+14+rise,5,'#100c0c');rect(mx-9,y+21+rise,18,hh,'#100c0c');rect(mx-3,y+18+rise,6,4,'#100c0c');ctx.restore();
-    rect(x+13,y,2,Math.min(12,hh),'#140e0e');
-    const sy=y+24,edge=mx+w.dir*(ww/2);
-    if(!w.thrown&&w.t>.55){const e=clamp((w.t-.55)/.4,0,1);const ax=edge+w.dir*(e*8);rect(Math.min(mx,ax),sy,Math.abs(ax-mx)+1,3,'#100c0c');drawBag5(ax+w.dir*3,sy+4,Math.sin(gt*10)*.2);}
-    else if(w.thrown&&w.t<1.35){const ax=edge+w.dir*6;rect(Math.min(mx,ax),sy-2,Math.abs(ax-mx)+1,3,'#100c0c');}}
+  for(const w of throws5){const x=R(w.x-cx),y=w.y,ww=w.w,hh=w.h;if(x+ww<-30||x>W+30)continue;const t=w.t,mx=x+ww/2,d=w.dir;
+    // the light clicks on (with a stutter), and goes off again once they have ducked back
+    const on=t<.06||(t>.13&&t<1.75);const dim=t>1.6?clamp((1.75-t)/.15,0,1):1;
+    rect(x,y,ww,hh,on?'#e8a860':'#1e2832');
+    if(on){alpha(dim,()=>{rect(x,y,ww,hh,'#eeb468');rect(x,y,ww,10,'#ffd890');rect(x+4,y+10,ww-8,hh-14,'#f6c47a');});}
+    // curtains stir in the draught from the open sash
+    const cs=Math.round(Math.sin(gt*3+w.x)*1.5+(t>.45&&t<1.5?2:0));
+    if(on){rect(x,y,5+cs,hh,'#8a4a3a');rect(x+ww-5+cs,y,5-cs,hh,'#8a4a3a');rect(x+1,y,1,hh,'#a86050');rect(x+ww-3,y,1,hh,'#6a3428');}
+    // inner glazing bars and the sliding sash sit behind the figure leaning out
+    const sash=t<.4?0:t<.6?Math.round(16*ease((t-.4)/.2)):t<1.55?16:Math.round(16*(1-ease(clamp((t-1.55)/.2,0,1))));
+    rect(x,y+18,ww,2,'#140e0e');rect(x+13,y,2,18,'#140e0e');
+    const sy=y+hh-12-sash;rect(x,sy,ww,2,'#2a1e1c');if(sash<12)rect(x+13,sy,2,y+hh-sy,'#140e0e');
+    // the figure: rises into view, picks up the bag, winds up, flings it, then sinks away
+    const rise=t<.15?36:t<.45?Math.round(36*(1-ease((t-.15)/.3))):t<1.5?0:Math.round(36*ease(clamp((t-1.5)/.3,0,1)));
+    const pose=throwPose5(t),v=w.v||0,fr=THROWER[v][pose];const lean=(pose==='wind'?-2:pose==='throw'?3:pose==='follow'?2:pose==='lean'?1:0)*d;
+    const bob=pose==='idle'&&rise===0?Math.round(Math.sin(gt*2.2+w.x)*.6):0;
+    const fx=d>0?mx-14+lean:mx-(36-14)+lean,fy=y+8+rise+bob+(pose==='throw'?1:0);
+    ctx.save();ctx.beginPath();ctx.rect(d>0?x:x-22,y,ww+22,hh);ctx.clip();
+    if(rise<36)ctx.drawImage(d>0?fr.r:fr.l,fx,fy);
+    // a cigarette glowing at the lips of the one in the cap, smoke curling up
+    if(v===0&&rise<20){const gx=d>0?fx+19:fx+36-21,g=.6+.4*Math.sin(gt*5+w.x);rect(gx,fy+12,2,1,'#c8c0b0');rect(d>0?gx+2:gx-1,fy+12,1,1,g>.8?'#ffb060':'#e05a2a');
+      for(let k=0;k<3;k++){const q=(gt*.7+k/3)%1;alpha((1-q)*.35,()=>rect(gx+1+Math.sin(gt*3+k*2)*2*q,fy+11-q*10,1,1,'#d8d0c8'));}}
+    // the bag in the hand until it is let go
+    if(!w.thrown&&t>.45&&rise<12){const H=THROW_HAND[pose];const hx=d>0?fx+H[0]:fx+36-1-H[0];drawBag5(hx+d*(pose==='wind'?-1:1),fy+H[1]+5,pose==='wind'?-.7*d:pose==='throw'?.5*d:Math.sin(gt*10)*.15);}
+    ctx.restore();
+    // outer frame and sill in front
+    rect(x-3,y-3,ww+6,3,'#140e0e');rect(x-3,y+hh,ww+6,3,'#140e0e');rect(x-3,y,3,hh,'#140e0e');rect(x+ww,y,3,hh,'#140e0e');
+    if(sash<12&&rise>=30)alpha(.25,()=>rect(x,sy+2,ww,y+hh-sy-2,'#9ab0c0'));
+    rect(x-6,y+hh+3,ww+12,2,'#6a5a50');}
   for(const g of bags5)drawBag5(g.x-cx,g.y,g.r);}
 function drawBag5(x,y,r){ctx.save();ctx.translate(R(x),R(y));ctx.rotate(r);ctx.fillStyle='#08090c';ctx.fillRect(-6,-5,12,10);ctx.fillRect(-5,-6,10,12);ctx.fillStyle='#34404e';ctx.fillRect(-5,-4,10,8);ctx.fillRect(-4,-5,8,10);
   ctx.fillStyle='#6a7a90';ctx.fillRect(-3,-4,3,2);ctx.fillRect(-4,-2,1,2);ctx.fillStyle='#08090c';ctx.fillRect(-1,-9,2,4);ctx.fillStyle='#34404e';ctx.fillRect(-2,-10,1,2);ctx.fillRect(1,-10,1,2);ctx.fillStyle='#8a7a4a';ctx.fillRect(2,1,2,1);ctx.restore();}
@@ -1690,7 +1750,7 @@ function drawCity5Light(cx){
   lightPool(p.x-cx,p.y-8,58,'rgba(120,124,150,.8)');
   // lit balcony doors spill a warm patch of light: small islands in the dark
   {const c0=Math.max(0,Math.floor(cx/T)-2),c1=Math.min(COLS-1,Math.floor(cx/T)+22);for(let r=0;r<ROWS;r++)for(let c=c0;c<=c1;c++){if(map[r][c]!=='p'||tileAt(c-1,r)==='p')continue;let e=c;while(tileAt(e+1,r)==='p')e++;
-    if(balLit5(c*13+r)){const x=(c+e+1)*T/2-cx;lightPool(x,r*T-18,40,'rgba(255,190,120,.55)');}}}
+    if(balLit5(c*13+r)){const x=(c+e+1)*T/2-cx;lightPool(x,r*T-BWIN_UP5-BWIN_H5/2,40,'rgba(255,190,120,.55)');}}}
   for(const L of LAMPS5){const hx=L.x+L.d*9-cx;if(hx<-120||hx>W+120)continue;const fl=lampFl5(L);if(fl<.3)continue;
     const g=LG.createLinearGradient(0,76,0,146);g.addColorStop(0,'rgba(255,224,160,.85)');g.addColorStop(1,'rgba(255,200,130,.3)');LG.fillStyle=g;
     LG.beginPath();LG.moveTo(hx-3,76);LG.lineTo(hx+3,76);LG.lineTo(hx+38,146);LG.lineTo(hx-38,146);LG.closePath();LG.fill();
@@ -2793,6 +2853,7 @@ function drawWorld(){
   for(const e of enemies){if(Math.abs(e.x-cx-W/2)>W/2+80)continue;e.type==='beetle'?drawBeetle(e,cx):e.type==='frog'?drawFrogE(e,cx):drawBee(e,cx);}
   drawBoss(cx);
   if(state!=='title'&&!(LV===2&&p.y<=WATER_Y+1))drawPlayer(cx);
+  if(LV===5)drawWalkers5(cx); // passers-by walk in front of the cat, see-through
   if(LV===2){drawJumpers(cx);drawWaterFront(cx);drawPollution(cx);for(const d of pads)if(padSolid(d))drawPad(d,cx);if(state!=='title'&&p.y<=WATER_Y+1)drawPlayer(cx);}
   drawParts(cx);
   if(shakeT>0)ctx.restore();
@@ -2846,7 +2907,7 @@ function crowdBody(P,c,t){
     line(x+f,hd+14,x+f*3,hd+24,3);line(x+f*3,hd+24,x+f*7,hd+18,3);rect(x+f*7-(f>0?0:2),hd+12,3,7,K);
     P.ph=[x+f*7+(f>0?-1:2)-(f>0?0:2),hd+13,1,5];P.fc=[f>0?x+1:x-4,hd+3,4,7];}
 }
-function drawCrowd(c,t){ctx=crowdG;crowdG.clearRect(0,0,W,H);try{for(const P of CROWD)crowdBody(P,c,t);}finally{ctx=mainCtx;}alpha(.74,()=>ctx.drawImage(crowdCv,0,0));}
+function drawCrowd(c,t){ctx=crowdG;crowdG.clearRect(0,0,W,H);try{for(const P of CROWD)crowdBody(P,c,t);}finally{ctx=mainCtx;}alpha(.7,()=>ctx.drawImage(crowdCv,0,0));}
 function crowdPhones(c,t){const cols=['#cfeeff','#ffd8ec','#d8ffd0','#fff2c0','#a8c8ff'];const glc=['rgb(190,230,255)','rgb(255,200,230)','rgb(200,255,200)','rgb(255,240,190)','rgb(170,200,255)'];
   for(const P of CROWD){if(!P.ph)continue;const k=Math.floor(t*6+P.sd*3);const flash=hash(k*13+P.sd)>.88;const ci=Math.floor(hash(k+P.sd)*5);
     const col=flash?'#ffffff':cols[ci];const b=flash?1:.45+.55*hash(k*7+P.sd);const [px,py,pw,ph]=P.ph,[fx,fy,fw,fh]=P.fc;
@@ -2945,8 +3006,8 @@ function drawInterior(t){
   ctx.fillStyle='rgba(30,30,44,.26)';ctx.fill('evenodd');ctx.restore();
   for(const [wx,wy,ww,wh] of WINS){alpha(.22,()=>{for(let k=0;k<34;k++)rect(wx+hash(k*5+wx)*ww,wy+hash(k*9+wx)*wh,1,1,'#e8c8a0');});}
   sunBeams(c);
-  drawCrowd(c,t);
-  if(!c.inDoor)drawCatAt(c.pose,t,c.catX,c.catY,c.face); // drawn after the dim pass so the black cat still reads
+  if(!c.inDoor)drawCatAt(c.pose,t,c.catX,c.catY,c.face); // the cat sits behind the passengers
+  drawCrowd(c,t);                                                          // passengers are see-through so the cat never gets lost
   c.lights.forEach((on,i)=>{if(on){const lx=i?259:61;rect(lx-34,25,68,3,'#fffbe8');glow(lx,30,50,'rgb(255,236,190)',.14);}});
   // LED sign above the doors
   rect(DOOR.x+3,38,DOOR.w-6,9,'#0e0b08');
