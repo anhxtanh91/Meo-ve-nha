@@ -2424,7 +2424,7 @@ function drawJunkRat(e,cx){if(!e.alive)return false;const x=R(e.x-cx),y=R(e.y),s
     rect(x-6,y-3,12,3,'#3a3228');rect(x-5,y-5,10,2,'#4a4034');rect(x-3,y-6,6,1,'#5a4e40');rect(x-6,y-3,3,2,'#2a5aa0');rect(x+3,y-4,3,3,'#c8c0a8');rect(x-1,y-6,2,1,'#8a2a24');
     if(Math.floor(gt*.9+e.x)%4!==0){const ox=e.dir<0?-2:1;rect(x+ox-1,y-4,1,1,'#ffd84a');rect(x+ox+1,y-4,1,1,'#ffd84a');}return true;}
   if(e.stepV)e.stepV=e.stepV<.5?0:e.stepV*.62;const fr=st==='scurry'||st==='burst'?RAT_RUN[Math.floor(gt*20)%RAT_RUN.length]:st==='pant'?RAT_IDLE[Math.floor(gt*6)%RAT_IDLE.length]:RAT_RUN[Math.abs(e.vx||0)>1?Math.floor(gt*10)%RAT_RUN.length:0];
-  blit(fr,e.x-cx,e.y+RAT_DY+1+(e.stepV||0),-e.dir);
+  blit(fr,e.x-cx,e.y+RAT_DY+(heapAt(Math.floor(e.x/T),Math.floor(e.y/T))?3:1)+(e.stepV||0),-e.dir); // heap tops are carved a few px below the tile top
   if(st==='burst'&&e.st_t<.5)bubble(e.x-cx,e.y-12,GLY.ex);
   if(st==='scurry'&&e.onGround&&Math.random()<.4)puff(e.x-e.dir*6,e.y,1,'#7a6a52',20,6,.25);
   if(st==='pant'){const k=Math.floor(gt*6)%2;rect(x+e.dir*8,y-4+k,1,1,'#ffffff');}
@@ -2516,7 +2516,8 @@ function drawRatBoss(cx){const b=boss;if(b.state==='gone')return;const x=b.x-cx;
     for(let i=-18;i<=18;i++){const hh=Math.round(5*Math.cos(i/18*Math.PI/2)*(b.state==='rumble'?1.5:1));for(let y=0;y<hh;y++)rect(X+i,GROUND_Y-y,1,1,y===hh-1?'#7a6a52':'#4a3c30');}
     if(b.state==='rumble'){rect(X-1,GROUND_Y-10,3,6,'#ffd84a');rect(X,GROUND_Y-3,1,1,'#ffd84a');}return;}
   let spr,y=b.y;const A=BOSS6A;if(b.state==='dizzy'||b.state==='bonk'||b.state==='recover')spr=A.idle[Math.floor(gt*7)%A.idle.length];else if(b.state==='leap'||(b.state==='intro'&&b.t>1.9&&b.t<3.3)||(b.state==='run'&&Math.abs(p.x-b.x)<46&&Math.sign(p.x-b.x)===b.dir))spr=A.bite[Math.floor(gt*10)%A.bite.length];else if(b.state==='intro'&&b.t>3.3)spr=A.idle[Math.floor(gt*7)%A.idle.length];else spr=A.run[Math.floor(gt*(b.state==='run'||b.state==='flee'?18:9))%A.run.length];
-  const draw=()=>blit(spr,x,y+1,-b.dir);
+  const fy=(A.idle.includes(spr)||A.bite.includes(spr))?4:0; // the tail curls below the paws in these poses: drop them so the paws stand on the ground
+  const draw=()=>blit(spr,x,y+1+fy,-b.dir);
   if(b.state==='intro'||b.state==='dive'){ctx.save();ctx.beginPath();ctx.rect(0,0,W,GROUND_Y+1);ctx.clip();draw();ctx.restore();}
   else if(b.flash>0&&Math.floor(b.flash*20)%2)alpha(.5,draw);else draw();
   if(b.state==='dizzy'||b.state==='bonk'){const px0=R(x),py=R(b.y-b.h+2-(b.state==='bonk'?Math.max(0,10-b.t*40):0));rect(px0-18,py-1,36,7,'#16181c');rect(px0-17,py,34,2,'#a8b0bc');rect(px0-17,py,34,1,'#e0e6ee');for(let k=0;k<34;k++)rect(px0-17+k,py+2,1,3,((k>>1)&1)?'#f2c43a':'#1a1a1a');for(let k=0;k<(b.dents[b.plate]||0);k++)rect(px0-3+k*3,py,2,1,'#4a5058');
