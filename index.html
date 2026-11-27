@@ -2313,8 +2313,7 @@ function initBack6(){if(SKY6)return;
       if(rnd()<.5){const bx=x+50;P(bx,128,10,18,'#4a5a4a');P(bx,128,10,2,'#6a7a6a');P(bx+2,124,6,4,'#3a4a3a');} // a bin
       if(rnd()<.4){const sx=x+8;P(sx,134,22,8,'#6a3a3a');P(sx,130,4,12,'#5a2a2a');P(sx+18,130,4,12,'#5a2a2a');P(sx+2,134,18,2,'#8a5050');}}}); // an old sofa
   SCRAP6=L(64,(P,g,rnd)=>{for(let x=-30;x<LWID;x+=80+Math.floor(rnd()*40)){mound(P,rnd,x,90+Math.floor(rnd()*40),40+Math.floor(rnd()*26),146,['#4a3430','#5a4038','#6a4c40'],.22);
-      for(let k=0;k<3;k++){const cx=x+15+Math.floor(rnd()*60),cy=146-12-Math.floor(rnd()*30);const col=['#6a3a2a','#3a4a5a','#5a5a3a','#7a2a2a'][Math.floor(rnd()*4)];
-        P(cx,cy,26,9,col);P(cx+5,cy-5,15,5,col);P(cx+7,cy-4,5,3,'#8aa0b0');P(cx+13,cy-4,5,3,'#7a90a0');P(cx+3,cy+7,5,4,'#1a1a1e');P(cx+18,cy+7,5,4,'#1a1a1e');P(cx,cy,26,1,'rgba(255,255,255,.15)');} // crushed cars
+      for(let k=0;k<3;k++){rnd();rnd();rnd();} // (no crushed cars: the user asked them gone; rnd() kept so the mounds stay put)
       if(rnd()<.5){const bx=x+60;for(let k=0;k<4;k++)P(bx-k*2,146-40+k*10,30,2,'#3a2a26');}}});
 }
 
