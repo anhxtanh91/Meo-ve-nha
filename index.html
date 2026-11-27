@@ -1594,7 +1594,7 @@ function drawBin5(bn,cx){const x=R(bn.x-cx);if(x<-20||x>W+20)return;const y=GROU
   rect(x-9,y-20,18,20,'#2c3236');rect(x-8,y-19,16,19,'#5e666c');for(let k=-6;k<8;k+=3){rect(x+k,y-18,1,17,'#727a80');rect(x+k+1,y-18,1,17,'#474e54');}
   rect(x-8,y-14,16,1,'#3a4044');rect(x-8,y-6,16,1,'#3a4044');rect(x-10,y-15,2,3,'#3a4044');rect(x+8,y-15,2,3,'#3a4044');
   const jit=bn.rat>0?(Math.sin(gt*70)>0?1:-1):0;const lift=Math.max(Math.round(bn.lid*10),bn.eyes>0?3:bn.rat>0?2:0)+(bn.dent>0?-1:0);
-  if(lift>0){rect(x-8,y-21,16,1,'#0c0c0e');if(bn.eyes>0){rect(x-4,y-21,2,1,'#d8ff50');rect(x+2,y-21,2,1,'#d8ff50');}}
+  if(lift>0){rect(x-8,y-21,16,1,'#0c0c0e');if(bn.eyes>0){rect(x-4,y-21,2,1,'#7aff6a');rect(x+2,y-21,2,1,'#7aff6a');rect(x-3,y-21,1,1,'#eaffd8');rect(x+3,y-21,1,1,'#eaffd8');}}
   rect(x-10+jit,y-23-lift,20,3,'#3a4044');rect(x-10+jit,y-23-lift,20,1,'#9aa2a8');rect(x-9+jit,y-22-lift,18,1,'#727a80');rect(x-2+jit,y-25-lift,4,2,'#3a4044');
   rect(x-14,y-2,4,2,'#8a7a5a');rect(x+11,y-1,3,1,'#c0b090');rect(x+12,y-3,2,2,'#5a8a5a');}
 function drawLamp5(L,cx){const x=R(L.x-cx);if(x<-40||x>W+40)return;rect(x,74,2,70,'#16181c');rect(x-1,140,4,4,'#16181c');rect(x+1,74,1,66,'#2e3236');
@@ -1762,7 +1762,7 @@ function drawCity5Light(cx){
   // low mist rolling along the street and the canal
   for(let i=0;i<7;i++){const x=((i*83-cx*.7+gt*(5+i%3*3))%(W+160)+W+160)%(W+160)-80,y=128+(i%4)*12;alpha(.22,()=>ctx.drawImage(HAZE5,R(x-70),R(y-14),140,28));}
   if(state==='arrive')for(const w of walkers5){const x=w.x-cx;if(x<-30||x>W+30)continue;const px=R(x+(w.dir>0?1:-1)*3.7),py=R(w.y-44*1.1+11);glow(px,py,7,'rgb(150,200,255)',.45);}
-  for(const bn of bins5)if(bn.eyes>0){const x=bn.x-cx;glow(x-3,GROUND_Y-21,4,'rgb(200,255,80)',.6);glow(x+3,GROUND_Y-21,4,'rgb(200,255,80)',.6);}
+  for(const bn of bins5)if(bn.eyes>0){const x=bn.x-cx;glow(x-3,GROUND_Y-21,6,'rgb(110,255,100)',.75);glow(x+3,GROUND_Y-21,6,'rgb(110,255,100)',.75);}
   if(boss&&boss.kind==='stray'&&!boss.hidden){const b=boss,sc=1.25;glow(b.x-cx+b.dir*7*sc,b.y-11*sc,5,'rgb(200,255,80)',.35);}
 }
 function reset5(){arr5=null;rats5=[];
@@ -1823,7 +1823,7 @@ function updStrayBoss(dt){
       if(k>=1){b.x=b.tx;b.y=b.ty;const n=b.next;b.state=n;b.t=0;
         if(n==='land'||n==='skid'||n==='dizzy'){shakeT=.1;shakeA=1;puff(b.x,b.y,6,'#4a4c50',50,14,.35);}
         if(n==='land')b.state=b.y<GROUND_Y-2?'perch':'skid';
-        if(n==='dive'){const bn=bins5[b.bin];b.hidden=true;bn.lid=1;SFX.lid();b.state='hide';b.hideT=4.4/Math.sqrt(b.spd);b.rT=.5;b.fakeN=0;b.eyeShown=0;b.swapped=0;b.hideT0=b.hideT;}
+        if(n==='dive'){const bn=bins5[b.bin];b.hidden=true;bn.lid=1;SFX.lid();b.state='hide';b.hideT=4.4/Math.sqrt(b.spd);b.rT=.5;b.fakeN=0;b.eyeShown=0;b.hideT0=b.hideT;b.eyeDue=.5+Math.random()*.6;b.swapLeft=(Math.random()<.6?1:0)+b.hits;b.swapT=.9+Math.random()*1.4;}
         if(n==='gone'){b.hidden=true;b.state='gone';}}
       break;}
     case 'skid':{if(Math.random()<.4)puff(b.x+b.dir*8,GROUND_Y,1,'#4a4c50',30,8,.3);if(b.t>.45/b.spd){b.cnt++;if(b.cnt>=2+(b.hits>0?1:0)){b.cnt=0;let i;do{i=Math.floor(Math.random()*3);}while(i===b.lastBin);b.bin=i;b.lastBin=i;b.state='tobin';b.t=0;}else{b.state='prowl';b.t=0;}}break;}
@@ -1833,14 +1833,14 @@ function updStrayBoss(dt){
       if(b.t>.18&&b.t<.36&&state==='play'&&Math.abs(p.x-(b.x+b.dir*12))<16&&Math.abs(p.y-b.y)<18&&p.inv<=0&&!(p.safe>0))hurt(b.x,false);
       if(b.t>.75){b.sw=0;const tx=clamp(b.x+(b.x<CX?44:-44),L,Rx);strayArc(b,tx,GROUND_Y,.45,14,'skid');}break;}
     case 'tobin':{const bn=bins5[b.bin],dx=bn.x-b.x;b.dir=dx<0?-1:1;b.ph+=dt*14;b.x+=Math.sign(dx)*Math.min(Math.abs(dx),150*b.spd*dt);if(Math.abs(dx)<3)strayArc(b,bn.x,GROUND_Y-22,.34,16,'dive');break;}
-    case 'hide':{b.hideT-=dt;b.rT-=dt;
-      // every can rattles at random (the real one no more than the others); the eyes only flash for an instant, and not every time
-      if(b.rT<=0){const j=Math.floor(Math.random()*3);bins5[j].rat=.4;
-        if(j===b.bin&&(Math.random()<.45||(!b.eyeShown&&b.hideT<1.6))){bins5[j].eyes=.16;b.eyeShown=1;}
-        SFX.rattle();b.rT=(.5+Math.random()*.3)/Math.sqrt(b.spd);}
-      // once it has been hit it gets cagey: halfway through it slips across to another can
-      if(b.hits>=1&&!b.swapped&&b.hideT<b.hideT0*.55){b.swapped=1;let j;do{j=Math.floor(Math.random()*3);}while(j===b.bin);
-        streak5={x0:bins5[b.bin].x,x1:bins5[j].x,t:0};bins5[b.bin].lid=.35;bins5[j].lid=.35;b.bin=j;b.eyeShown=0;b.hideT=Math.max(b.hideT,1.8);SFX.rattle();}
+    case 'hide':{b.hideT-=dt;b.rT-=dt;b.eyeDue-=dt;b.swapT-=dt;
+      // every can rattles at random, so the noise gives nothing away
+      if(b.rT<=0){const j=Math.floor(Math.random()*3);bins5[j].rat=.4;SFX.rattle();b.rT=(.5+Math.random()*.3)/Math.sqrt(b.spd);}
+      // only the green eyes tell where it really is: they glint from under the lid of its can, and never from the others
+      if(b.eyeDue<=0){bins5[b.bin].eyes=.2;b.eyeShown=1;b.eyeDue=(1.1+Math.random()*.9)/Math.sqrt(b.spd);}
+      // it creeps through the rubbish into another can without a sound or a shadow, at random, more often once hurt
+      if(b.swapLeft>0&&b.swapT<=0&&b.hideT>1){b.swapLeft--;let j;do{j=Math.floor(Math.random()*3);}while(j===b.bin);
+        for(const bn of bins5)bn.eyes=0;b.bin=j;b.eyeShown=0;b.eyeDue=.35+Math.random()*.4;b.hideT=Math.max(b.hideT,1.6);b.swapT=1+Math.random()*1.2;}
       if(b.hideT<=0){const bn=bins5[b.bin];b.hidden=false;b.x=bn.x;b.y=GROUND_Y-22;bn.lid=1;SFX.lid();b.cnt=0;strayPounce(b);}
       break;}
     case 'dizzy':{if(b.t>1.7){if(b.hits>=3){b.state='flee';b.t=0;SFX.yowl();}else{b.spd*=1.15;b.cnt=0;b.state='prowl';b.t=0;}}break;}
