@@ -56,7 +56,7 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rend
 .mlist[hidden]{display:none}
 .mi.locked{opacity:.45;cursor:default}
 .tmenu{min-width:min(52%,300px);gap:.4cqw;background:rgba(12,9,18,.62);padding:1.2cqw;border-radius:.6cqw;box-shadow:0 0 0 2px rgba(0,0,0,.5)}
-.tmenu .mi{font-size:max(17px,4cqw)}
+.tmenu .mi{font-size:max(16px,3.6cqw)}
 .tmenu .note{font-size:.7em;opacity:.8}
 .mi .note{font-size:.62em;opacity:.8}
 #llist.cuts{display:grid;grid-template-columns:1fr 1fr;gap:.4cqw 1.2cqw;min-width:min(94%,640px)}#llist.cuts .mi{font-size:max(13px,3cqw);flex-direction:column;gap:0;line-height:1.05}#llist.cuts .mi .note{font-size:.8em}#llist.cuts .mi[data-a=back]{grid-column:1/-1;flex-direction:row}
@@ -86,7 +86,7 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rend
 .ov h2{font-size:max(28px,8cqw);color:var(--accent);text-shadow:0 .1em 0 #000}
 .ov p{margin:0;font-size:max(16px,3.8cqw);max-width:60ch;text-shadow:0 2px 0 #000}
 .ov .sub{letter-spacing:.12em;text-transform:uppercase;font-size:max(14px,3.2cqw)}
-.ov .keys{color:#d6cfe6;font-size:max(14px,3.2cqw)}
+.ov .keys{color:#d6cfe6;font-size:max(7px,2.3cqw);white-space:nowrap}#ovBye{background:#000}#ovBye h2{color:#f2d84a}
 .ov.saving{justify-content:flex-end;align-items:flex-end;padding:0 4cqw 4cqw;background:none}
 .ov.saving p{font-size:max(15px,3.4cqw);background:rgba(10,8,14,.72);padding:.4em .9em;border-radius:.4em}
 .dots i{font-style:normal;animation:dot 1s infinite}.dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
@@ -159,9 +159,11 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rend
       <button class="mi" type="button" id="btnLevels" data-a="levels">Chọn màn</button>
       <button class="mi" type="button" id="btnCuts" data-a="cuts">Xem lại cutscene</button>
       <button class="mi" type="button" id="btnOpt" data-a="opt">Cài đặt</button>
+      <button class="mi" type="button" id="btnQuit" data-a="quit">Thoát game</button>
     </div>
     <p class="keys">A D hoặc ← → để chạy · W / Space để nhảy · nhảy lên đầu để hạ kẻ địch</p>
   </div>
+  <div class="ov" id="ovBye" hidden><h2>Tạm biệt!</h2><p>Chú mèo đang đợi bạn quay lại.</p><p class="keys">Bạn có thể đóng tab này · bấm bất kỳ đâu để quay lại</p></div>
   <div class="ov" id="ovWin" hidden>
     <h2>Hết màn 1</h2>
     <p>Chú mèo đã rời trạm xe. Đường về nhà vẫn còn xa lắm…</p>
@@ -3071,6 +3073,7 @@ $('fs').onclick=toggleFS;
 /* ================= input ================= */
 const KEYMAP={ArrowLeft:'L',KeyA:'L',ArrowRight:'R',KeyD:'R',Space:'J',ArrowUp:'J',KeyW:'J',KeyK:'J'};
 addEventListener('keydown',e=>{
+  if(!$('ovBye').hidden){e.preventDefault();$('ovBye').click();return;}
   if(paused&&e.target!==$('cheatIn')){menuKey(e);return;}
   if(e.target&&e.target.tagName==='BUTTON'&&(e.code==='Space'||e.code==='Enter')&&state!=='play'&&state!=='cut'&&state!=='arrive')return;
   const k=KEYMAP[e.code];
@@ -3164,7 +3167,11 @@ function titleDo(a){ensureAudio();
   else if(a==='cont'){const n=contLevel();if(!n){tone(200,120,.15,'square',.05);return;}startLevel(n);}
   else if(a==='levels')openTitleSub('levels');
   else if(a==='cuts')openTitleSub('cuts');
-  else if(a==='opt')openTitleSub('sound');}
+  else if(a==='opt')openTitleSub('sound');
+  else if(a==='quit'){ // a web page can't really quit: try to close the tab, leave fullscreen, go quiet and show a goodbye screen
+    try{if(document.fullscreenElement)document.exitFullscreen();}catch(e){}try{if(ac)ac.suspend();}catch(e){}
+    show('ovTitle',false);show('ovBye',true);try{window.close();}catch(e){}}}
+$('ovBye').addEventListener('click',()=>{show('ovBye',false);show('ovTitle',true);try{if(ac)ac.resume();}catch(e){}});
 $('tlist').addEventListener('click',e=>{const it=e.target.closest('.mi');if(!it)return;titleSel=TI().indexOf(it);titleMark();titleDo(it.dataset.a);it.blur();});
 function menuDo(a){
   if(a==='resume')closeMenu();
