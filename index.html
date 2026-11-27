@@ -2860,8 +2860,7 @@ function drawNight(cx){const fv=fireAt(cx+W/2);
 for(let i=0;i<26;i++){const k=((gt*(.1+hashD(i*3)*.08)+hashD(i*5))%1),x=((hashD(i*7)*W*1.3-cx*.15+Math.sin(gt*1.1+i)*8)%W+W)%W,y=GROUND_Y+4-k*130,fl=.5+.5*Math.sin(gt*(5+i%4)+i);alpha(dz*(1-k)*fl,()=>{rect(x,y,1,1,fl>.7?'#ffd070':'#ff7a20');glow(x,y,3,'rgb(255,140,50)',.5);});}}}
   // things that glow on top of the dark
   const dk=boss&&boss.kind==='dog'&&boss.state==='intro'?boss.dk||0:0;
-  if(dk>0){ // the intro no longer blacks out the screen: just embers and the glowing eyes
-
+  if(dk>0){alpha(dk*.93,()=>rect(0,0,W,H,'#050304'));
     for(let i=0;i<34;i++){const k=((gt*(.12+hashD(i*3)*.1)+hashD(i*5))%1),x=hashD(i*7)*W+Math.sin(gt*1.3+i)*6,y=GROUND_Y+4-k*120,fl=.5+.5*Math.sin(gt*(6+i%5)+i);
       alpha(dk*(1-k)*(.4+.6*fl),()=>{rect(x,y,1,1,k<.4?'#ffd060':'#ff6a20');if(fl>.85)glow(x,y,3,'rgb(255,120,40)',.5);});}}
   if(boss&&boss.kind==='dog'&&boss.state==='intro'&&boss.eyeK>0)drawDogEyes(boss,cx);
