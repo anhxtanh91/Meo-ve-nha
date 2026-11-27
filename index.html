@@ -2174,7 +2174,7 @@ function buildDump6(ground,plat){
   heaps6=[];ridges6=[];tyres6=[];
   const pit=(c0,c1)=>{for(let c=c0;c<=c1;c++)for(let r=0;r<ROWS;r++)map[r][c]=' ';};
   // a ridge: a row of 2-column heaps with stepped tops, so the cat walks up and over it like a hill
-  const ridge=(c0,tops,o={})=>{const R0={segs:[],chain:!!o.chain,fired:false};ridges6.push(R0);const bot=o.bot||8;
+  const ridge=(c0,tops,o={})=>{const R0={segs:[],chain:!!o.chain,fired:false};ridges6.push(R0);const bot=10;pit(c0,c0+tops.length*2-1);
     tops.forEach((top,i)=>{const a=c0+i*2,b2=a+1;for(let c=a;c<=b2;c++)for(let r=top;r<=bot;r++)map[r][c]='J';const h={c0:a,c1:b2,top,bot,cur:top,st:'ok',t:0,ridge:R0,ri:i};heaps6.push(h);R0.segs.push(h);});};
   ground(0,COLS-1);
   // the dump: rolling hills of rubbish
@@ -2212,7 +2212,6 @@ function updHeaps6(dt){if(LV!==6)return;
         const nb=h.ridge.segs,L=nb[h.ri-1],Rn=nb[h.ri+1];if(h.bot-h.top>=2&&Math.random()<(h.ridge.chain?.45:.7)){const dl=L?L.cur:9,dr=Rn?Rn.cur:9;const dir=dl===dr?(Math.random()<.5?-1:1):dl>dr?-1:1;spawnTyre((x0+x1)/2,topY-2,dir);}}}
     else if(h.st==='sink'){h.t+=dt;if(h.t>.2){h.t=0;
         // too slow: the cat is dragged down with the rubbish, just like falling into a pit
-        if(on&&!boss){puff(p.x,p.y-4,14,'#5a4a38',70,60,.6);tone(300,80,.4,'sawtooth',.05);hurt(p.x,true);return;}
         for(let c=h.c0;c<=h.c1;c++)map[h.cur][c]=' ';
         for(let i=0;i<10;i++)parts.push({x:x0+Math.random()*(x1-x0),y:topY+4+Math.random()*10,vx:(Math.random()*2-1)*40,vy:-30-Math.random()*50,life:.6,max:.6,c:['#5a4a38','#2a2a34','#e8e0c8','#9a4a3a','#3a6ad0'][Math.floor(Math.random()*5)],g:500});
         tone(110,60,.18,'square',.035);hiss(.25,.05,500);shakeT=Math.max(shakeT,.12);shakeA=1;
@@ -2226,7 +2225,7 @@ function updHeaps6(dt){if(LV!==6)return;
     if(y.onGround&&!wasG&&Math.abs(y.vy)<1){}if(y.onGround)y.vx*=Math.pow(.85,dt);y.a+=y.vx*dt/5;if(y.y>H+30)y.life=0;
     if(Math.abs(y.vx)<12&&y.onGround)y.life=Math.min(y.life,.6);
     for(const e of enemies)if(e.alive&&e.type==='beetle'&&Math.abs(e.x-y.x)<e.hw+5&&Math.abs(e.y-y.y)<8)killByJunk(e,0);
-    if(state==='play'&&y.life>.3&&overlap(p,y)){if(p.vy>30&&p.prevY<=y.y-y.h+5){p.vy=keys.J?-330:-250;p.safe=.5;SFX.stomp();}else if(p.inv<=0&&!(p.safe>0)&&Math.abs(y.vx)>25)hurt(y.x,false);}}
+    if(state==='play'&&y.life>.3&&overlap(p,y)){if(p.vy>30&&p.prevY<=y.y-y.h+5){p.vy=keys.J?-330:-250;p.safe=.5;SFX.stomp();}else if(p.inv<=0&&!(p.safe>0)&&Math.abs(y.vx)>25&&y.life<4.4)hurt(y.x,false);}}
   tyres6=tyres6.filter(y=>y.life>0);
 }
 function drawTyres6(cx){for(const y of tyres6){const x=R(y.x-cx),yy=R(y.y-6);if(x<-10||x>W+10)continue;const k=y.life<.6?y.life/.6:1;
@@ -2351,7 +2350,13 @@ function drawGate6(cx){const X=R(GATE6_X-cx);if(X<-GATE6_W-10||X>W+10)return;con
     if(mk==='/'){rect(x+3,yo-3,2,1,col);rect(x+4,yo-4,2,1,col);}
     if(k%3===0)rect(x+1,yo+10,1,2+(k%2)*2,col);
     x+=g[0].length*2+2;});
-  rect(bx+36,by+14,1,3,col);}
+  rect(bx+36,by+14,1,3,col);
+  // a few crows perched on the top rail, preening, now and then shaking out their feathers
+  for(const [ox,ph] of [[14,0],[33,2.1],[96,4.3]]){const cxw=X+ox,cy=101,t=(gt*.6+ph)%6,pre=t<2.2,sh=t>4.6&&t<5.1,f=ox===96?-1:1;
+    const B='#141218',Bh='#2e2a3a';rect(cxw-3,cy-5,7,4,B);rect(cxw-2,cy-6,5,1,B);rect(cxw-3,cy-5,6,1,Bh);rect(cxw+(f>0?-5:4),cy-4,2,2,B);rect(cxw-1,cy-1,1,2,'#3a3226');rect(cxw+1,cy-1,1,2,'#3a3226');
+    if(sh){rect(cxw-4,cy-7,9,1,B);rect(cxw-4,cy-4,1,3,B);rect(cxw+4,cy-4,1,3,B);}
+    if(pre){const k=Math.floor(gt*6+ph)%2;rect(cxw+f*(k?-1:0),cy-7,3,3,B);rect(cxw+f*(k?-2:-1),cy-5,2,1,'#5a5248');}
+    else{const hx=cxw+f*3;rect(hx-1,cy-9,3,3,B);rect(hx+f*2,cy-8,2,1,'#5a5248');rect(hx+(f>0?1:-1),cy-9,1,1,'#e8e0c8');}}}
 function drawBack6(cx){initBack6();
   ctx.drawImage(SKY6,0,0);
   // a pale sun behind the haze
