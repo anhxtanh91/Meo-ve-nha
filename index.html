@@ -1607,9 +1607,37 @@ function updCity5(dt){if(LV!==5)return;
 }
 function drawWalkers5(cx){for(const w of walkers5){const x=w.x-cx;if(x<-30||x>W+30)continue;const fr=WALKER[w.v][Math.floor(w.ph)%4];
   const s=1.1,ww=fr.w*s,hh=fr.h*s;ctx.drawImage(w.dir>0?fr.r:fr.l,R(x-ww/2),R(w.y-hh),R(ww),R(hh));}}
+// rubbish bags: shiny blue-black plastic, knotted at the top
+function bagS(w,h,seed){return shapeSprite(w+2,h+4,'#05070a',m=>{const r=mulberry(seed);m.disc(w/2+1,h/2+3.5,Math.min(w,h)/2,'#253042');m.cap(w*.3+1,h*.62+3,w*.7+1,h*.62+3,h*.38,'#253042');
+  m.cap(w/2+1,4,w/2+1,1.5,1,'#253042');m.cap(w/2,2,w/2-2.5,0,.6,'#253042');m.cap(w/2+2,2,w/2+4.5,0,.6,'#253042');
+  m.recolor((x,y)=>y>h*.7+3,'#1a2232');m.recolor((x,y,c)=>c==='#253042'&&x<w*.45&&y<h*.55+3&&y>4,'#36445c');
+  for(let i=0;i<3;i++){const x=Math.floor(2+r()*(w-3)),y=Math.floor(5+r()*(h-4));if(m.get(x,y))m.px(x,y,'#7a8aa4');}
+  for(let i=0;i<2;i++){const x=Math.floor(2+r()*(w-3)),y=Math.floor(6+r()*(h-5));if(m.get(x,y)&&m.get(x+1,y))m.px(x+1,y,'#141a26');}});}
+const BAGS5=[bagS(14,12,1),bagS(12,10,2),bagS(16,13,3),bagS(10,9,4),bagS(13,11,5)];
+const BAGPILES5=[[4,3],[214,4],[296,6],[330,3]];
+// the wreck: a rusted, spray-painted sedan sitting on flat tyres
+const CAR5=(()=>{const [c,g]=mkCanvas(86,36);const F=(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(x,y,w,h);};const r=mulberry(77);
+  const body='#5a3448',dark='#3a2030',lite='#7a4a5e',rust='#7a4a2a';
+  F(4,16,78,12,'#0c0a0e');F(5,17,76,10,body);F(2,20,82,7,body);F(2,20,82,1,lite);         // lower body
+  F(18,6,46,12,'#0c0a0e');F(19,7,44,11,body);F(22,7,38,1,lite);                            // cabin
+  F(22,9,17,8,'#0e1218');F(42,9,18,8,'#0e1218');F(40,8,2,10,dark);                         // windows (smashed)
+  for(let i=0;i<14;i++)F(23+Math.floor(r()*36),9+Math.floor(r()*7),1,1,'#5a6a7a');F(46,10,3,1,'#8a9ab0');F(25,11,2,1,'#8a9ab0');
+  F(2,22,4,3,'#c8a060');F(80,22,4,3,'#6a1a1a');F(3,26,80,2,dark);                          // lights, sill
+  for(let i=0;i<10;i++){const x=6+Math.floor(r()*72),y=18+Math.floor(r()*8);F(x,y,2+Math.floor(r()*4),1+Math.floor(r()*2),rust);}
+  const GC=['#d0507a','#50b0d0','#e8c850','#80c868'];g.globalAlpha=.85;for(let k=0;k<9;k++){const x=10+k*7,y=19+Math.round(Math.sin(k*1.4)*2);F(x,y,5,3,GC[k%4]);F(x+1,y+3,1,2,GC[k%4]);}g.globalAlpha=1;
+  for(const wx of [16,66]){F(wx-7,25,15,9,'#0a0a0c');F(wx-6,30,13,4,'#141416');F(wx-3,27,6,4,'#3a3a40');F(wx-1,28,2,2,'#1a1a1e');}   // flat tyres
+  F(30,29,8,5,'#4a3a34');F(31,29,6,1,'#6a5a50');                                            // propped on a brick
+  F(64,2,6,6,'#3a5a2a');F(66,0,2,3,'#5a8a3a');F(60,5,4,2,'#4a6a32');                       // weeds growing on the roof
+  F(8,14,8,3,'#6a6a5a');F(9,13,3,1,'#8a8a78');                                             // junk on the bonnet
+  return c;})();
+function drawStreetJunk5(cx){
+  {const x=R(132-cx);if(x>-90&&x<W){ctx.drawImage(CAR5,x,GROUND_Y-34);alpha(.35,()=>rect(x+4,GROUND_Y,80,2,'#000'));}}
+  for(const [px,n] of BAGPILES5){for(let i=0;i<n;i++){const b=BAGS5[(px+i*3)%BAGS5.length];const x=R(px+i*9-(i%2)*3-cx),y=GROUND_Y+1-(i>=3&&i%3===0?7:0);if(x<-20||x>W)continue;ctx.drawImage(i%2?b.l:b.r,x,y-b.h);}}
+  // loose litter
+  for(const [lx,col] of [[60,'#c8c0a0'],[118,'#8a7a4a'],[205,'#c8c0a0'],[262,'#6a7a5a']]){const x=R(lx-cx);rect(x,GROUND_Y-1,3,1,col);rect(x+1,GROUND_Y-2,2,1,col);}
+}
 function drawDeco5(cx){
-  drawPuddles5(cx);{const x=R(170-cx);rect(x,GROUND_Y,14,1,'#0c0e10');rect(x+1,GROUND_Y+1,12,1,'#3a3e44');}
-  for(let i=0;i<3;i++){const x=R(296+i*7-cx);rect(x,GROUND_Y-8+(i%2)*2,9,8-(i%2)*2,'#1c242c');rect(x+1,GROUND_Y-8+(i%2)*2,4,1,'#4a5a68');rect(x+3,GROUND_Y-10+(i%2)*2,2,2,'#1c242c');}
+  drawPuddles5(cx);drawStreetJunk5(cx);{const x=R(102-cx);rect(x,GROUND_Y,14,1,'#0c0e10');rect(x+1,GROUND_Y+1,12,1,'#3a3e44');}
   for(const L of LAMPS5)drawLamp5(L,cx);
   drawWalkers5(cx);
   for(const bn of bins5)drawBin5(bn,cx);
@@ -1652,7 +1680,7 @@ function drawAmbient5(cx){
   // fine drizzle and moths around the lamps
   for(let i=0;i<90;i++){const s=hashD(i*7+3),k=((gt*(1.4+s*.6)+s)%1),x=((i*37-cx*.95-k*30)%(W+40)+W+40)%(W+40)-20,y=k*H;alpha(.28+s*.15,()=>{rect(x,y,1,2,'#8aa0b4');rect(x-1,y+2,1,2,'#8aa0b4');});if(k>.97&&s>.5)rect(x-3,GROUND_Y-1,3,1,'#8aa0b4');}
   // steam from a manhole in the street
-  if(cx<400)for(let i=0;i<6;i++){const k=((gt*.22+i/6)%1),x=176-cx+Math.sin(gt*.8+i)*4+k*10,y=GROUND_Y-k*60;alpha((1-k)*.18,()=>{ctx.fillStyle='#a0aab0';ctx.beginPath();ctx.arc(R(x),R(y),4+k*12,0,Math.PI*2);ctx.fill();});}
+  if(cx<400)for(let i=0;i<6;i++){const k=((gt*.22+i/6)%1),x=108-cx+Math.sin(gt*.8+i)*4+k*10,y=GROUND_Y-k*60;alpha((1-k)*.18,()=>{ctx.fillStyle='#a0aab0';ctx.beginPath();ctx.arc(R(x),R(y),4+k*12,0,Math.PI*2);ctx.fill();});}
   for(const L of LAMPS5){const hx=L.x+L.d*9-cx;if(hx<-20||hx>W+20)continue;for(let i=0;i<3;i++){const a=gt*(2+i)+i*2;rect(hx+Math.cos(a)*(5+i*2),80+Math.sin(a*1.3)*4,1,1,'#e8dcb0');}}
 }
 const lampFl5=L=>{const s=L.x*.013;if(L.x===236)return (Math.sin(gt*23)>.75||Math.sin(gt*5.3+s)>.9)?.1:1;const b=Math.sin(gt*1.7+s*7)>.97||(Math.sin(gt*.6+s*3)>.92&&Math.sin(gt*31)>0);return b?.12:1;}; // street lamps sputter on and off
