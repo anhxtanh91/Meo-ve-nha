@@ -92,6 +92,28 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rend
 @keyframes dot{0%,60%,100%{opacity:.2}30%{opacity:1}}
 #ovL2{background:rgba(0,0,0,.35);animation:endIn 2.4s ease both}
 #ovL2 .row{animation:endIn 1.2s 1.6s ease both}
+#ovStats{background:rgba(10,8,14,.9);gap:1cqw;justify-content:center;padding:1.6cqw 3cqw;overflow:auto;animation:endIn 1s ease both}
+#ovStats h2{font-size:max(22px,5.4cqw)}
+#ovStats .btn{font-size:max(16px,3.4cqw)}
+#ovStats .cols{display:flex;gap:3cqw;align-items:flex-start;justify-content:center;width:100%;flex-wrap:wrap}
+#ovStats table{border-collapse:collapse;font-size:max(12px,2.7cqw);line-height:1.1;font-variant-numeric:tabular-nums;text-shadow:0 2px 0 #000}
+#ovStats th{font-weight:400;color:var(--muted,#bdb3cf);padding:0 .6em .25em;text-align:right}
+#ovStats td{padding:.12em .6em;text-align:right;white-space:nowrap}
+#ovStats th:first-child,#ovStats td:first-child{text-align:left}
+#ovStats tr.tot td{border-top:1px solid rgba(255,255,255,.35);color:var(--accent);padding-top:.3em}
+#ovStats .na{opacity:.45}
+#ovStats .kills{display:flex;flex-wrap:wrap;justify-content:center;gap:.15em 1.1em;max-width:94%;font-size:max(12px,2.6cqw);line-height:1.1;text-shadow:0 2px 0 #000}
+#ovStats .kills .h{color:var(--muted,#bdb3cf)}
+#ovStats .kills b{font-weight:400;color:var(--accent);font-variant-numeric:tabular-nums}
+#ovStats .kills .boss{color:#ffb4a8}
+#ovStats .best.new{color:#ffe066;animation:recPulse .7s ease-in-out infinite alternate}
+#ovStats .rec{color:#ffe066;font-size:.85em;margin-left:.3em;animation:recPulse 1s ease-in-out infinite alternate}
+#ovStats .best{font-size:max(12px,2.7cqw);color:#d6cfe6;margin:0}
+@keyframes recPulse{from{opacity:.55}to{opacity:1}}
+#recToast{position:absolute;left:50%;top:14%;transform:translateX(-50%);z-index:7;pointer-events:none;font-family:var(--pix);text-align:center;color:#ffe066;text-shadow:0 2px 0 #000,0 0 .5em rgba(255,200,60,.6);white-space:nowrap;animation:recIn 3.6s ease both}
+#recToast b{display:block;font-weight:400;font-size:max(20px,5.6cqw);letter-spacing:.06em}
+#recToast span{display:block;font-size:max(14px,3.2cqw);color:#fff}
+@keyframes recIn{0%{opacity:0;transform:translate(-50%,-.6em) scale(.8)}12%{opacity:1;transform:translate(-50%,0) scale(1.08)}20%{transform:translate(-50%,0) scale(1)}85%{opacity:1}100%{opacity:0}}
 @keyframes endIn{from{opacity:0}to{opacity:1}}
 .ov .row{display:flex;gap:3cqw;flex-wrap:wrap;justify-content:center}
 #touch{position:absolute;inset:auto 0 0 0;display:none;justify-content:space-between;padding:2cqw 3cqw;pointer-events:none;z-index:4}
@@ -175,7 +197,14 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rend
     <span class="sub">Đã lưu · Hoàn thành Màn 5</span>
     <h2>END GAME</h2>
     <p>Mèo đã về đến nhà rồi.</p>
-    <div class="row"><button class="btn" id="btnL2Again" type="button">Chơi lại màn 5</button><button class="btn ghost" id="btnL2Home" type="button">Màn hình chính</button></div>
+    <div class="row"><button class="btn ghost" id="btnStats" type="button">Thống kê</button><button class="btn" id="btnL2Again" type="button">Chơi lại màn 5</button><button class="btn ghost" id="btnL2Home" type="button">Màn hình chính</button></div>
+  </div>
+  <div class="ov" id="ovStats" hidden>
+    <h2>THỐNG KÊ</h2>
+    <table id="stTable"></table>
+    <div class="kills" id="stKills"></div>
+    <p class="best" id="stBest"></p>
+    <button class="btn" id="btnStatsOk" type="button">Tiếp tục</button>
   </div>
   <div class="ov" id="ovOver" hidden>
     <h2>Mèo kiệt sức rồi</h2>
@@ -2587,7 +2616,7 @@ const TI=()=>[...document.querySelectorAll('#tlist .mi')];
 function titleMark(){TI().forEach((el,i)=>el.classList.toggle('sel',i===titleSel));}
 function openTitleSub(pg){fromTitle=true;paused=true;show('ovTitle',false);$('cheatBox').hidden=true;setPage(pg);show('ovMenu',true);if(pg==='sound')document.querySelector('#ovMenu h2').textContent='Cài đặt';}
 function titleDo(a){ensureAudio();
-  if(a==='new')startCut();
+  if(a==='new'){runReset();startCut();}
   else if(a==='cont'){const n=contLevel();if(!n){tone(200,120,.15,'square',.05);return;}startLevel(n);}
   else if(a==='levels')openTitleSub('levels');
   else if(a==='cuts')openTitleSub('cuts');
@@ -2632,7 +2661,7 @@ function menuKey(e){
 function setState(s){
   if(paused&&s!=='play')closeMenu();
   state=s;st=0;
-  show('ovTitle',s==='title');if(s==='title'){const n=contLevel();$('btnCont').classList.toggle('locked',!n);$('btnCont').innerHTML=n?`Chơi tiếp <span class="note">Màn ${dispN(n)}</span>`:'Chơi tiếp';titleSel=0;titleMark();}show('ovWin',false);show('ovOver',s==='over');show('ovSave',s==='saving');show('ovL2',s==='l2');
+  show('ovTitle',s==='title');if(s==='title'){const n=contLevel();$('btnCont').classList.toggle('locked',!n);$('btnCont').innerHTML=n?`Chơi tiếp <span class="note">Màn ${dispN(n)}</span>`:'Chơi tiếp';titleSel=0;titleMark();}show('ovWin',false);show('ovOver',s==='over');show('ovSave',s==='saving');show('ovL2',s==='l2');show('ovStats',false);
   show('skip',s==='cut'||s==='arrive'||s==='ending');
   show('hud',s==='play'||s==='win'||s==='over'||s==='outro');show('menuBtn',s==='play');
   show('banner',false);
@@ -2640,7 +2669,7 @@ function setState(s){
   updateHud();
 }
 function startCut(){
-  ensureAudio();LV=1;lastCheck=140;resetLevel();
+  ensureAudio();lvReset();LV=1;lastCheck=140;resetLevel();
   cut={S:0,door:0,catX:262,catY:123,face:-1,pose:poseSleep(0),sway:0,swayV:0,fired:{},bub:null,inDoor:false,lights:[true,true,true],ledFlicker:1,phone:1,moving:true};
   setState('cut');$('btnStart').blur();
 }
@@ -2651,7 +2680,7 @@ function startPlay(fromSkip){if(cutView){endCutView();return;}
   p.ctrl=!(LV===1&&!bus.gone);setState('play');show('banner',true);bannerT=2.4;
 }
 function skipCut(){if(cutView==='boss'||cutView==='out'){endCutView();return;}if(state==='ending'&&cutView){endCutView();return;}if(state==='ending'){skipEnding();show('skip',false);return;}if(LV===5){p.x=START5[0];p.y=START5[1];p.vx=p.vy=0;p.onGround=true;p.stalk=0;cam=CAMMIN5;fadeIn5=.8;startPlay(false);return;}if(LV!==1){p.x=56;p.y=144;startPlay(false);return;}startPlay(true);}
-function startLevel(n){ensureAudio();seenIntro={};if(n===1){lastCheck=140;startCut();return;}LV=n;lastCheck=56;resetLevel();p.x=-20;p.ctrl=false;$('banner').innerHTML=bannerFor(n);setState('arrive');show('banner',true);}
+function startLevel(n){ensureAudio();seenIntro={};lvReset();if(n===1){lastCheck=140;startCut();return;}LV=n;lastCheck=56;resetLevel();p.x=-20;p.ctrl=false;$('banner').innerHTML=bannerFor(n);setState('arrive');show('banner',true);}
 $('skip').onclick=()=>{ensureAudio();skipCut();$('skip').blur();};
 $('btnAgain').onclick=()=>{ensureAudio();lastCheck=140;startPlay(true);};
 $('btnReplay').onclick=()=>{startCut();};
@@ -2691,8 +2720,8 @@ let cheat=false;
 function respawnAtCheckpoint(){const lives=p.lives;resetLevel();p.lives=lives;p.inv=1.5;p.ctrl=true;if(bus)bus.gone=true;updateHud();}
 function hurt(fromX,pit){
   if(cheat){p.inv=.8;if(pit&&!boss){respawnAtCheckpoint();return;}if(pit){p.x=p.spawnX;p.y=groundY(Math.floor(p.spawnX/T))-1;p.vx=0;p.vy=0;cam=clamp(p.x-W*.42,0,LW-W);}else{p.vx=(p.x<fromX?-1:1)*130;p.vy=-190;}return;}
-  p.lives--;SFX.hurt();updateHud();
-  if(p.lives<=0){setState('over');return;}
+  p.lives--;SFX.hurt();updateHud();if(lvS&&!cutView)lvS.hurts++;
+  if(p.lives<=0){if(lvS&&!cutView)lvS.deaths++;setState('over');return;}
   p.inv=1.5;
   if(pit&&!boss){respawnAtCheckpoint();return;}
   if(pit){p.x=p.spawnX;p.y=groundY(Math.floor(p.spawnX/T))-1;p.vx=0;p.vy=0;cam=clamp(p.x-W*.42,0,LW-W);}
@@ -2781,7 +2810,54 @@ function updSaving(dt){
   if(st>1.3&&!outro.saved){outro.saved=true;const ok=saveGame();$('saveText').innerHTML=ok?'Đã lưu ✓':'Không lưu được (trình duyệt chặn bộ nhớ)';}
   if(st>2.2){const nx=nextLevel(LV);if(nx){startLevel(nx);return;}if(LV===5){startEnding();return;}setState('l2');$('btnL2Again').focus({preventScroll:true});}
 }
-function winLevel(){waves=[];clearK=0;sprout=null;setState('outro');p.ctrl=false;p.vx=0;outro={ph:'wait',t:0};$('bossBar').hidden=true;SFX.win();for(let i=0;i<4;i++)puff(p.x+(Math.random()*60-30),90,8,['#f2c43a','#ee8fa8','#8cc3e3','#ffffff'][i],70,80,1);}
+
+/* ---- run statistics + records (shown after the ending) ---- */
+const RUN_KEY='meo-ve-nha-run',REC_KEY='meo-ve-nha-records';
+let lvS=null; // stats of the level attempt in progress
+const lsGet=k=>{try{return JSON.parse(localStorage.getItem(k)||'null')||{};}catch(e){return {};}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+function lvReset(){lvS={t:0,kills:{},hurts:0,deaths:0};}
+function runReset(){lsSet(RUN_KEY,{levels:{},at:Date.now()});}
+const ENAMES={1:{beetle:'Bọ rùa',bee:'Ong',minion:'Ong lính'},3:{beetle:'Chuột',bee:'Quạ'},4:{beetle:'Rắn',bee:'Dơi'},2:{frog:'Ếch con',beetle:'Bọ',bee:'Chuồn chuồn'},5:{beetle:'Gián',bee:'Bồ câu'}};
+const BOSSN={1:'Ong Chúa',3:'Quạ Đầu Đàn',4:'Chó Hoang',2:'Ếch Chúa',5:'Mèo Hoang'};
+const enemyName=e=>(ENAMES[LV]&&ENAMES[LV][e.type])||e.type;
+function addKill(n){if(!lvS||cutView)return;lvS.kills[n]=(lvS.kills[n]||0)+1;}
+function fmtT(s){if(!(s>=0))return '—';const m=Math.floor(s/60),x=s-m*60;return `${m}:${x<10?'0':''}${x.toFixed(1)}`;}
+let lastRec={};
+function finishLevelStats(){if(!lvS)return;
+  lvS.kills['★ '+BOSSN[LV]]=(lvS.kills['★ '+BOSSN[LV]]||0)+1;
+  const run=lsGet(RUN_KEY);run.levels=run.levels||{};run.levels[LV]={t:lvS.t,kills:lvS.kills,hurts:lvS.hurts,deaths:lvS.deaths};lsSet(RUN_KEY,run);
+  const rec=lsGet(REC_KEY);rec.lv=rec.lv||{};const old=rec.lv[LV];
+  if(!old||lvS.t<old.t){rec.lv[LV]={t:lvS.t,at:Date.now()};lsSet(REC_KEY,rec);lastRec[LV]=true;
+    if(old)recToast('KỶ LỤC MỚI!',`Màn ${dispN(LV)}: ${fmtT(lvS.t)} (cũ ${fmtT(old.t)})`);}
+  else lastRec[LV]=false;
+  lvS=null;}
+function recToast(a,b){const old=$('recToast');if(old)old.remove();const d=document.createElement('div');d.id='recToast';d.innerHTML=`<b>${a}</b><span>${b}</span>`;$('wrap').appendChild(d);try{tone(880,1320,.25,'square',.05);setTimeout(()=>tone(1320,1760,.3,'square',.05),180);}catch(e){}setTimeout(()=>d.remove(),3700);}
+function showStats(first){
+  const run=lsGet(RUN_KEY),L=run.levels||{},rec=lsGet(REC_KEY);rec.lv=rec.lv||{};
+  let h='<tr><th>Màn</th><th>Thời gian</th><th>Hạ</th><th>Bị thương</th><th>Chết</th></tr>',T=0,K=0,Hu=0,D=0,all=true;const kills={};
+  for(const M of LEVELS){const r=L[M.id];
+    if(!r){all=false;h+=`<tr class="na"><td>${M.n}. ${M.name}</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>`;continue;}
+    const k=Object.values(r.kills).reduce((a,b)=>a+b,0);T+=r.t;K+=k;Hu+=r.hurts;D+=r.deaths;
+    for(const [n,c] of Object.entries(r.kills))kills[n]=(kills[n]||0)+c;
+    const isRec=rec.lv[M.id]&&Math.abs(rec.lv[M.id].t-r.t)<1e-6;
+    h+=`<tr><td>${M.n}. ${M.name}</td><td>${fmtT(r.t)}${isRec?'<span class="rec">★</span>':''}</td><td>${k}</td><td>${r.hurts}</td><td>${r.deaths}</td></tr>`;}
+  let gRec='',gNew='';const tt=$('recToast');if(tt)tt.remove();
+  if(all){rec.game=rec.game||{};const g=rec.game,news=[];
+    if(first){if(!(g.t<=T)){if(g.t)news.push('thời gian');g.t=T;}if(!(g.d<=D)){if(g.d!==undefined)news.push('ít chết nhất');g.d=D;}if(!(g.k>=K)){if(g.k!==undefined)news.push('hạ nhiều quái nhất');g.k=K;}lsSet(REC_KEY,rec);
+      if(news.length){gNew='★ KỶ LỤC MỚI cả game: '+news.join(', ')+'! ★';try{tone(880,1320,.25,'square',.05);setTimeout(()=>tone(1320,1760,.3,'square',.05),180);}catch(e){}}}
+    const st=(v,b)=>v===b?'<span class="rec">★ kỷ lục</span>':'';
+    gRec=`Kỷ lục cả game: ${fmtT(g.t)} · ${g.d} lần chết · ${g.k} quái`;
+    h+=`<tr class="tot"><td>Tổng</td><td>${fmtT(T)}${T===g.t?'<span class="rec">★</span>':''}</td><td>${K}</td><td>${Hu}</td><td>${D}${D===g.d?'<span class="rec">★</span>':''}</td></tr>`;}
+  else{h+=`<tr class="tot"><td>Tổng</td><td>${fmtT(T)}</td><td>${K}</td><td>${Hu}</td><td>${D}</td></tr>`;gRec='Chơi hết 5 màn từ “Chơi mới” để lập kỷ lục cả game.';}
+  $('stTable').innerHTML=h;
+  const ks=Object.entries(kills).sort((a,b)=>(a[0][0]==='★')-(b[0][0]==='★')||b[1]-a[1]);
+  $('stKills').innerHTML='<span class="h">Quái đã hạ:</span>'+(ks.length?ks.map(([n,c])=>`<span class="${n[0]==='★'?'boss':''}">${n.replace('★ ','')} <b>×${c}</b></span>`).join(''):'<span>—</span>');
+  $('stBest').innerHTML=gNew||(gRec+' · ★ = kỷ lục');$('stBest').classList.toggle('new',!!gNew);
+  show('ovL2',false);show('ovStats',true);$('btnStatsOk').focus({preventScroll:true});}
+$('btnStatsOk').onclick=()=>{show('ovStats',false);show('ovL2',true);$('btnL2Again').focus({preventScroll:true});};
+$('btnStats').onclick=()=>showStats(false);
+function winLevel(){if(!cutView)finishLevelStats();waves=[];clearK=0;sprout=null;setState('outro');p.ctrl=false;p.vx=0;outro={ph:'wait',t:0};$('bossBar').hidden=true;SFX.win();for(let i=0;i<4;i++)puff(p.x+(Math.random()*60-30),90,8,['#f2c43a','#ee8fa8','#8cc3e3','#ffffff'][i],70,80,1);}
 
 // ---- each regular enemy has its own way of fighting (ladybug, frog and carp keep theirs) ----
 let drops=[]; // pigeon droppings
@@ -2852,7 +2928,7 @@ function updEnemies(dt){updDrops(dt);
     }else updFlyer(e,dt);
     if(state==='play'&&overlap(p,e)){
       if(p.vy>40&&p.prevY<=e.y-e.h+5){
-        e.alive=false;e.dead=.5;stats.stomps++;SFX.stomp();p.safe=.6;
+        e.alive=false;e.dead=.5;stats.stomps++;addKill(enemyName(e));SFX.stomp();p.safe=.6;
         p.vy=keys.J?-330:-230;p.jumping=keys.J;p.y=e.y-e.h-.1;
         puff(e.x,e.y-e.h,8,'#fff3a0',60,50,.4);
         if(e.type!=='beetle'&&e.type!=='frog')e.vy=-60;
@@ -3391,11 +3467,11 @@ function updEnding(dt){const e=endS;if(!e)return;e.t+=dt;e.pt+=dt;const t=e.pt;l
   else if(e.ph==='turn'){const n=Math.floor(t/.95);e.face=n%2?-1:1;e.ph2+=dt*8*.17;P=lowerE(poseWalkE(e.ph2,gt),.4);e.x=222+Math.sin(t/.95*Math.PI)*2;if(t>2.85){e.face=-1;go('curl');}}
   else if(e.ph==='curl'){const k=ease(clamp(t/1.8,0,1));P=k<.5?lowerE(poseStand(gt),k*2*3):lerpV(lowerE(poseStand(gt),3),poseSleep(gt),(k-.5)*2);rate=6;if(t>1.9)go('sleep');}
   else if(e.ph==='sleep'){P=poseSleep(gt);rate=4;if(Math.sin(gt*.9)>.97)P.tail={...P.tail,curl:P.tail.curl-.1};e.purrT-=dt;if(e.purrT<=0){e.purrT=1.2;tone(52,46,.5,'sine',.035);tone(50,44,.4,'sine',.03,.6);}
-    if(t>4.5)e.fade=clamp((t-4.5)/3.5,0,1);if(t>8.5&&cutView){endCutView();return;}if(t>8.5&&!e.done){e.done=true;show('ovL2',true);show('skip',false);$('btnL2Again').focus({preventScroll:true});}}
+    if(t>4.5)e.fade=clamp((t-4.5)/3.5,0,1);if(t>8.5&&cutView){endCutView();return;}if(t>8.5&&!e.done){e.done=true;showStats(true);show('skip',false);}}
   if(['pad','look','knead','turn','curl','sleep','land2'].includes(e.ph))e.y=endSurf(e.x);
   e.pose=lerpV(e.pose,P,1-Math.exp(-dt*rate));
 }
-function skipEnding(){if(!endS)return;endS.ph='sleep';endS.pt=8.5;endS.x=222;endS.face=-1;endS.pose=poseSleep(gt);endS.fade=1;if(!endS.done){endS.done=true;show('ovL2',true);}}
+function skipEnding(){if(!endS)return;endS.ph='sleep';endS.pt=8.5;endS.x=222;endS.face=-1;endS.pose=poseSleep(gt);endS.fade=1;if(!endS.done){endS.done=true;showStats(true);}}
 const END_STARS=(()=>{const r=mulberry(77);return Array.from({length:18},()=>[22+r()*60,32+r()*26,r()]);})();
 const END_DUST=(()=>{const r=mulberry(31);return Array.from({length:70},()=>({x:r()*W,y:r()*150,s:r(),z:r()}));})();
 const FAIRY=[[86,38],[94,42],[102,45],[110,47],[118,47],[126,45],[134,42],[142,38],[150,35]];
@@ -3574,7 +3650,7 @@ function update(dt){
   else if(state==='arrive'){updArrive(dt);updBus(dt);updParts(dt);}
   else if(state==='play'){
     if(!p.ctrl&&LV===1&&bus.gone&&!boss)p.ctrl=true; // the cat waits until the bus has driven off screen
-    updCutView(dt);if(state!=='play')return;updPlayer(dt);if(state==='play'){updEnemies(dt);updFish();updBoss(dt);updFires4();updHoppers(dt);updCity5(dt);if(LV===2){updPads(dt);updWaves(dt);updJumpers(dt);}}updBus(dt);updParts(dt);
+    updCutView(dt);if(state!=='play')return;if(lvS&&!cutView)lvS.t+=dt;updPlayer(dt);if(state==='play'){updEnemies(dt);updFish();updBoss(dt);updFires4();updHoppers(dt);updCity5(dt);if(LV===2){updPads(dt);updWaves(dt);updJumpers(dt);}}updBus(dt);updParts(dt);
     const target=boss?ARENA_X:p.x-W*.42;cam+=(target-cam)*Math.min(1,dt*(boss?4:7));cam=clamp(cam,LV===5?CAMMIN5:0,LW-W);
     if(bannerT>0){bannerT-=dt;if(bannerT<=0)show('banner',false);}
   }
