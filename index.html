@@ -3167,6 +3167,8 @@ const CUTS=[{a:'cut1',name:'Mở đầu',note:'Chuyến xe buýt',ok:()=>true},
   {a:'out2',name:'Màn 5',note:'Hồ sen sạch lại',ok:d=>d.includes(2)},
   {a:'cut5',name:'Màn 6',note:'Con hẻm phố đêm',ok:d=>reached(d,5)},
   {a:'boss5',name:'Màn 6',note:'Mèo hoang',ok:d=>reached(d,5)},
+  {a:'dream1',name:'Màn 1',note:'Giấc mơ bức tranh',ok:d=>d.includes(1)},
+  {a:'dream2',name:'Màn 5',note:'Giấc mơ câu cá',ok:d=>d.includes(2)},
   {a:'cutEnd',name:'Kết thúc',note:'Về đến nhà',ok:d=>d.includes(5)}];
 let cvT=0,cvEnd=0;
 // replay a boss's entrance, or the scene after a boss, straight in the arena
@@ -3221,6 +3223,8 @@ function menuDo(a){
   else if(a==='cut1'){closeMenu();cutView=true;lastCheck=140;startCut();}
   else if(a==='cut5'){closeMenu();cutView=true;startLevel(5);}
   else if(a==='cutEnd'){closeMenu();cutView=true;LV=5;startEnding();}
+  else if(a==='dream1'){closeMenu();cutView=true;startDream1(null);}
+  else if(a==='dream2'){closeMenu();cutView=true;startDream1(null,'fish');}
   else if(/^boss[1-6]$/.test(a)){closeMenu();ensureAudio();replayArena(+a[4],false);}
   else if(/^out[1-6]$/.test(a)){closeMenu();ensureAudio();replayArena(+a[3],true);}
   else if(a==='back'){const from=menuPage;setPage('main');menuSel=from==='levels'?1:2;menuMark();}
@@ -3252,7 +3256,7 @@ function setState(s){
   if(paused&&s!=='play')closeMenu();
   state=s;st=0;
   show('ovTitle',s==='title');if(s==='title'){const n=contLevel();$('btnCont').classList.toggle('locked',!n);$('btnCont').innerHTML=n?`Chơi tiếp <span class="note">Màn ${dispN(n)}</span>`:'Chơi tiếp';titleSel=0;titleMark();}show('ovWin',false);show('ovOver',s==='over');show('ovSave',s==='saving');show('ovL2',s==='l2');show('ovStats',false);
-  show('skip',s==='cut'||s==='arrive'||s==='ending');
+  show('skip',s==='cut'||s==='arrive'||s==='ending'||s==='dream1');
   show('hud',s==='play'||s==='win'||s==='over'||s==='outro');show('menuBtn',s==='play');
   show('banner',false);
   if(s==='title'||s==='cut'||s==='arrive')$('bossBar').hidden=true;
@@ -3269,7 +3273,7 @@ function startPlay(fromSkip){if(cutView){endCutView();return;}wakeS=null;dream=n
   if(fromSkip){resetLevel();if(LV===1){bus.door=0;bus.leaving=true;bus.vx=60;}}
   p.ctrl=!(LV===1&&!bus.gone);setState('play');show('banner',true);bannerT=2.4;
 }
-function skipCut(){if(wakeS&&LV===5){wakeS=null;dream=null;p.zzz=false;}if(cutView==='boss'||cutView==='out'){endCutView();return;}if(state==='ending'&&cutView){endCutView();return;}if(state==='ending'){skipEnding();show('skip',false);return;}if(LV===5){p.x=START5[0];p.y=START5[1];p.vx=p.vy=0;p.onGround=true;p.stalk=0;cam=CAMMIN5;fadeIn5=.8;startPlay(false);return;}if(LV!==1){p.x=56;p.y=144;startPlay(false);return;}startPlay(true);}
+function skipCut(){if(state==='dream1'){endDream1();return;}if(wakeS&&LV===5){wakeS=null;dream=null;p.zzz=false;}if(cutView==='boss'||cutView==='out'){endCutView();return;}if(state==='ending'&&cutView){endCutView();return;}if(state==='ending'){skipEnding();show('skip',false);return;}if(LV===5){p.x=START5[0];p.y=START5[1];p.vx=p.vy=0;p.onGround=true;p.stalk=0;cam=CAMMIN5;fadeIn5=.8;startPlay(false);return;}if(LV!==1){p.x=56;p.y=144;startPlay(false);return;}startPlay(true);}
 function startLevel(n){ensureAudio();seenIntro={};lvReset();if(n===1){lastCheck=140;startCut();return;}LV=n;lastCheck=56;resetLevel();p.x=-20;p.ctrl=false;$('banner').innerHTML=bannerFor(n);setState('arrive');show('banner',true);wakeS=null;dream=null;if(!cutView)startWake();}
 $('skip').onclick=()=>{ensureAudio();skipCut();$('skip').blur();};
 $('btnAgain').onclick=()=>{ensureAudio();lastCheck=140;startPlay(true);};
@@ -3494,7 +3498,7 @@ function updOutro(dt){
     if(dream){dream.k=clamp((o.t-.9)/2.6,0,1);dream.d=clamp((o.t-3.6)/2.8,0,1);}
     if(o.t>3.4&&!o.saveShown){o.saveShown=1;$('saveText').innerHTML='Đang lưu trò chơi<span class="dots"><i>.</i><i>.</i><i>.</i></span>';show('ovSave',true);}
     if(o.t>4.6&&!o.saved){o.saved=1;if(!cutView){const ok=saveGame();$('saveText').innerHTML=ok?'Đã lưu ✓':'Không lưu được (trình duyệt chặn bộ nhớ)';}else $('saveText').innerHTML='Đã lưu ✓';}
-    if(o.t>7.2){show('ovSave',false);p.zzz=false;dream=null;if(cutView){endCutView();return;}const nx=nextLevel(LV);if(nx){startLevel(nx);return;}if(LV===5){startEnding();return;}setState('l2');$('btnL2Again').focus({preventScroll:true});return;}}
+    if(o.t>7.2){show('ovSave',false);p.zzz=false;dream=null;if(cutView){endCutView();return;}const nx=nextLevel(LV);if((LV===1||LV===2)&&nx){startDream1(nx,LV===2?'fish':'forest');return;}if(nx){startLevel(nx);return;}if(LV===5){startEnding();return;}setState('l2');$('btnL2Again').focus({preventScroll:true});return;}}
   else if(o.ph==='look'){P=poseSit(gt,1);P.k='sit';p.face=1;if(o.t>.7)go('rise');}
   else if(o.ph==='rise'){P.k='crouch';p.face=1;if(o.t>.18)go('exit');}
   else if(o.ph==='exit'){p.face=1;p.vx=Math.min(130,p.vx+260*dt);p.x+=p.vx*dt;p.ph+=p.vx*dt*.19;P=poseRun(p.ph,gt);if(p.x>cam+W+26){if(cutView){endCutView();return;}fadeThen(()=>{p.x=cam+W+60;setState('saving');o.t=0;},.7);}}
@@ -4576,6 +4580,150 @@ const endSurf=x=>{ // top of the blanket over the sleeper (feet at the left, hea
   const k=endS?Math.sin(endS.t*1.25):0;
   const hump=(c,w,h)=>Math.max(0,h*(1-((x-c)/w)**2));
   return 117-Math.max(hump(214,14,4),hump(236,16,8),hump(254,16,10+k*1.1),2);};
+/* ================= dream after the queen bee: a child's crayon drawing of a little girl and the black cat, which comes alive ================= */
+let dr1=null,DR1_PAPER=null;
+function startDream1(next,kind='forest'){parts.length=0;$('bossBar').hidden=true;dr1={t:0,next,done:false,kind};setState('dream1');
+  // a soft music-box tune
+  const N=[523,659,784,659,587,698,880,698,523,659,784,1047,988,784,659,523];N.forEach((f,i)=>{tone(f,f,.5,'triangle',.035,1.2+i*.42);tone(f*2,f*2,.18,'sine',.012,1.2+i*.42);});}
+function endDream1(){if(!dr1||dr1.done)return;dr1.done=true;const nx=dr1.next,k=dr1.kind;if(cutView){endCutView();return;}fadeThen(()=>{dr1=null;startLevel(nx||nextLevel(k==='fish'?2:1));},.5);}
+function updDream1(dt){dr1.t+=dt;if(dr1.t>13.2)endDream1();}
+// a wobbly crayon stroke: dotted, waxy, with gaps and paper showing through
+function crayon(g,pts,col,w,seed,closed){const r=mulberry(seed);g.fillStyle=col;const n=pts.length;
+  for(let i=0;i<(closed?n:n-1);i++){const [x0,y0]=pts[i],[x1,y1]=pts[(i+1)%n];const L=Math.hypot(x1-x0,y1-y0),k=Math.max(1,Math.ceil(L*1.6));
+    for(let j=0;j<k;j++){if(r()<.14)continue;const t=j/k,x=x0+(x1-x0)*t+(r()-.5)*.9,y=y0+(y1-y0)*t+(r()-.5)*.9;g.globalAlpha=.55+r()*.45;g.fillRect(Math.round(x-w/2),Math.round(y-w/2),w,w);}}g.globalAlpha=1;}
+function scribble(g,cx,cy,rx,ry,col,seed,dens=1){const r=mulberry(seed);const pts=[];const n=Math.round((rx+ry)*1.3*dens);
+  for(let i=0;i<n;i++){const a=r()*Math.PI*2,q=Math.sqrt(r());pts.push([cx+Math.cos(a)*rx*q,cy+Math.sin(a)*ry*q]);}
+  // zig-zag hatching across the shape, like a kid colouring in
+  g.fillStyle=col;for(let y=-ry;y<=ry;y+=1.6){const hw=rx*Math.sqrt(Math.max(0,1-(y*y)/(ry*ry)));for(let x=-hw;x<=hw;x+=.8){if(r()<.22)continue;g.globalAlpha=.45+r()*.4;g.fillRect(Math.round(cx+x),Math.round(cy+y+(r()-.5)),1,1);}}g.globalAlpha=1;}
+function dr1Paper(){if(DR1_PAPER)return DR1_PAPER;const [c,g]=mkCanvas(W,H);const r=mulberry(1717);
+  g.fillStyle='#f3ead2';g.fillRect(0,0,W,H);
+  for(let i=0;i<5200;i++){const x=Math.floor(r()*W),y=Math.floor(r()*H);g.fillStyle=r()<.5?'#e8dcc0':'#faf4e4';g.fillRect(x,y,1,1);}
+  // faint fold line and slightly darker edges
+  g.globalAlpha=.25;g.fillStyle='#d8c8a4';g.fillRect(W/2,0,1,H);g.globalAlpha=1;
+  for(let i=0;i<14;i++){g.globalAlpha=.05;g.fillStyle='#8a6a3a';g.fillRect(i,0,1,H);g.fillRect(W-1-i,0,1,H);g.fillRect(0,i,W,1);g.fillRect(0,H-1-i,W,1);}g.globalAlpha=1;
+  // sky colouring, a sun with rays in the corner, a couple of clouds
+  for(let y=8;y<70;y+=3)crayon(g,[[10+r()*6,y],[W-10-r()*6,y+r()*3-1]],'#9cc8ea',1,40+y);
+  scribble(g,284,26,13,13,'#ffd23a',7);crayon(g,[...Array(16)].map((_,i)=>[284+Math.cos(i/16*6.283)*13,26+Math.sin(i/16*6.283)*13]),'#f0a020',2,8,true);
+  for(let i=0;i<9;i++){const a=i/9*6.283+.2;crayon(g,[[284+Math.cos(a)*17,26+Math.sin(a)*17],[284+Math.cos(a)*25,26+Math.sin(a)*25]],'#f0a020',2,90+i);}
+  for(const [x,y] of [[60,24],[150,16]]){crayon(g,[...Array(14)].map((_,i)=>{const a=i/14*6.283;return [x+Math.cos(a)*(16+3*Math.sin(a*3)),y+Math.sin(a)*7];}),'#7aa8d0',1,x,true);}
+  // tape on the corners
+  for(const [x,y,a] of [[4,2,1],[W-28,2,-1]]){g.globalAlpha=.55;g.fillStyle='#fff8d8';g.fillRect(x,y,24,8);g.globalAlpha=1;}
+  // the child's signature-ish scrawl
+  crayon(g,[[262,160],[266,154],[270,162],[274,154],[278,161],[284,156]],'#c03a5a',1,555);
+  return DR1_PAPER=c;}
+// trees for the drawing: brown scribbled trunk, a lumpy green crown
+function dr1Tree(g,x,s,seed){const gy=140;crayon(g,[[x-3,gy],[x-3,gy-30*s]],'#7a4a22',2,seed);crayon(g,[[x+3,gy],[x+3,gy-30*s]],'#7a4a22',2,seed+1);
+  for(let y=gy-30*s;y<gy;y+=2)crayon(g,[[x-3,y],[x+3,y+1]],'#9a6232',1,seed+y);
+  scribble(g,x,gy-44*s,18*s,16*s,'#4aa83a',seed+5);crayon(g,[...Array(18)].map((_,i)=>{const a=i/18*6.283;return [x+Math.cos(a)*(18*s+2*Math.sin(a*5)),gy-44*s+Math.sin(a)*(16*s+2*Math.cos(a*4))];}),'#2a7a2a',2,seed+9,true);
+  for(let i=0;i<3;i++)scribble(g,x-8*s+i*8*s,gy-46*s+(i%2)*8*s,2,2,'#e83a3a',seed+20+i);}
+// the girl: round face, yellow pigtails, pink triangle dress, stick arms and legs
+const dr1Blank=(g,x,y,rx,ry)=>{g.fillStyle='#f3ead2';g.beginPath();g.ellipse(x,y,rx,ry,0,0,Math.PI*2);g.fill();}; // characters cover what's behind them
+function dr1Girl(g,x,y,ph,face,seed,run){const lg=run?Math.sin(ph)*5:0,bob=run?-Math.abs(Math.sin(ph))*2:0;y+=bob;
+  crayon(g,[[x,y-12],[x-3+lg,y]],'#3a2a1a',1,seed);crayon(g,[[x,y-12],[x+3-lg,y]],'#3a2a1a',1,seed+1);
+  crayon(g,[[x-3+lg,y],[x-6+lg,y]],'#3a2a1a',2,seed+2);crayon(g,[[x+3-lg,y],[x+6-lg,y]],'#3a2a1a',2,seed+3);
+  // dress
+  const D=[[x,y-30],[x-10,y-11],[x+10,y-11]];g.fillStyle='#f3ead2';g.beginPath();g.moveTo(x,y-30);g.lineTo(x-10,y-11);g.lineTo(x+10,y-11);g.fill();scribble(g,x,y-17,6,6,'#f06a9a',seed+4);crayon(g,D,'#d03a6a',2,seed+5,true);
+  const ar=run?Math.sin(ph+1.5)*6:3;crayon(g,[[x-2,y-26],[x-11,y-20-ar]],'#3a2a1a',1,seed+6);crayon(g,[[x+2,y-26],[x+11,y-20+ar]],'#3a2a1a',1,seed+7);
+  // head and hair
+  dr1Blank(g,x,y-37,7,7);for(let q=0;q<2;q++)scribble(g,x,y-37,6,6,'#ffcfa0',seed+8+q*29);crayon(g,[...Array(12)].map((_,i)=>{const a=i/12*6.283;return [x+Math.cos(a)*7,y-37+Math.sin(a)*7];}),'#c87a4a',1,seed+9,true);
+  crayon(g,[[x-7,y-41],[x-3,y-45],[x+3,y-45],[x+7,y-41]],'#e8b020',2,seed+10);
+  for(const d of [-1,1]){crayon(g,[[x+d*7,y-41],[x+d*12,y-38+(run?Math.sin(ph*2+d)*2:0)]],'#e8b020',2,seed+11+d);g.fillStyle='#e83a5a';g.fillRect(x+d*8-1,y-42,3,2);}
+  g.fillStyle='#2a1a1a';g.fillRect(x-3+face,y-38,1,2);g.fillRect(x+2+face,y-38,1,2);crayon(g,[[x-3+face,y-34],[x+face,y-32],[x+3+face,y-34]],'#c0303a',1,seed+13);
+  g.globalAlpha=.5;g.fillStyle='#ff8a8a';g.fillRect(x-5+face,y-35,2,1);g.fillRect(x+4+face,y-35,2,1);g.globalAlpha=1;}
+// the black cat as a child draws it: a blob body, round head, triangle ears, a big curly tail, yellow eyes
+function dr1Cat(g,x,y,ph,face,seed,run){const bob=run?-Math.abs(Math.sin(ph))*3:0,lg=run?Math.sin(ph)*4:0;y+=bob;
+  for(const [lx,o] of [[-7,lg],[-3,-lg],[4,lg],[8,-lg]])crayon(g,[[x+lx*face,y-6],[x+lx*face+o,y]],'#1a1a22',2,seed+lx);
+  dr1Blank(g,x,y-9,11,5);for(let q=0;q<3;q++)scribble(g,x,y-9,11,5,'#22222a',seed+1+q*37,1.4);crayon(g,[...Array(14)].map((_,i)=>{const a=i/14*6.283;return [x+Math.cos(a)*11,y-9+Math.sin(a)*5];}),'#0a0a10',1,seed+2,true);
+  const hx=x+face*12,hy=y-15;dr1Blank(g,hx,hy,6,5);for(let q=0;q<3;q++)scribble(g,hx,hy,6,5,'#22222a',seed+3+q*41,1.5);crayon(g,[...Array(12)].map((_,i)=>{const a=i/12*6.283;return [hx+Math.cos(a)*6,hy+Math.sin(a)*5];}),'#0a0a10',1,seed+4,true);
+  for(const d of [-1,1]){crayon(g,[[hx+d*5,hy-3],[hx+d*4,hy-10],[hx+d*1,hy-4]],'#0a0a10',2,seed+5+d,true);}
+  g.fillStyle='#ffe040';g.fillRect(hx-3+face,hy-1,2,2);g.fillRect(hx+1+face,hy-1,2,2);g.fillStyle='#1a1a1a';g.fillRect(hx-2+face,hy-1,1,2);g.fillRect(hx+2+face,hy-1,1,2);
+  g.fillStyle='#ff9ab0';g.fillRect(hx+face,hy+1,1,1);crayon(g,[[hx+face*2,hy+2],[hx+face*9,hy]],'#5a5a66',1,seed+9);crayon(g,[[hx+face*2,hy+3],[hx+face*9,hy+4]],'#5a5a66',1,seed+10);
+  const tw=run?Math.sin(ph*1.3)*3:Math.sin(gt*2)*2;crayon(g,[[x-face*10,y-10],[x-face*15,y-16],[x-face*14,y-23+tw],[x-face*10,y-25+tw],[x-face*8,y-21+tw]],'#0a0a10',2,seed+11);}
+// sitting by the water: the girl on the bank with her legs out, the cat sitting up beside her
+function dr1GirlSit(g,x,y,face,seed,rodA){crayon(g,[[x-1,y-2],[x+face*12,y-1]],'#3a2a1a',1,seed);crayon(g,[[x+1,y],[x+face*12,y+1]],'#3a2a1a',1,seed+1);crayon(g,[[x+face*12,y-2],[x+face*12,y+2]],'#3a2a1a',2,seed+2);
+  g.fillStyle='#f3ead2';g.beginPath();g.moveTo(x,y-20);g.lineTo(x-8,y);g.lineTo(x+8,y);g.fill();scribble(g,x,y-7,5,5,'#5ab0f0',seed+4);crayon(g,[[x,y-20],[x-8,y],[x+8,y]],'#2a70c0',2,seed+5,true);
+  const hx=x+face*14,hy=y-13; // hands holding the rod
+  crayon(g,[[x,y-15],[hx,hy]],'#3a2a1a',1,seed+6);crayon(g,[[x,y-13],[hx,hy+1]],'#3a2a1a',1,seed+7);
+  const rx=hx+Math.cos(rodA)*34*face,ry=hy-Math.sin(rodA)*34;crayon(g,[[hx-face*4,hy+2],[rx,ry]],'#8a5a2a',2,seed+8);
+  dr1Blank(g,x,y-27,7,7);for(let q=0;q<2;q++)scribble(g,x,y-27,6,6,'#ffcfa0',seed+9+q*29);crayon(g,[...Array(12)].map((_,i)=>{const a=i/12*6.283;return [x+Math.cos(a)*7,y-27+Math.sin(a)*7];}),'#c87a4a',1,seed+10,true);
+  crayon(g,[[x-7,y-31],[x-3,y-35],[x+3,y-35],[x+7,y-31]],'#e8b020',2,seed+11);for(const dd of [-1,1]){crayon(g,[[x+dd*7,y-31],[x+dd*11,y-27]],'#e8b020',2,seed+12+dd);g.fillStyle='#e83a5a';g.fillRect(x+dd*8-1,y-32,3,2);}
+  // a little straw hat
+  crayon(g,[[x-11,y-34],[x+11,y-34]],'#d8a040',2,seed+14);scribble(g,x,y-37,6,3,'#f0c060',seed+15);
+  g.fillStyle='#2a1a1a';g.fillRect(x-3+face,y-28,1,2);g.fillRect(x+2+face,y-28,1,2);crayon(g,[[x-3+face,y-24],[x+face,y-22],[x+3+face,y-24]],'#c0303a',1,seed+16);
+  return [rx,ry];}
+function dr1CatSit(g,x,y,face,seed,look){dr1Blank(g,x,y-7,6,7);for(let q=0;q<3;q++)scribble(g,x,y-7,6,7,'#22222a',seed+q*37,1.4);crayon(g,[...Array(14)].map((_,i)=>{const a=i/14*6.283;return [x+Math.cos(a)*6,y-7+Math.sin(a)*7];}),'#0a0a10',1,seed+3,true);
+  const hx=x+face*2,hy=y-17+look;dr1Blank(g,hx,hy,6,5);for(let q=0;q<3;q++)scribble(g,hx,hy,6,5,'#22222a',seed+5+q*41,1.5);crayon(g,[...Array(12)].map((_,i)=>{const a=i/12*6.283;return [hx+Math.cos(a)*6,hy+Math.sin(a)*5];}),'#0a0a10',1,seed+6,true);
+  for(const dd of [-1,1])crayon(g,[[hx+dd*5,hy-3],[hx+dd*4,hy-10],[hx+dd*1,hy-4]],'#0a0a10',2,seed+7+dd,true);
+  g.fillStyle='#ffe040';g.fillRect(hx-3+face,hy-1,2,2);g.fillRect(hx+1+face,hy-1,2,2);g.fillStyle='#1a1a1a';g.fillRect(hx-2+face,hy-1,1,2);g.fillRect(hx+2+face,hy-1,1,2);g.fillStyle='#ff9ab0';g.fillRect(hx+face,hy+1,1,1);
+  const tw=Math.sin(gt*2.2)*2;crayon(g,[[x-face*5,y-1],[x-face*12,y-2],[x-face*14,y-8+tw],[x-face*11,y-12+tw]],'#0a0a10',2,seed+11);}
+// a kid's fish: an oval with a triangle tail and a dot eye
+function dr1Fish(g,x,y,a,col,seed){g.save();g.translate(Math.round(x),Math.round(y));g.rotate(a);dr1Blank(g,0,0,6,3);scribble(g,0,0,6,3,col,seed,1.4);crayon(g,[...Array(12)].map((_,i)=>{const q=i/12*6.283;return [Math.cos(q)*6,Math.sin(q)*3];}),'#c05a10',1,seed+1,true);
+  crayon(g,[[-6,0],[-11,-4],[-11,4]],'#c05a10',1,seed+2,true);scribble(g,-9,0,2,2,col,seed+3);g.fillStyle='#1a1a1a';g.fillRect(3,-1,1,1);g.restore();}
+function drawDreamFish(g,t,boil,run){const WY=116;
+  // far shore with small trees, then the clear blue lake
+  crayon(g,[[8,WY-6],[W-8,WY-5]],'#5aba3a',2,330+boil%2);for(let k=0;k<7;k++){const x=150+k*24;scribble(g,x,WY-14,8,8,'#4aa83a',400+k+boil%2);crayon(g,[[x,WY-6],[x,WY-2]],'#7a4a22',2,420+k);}
+  for(let y=WY;y<H-8;y+=2)crayon(g,[[8+((y*7)%5),y],[W-8,y+((y%4)?1:0)]],y<WY+10?'#7ac8f0':y<WY+30?'#4aa8e8':'#2a88d8',1,440+y+boil%3);
+  for(let i=0;i<6;i++){const x=((i*61+gt*6)%300)+12,y=WY+8+((i*17)%40);crayon(g,[[x,y],[x+8,y]],'#d8f0ff',1,470+i+boil%2);}
+  // the near bank on the left, with reeds and a lotus
+  const bank=[[0,WY+6],[40,WY+4],[96,WY+8],[112,WY+18],[118,H],[0,H]];g.fillStyle='#f3ead2';g.beginPath();bank.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.fill();
+  for(let y=WY+6;y<H;y+=2)crayon(g,[[6,y],[Math.min(110,96+(y-WY-8)*1.6),y]],'#6ac04a',1,480+y+boil%2);crayon(g,bank.slice(0,5),'#3a8a2a',2,490+boil%2);
+  for(const [x,h] of [[112,22],[118,16],[124,26],[236,20],[242,14]]){crayon(g,[[x,WY+14],[x+1,WY+14-h]],'#3a8a2a',1,500+x);scribble(g,x+1,WY+12-h,1,3,'#8a5a2a',510+x);}
+  scribble(g,270,WY+20,8,2,'#3a9a3a',520);scribble(g,270,WY+15,3,3,'#f07aa0',521);
+  // girl and cat side by side on the bank, both with lines in the water
+  const tug=false,rodA=.5+Math.sin(gt*1.3)*.05;
+  const [rx,ry]=dr1GirlSit(g,52,WY+6,1,700+boil%3*17,rodA);
+  const wet=t>9.75,jolt=t>9.75&&t<10.5?Math.round(-Math.abs(Math.sin((t-9.75)*14))*4):0;dr1CatSit(g,84+(t>9.75&&t<10.9?Math.round(Math.sin(gt*40)):0),WY+6+jolt,wet?-1:1,800+boil%3*13,t>6.4&&t<7.6?-2:wet?1:0);
+  if(wet){for(let i=0;i<9;i++){const q=(gt*1.2+i*.14)%1;g.fillStyle=i%2?'#4aa8e8':'#7ac8f0';g.fillRect(R(75+i*2.4),R(WY-18+q*22),2,3);}crayon(g,[[78,WY-28],[80,WY-32]],'#2a88d8',1,960);crayon(g,[[90,WY-29],[89,WY-33]],'#2a88d8',1,961);}
+  const crx=98+Math.cos(.6)*22,cry=WY-8-Math.sin(.6)*22;crayon(g,[[90,WY-6],[crx,cry]],'#8a5a2a',1,830);
+  // fishing lines with bobbers bobbing; ripples rings around them
+  const b1x=150,b1y=WY+14+Math.sin(gt*2.4)*1.2+(tug?2:0),b2x=126,b2y=WY+10+Math.sin(gt*2.1+1)*1;
+  crayon(g,[[rx,ry],[b1x,b1y]],'#5a5a66',1,840+boil%2);crayon(g,[[crx,cry],[b2x,b2y]],'#5a5a66',1,850+boil%2);
+  for(const [bx,by] of [[b1x,b1y],[b2x,b2y]]){g.fillStyle='#e83a3a';g.fillRect(bx-1,by-3,3,2);g.fillStyle='#ffffff';g.fillRect(bx-1,by-1,3,2);
+    const q=(gt*.7+bx)%1;crayon(g,[...Array(12)].map((_,i)=>{const a=i/12*6.283;return [bx+Math.cos(a)*(3+q*8),by+2+Math.sin(a)*(1+q*2)];}),'#e0f4ff',1,860+bx+Math.floor(gt*4)%2,true);}
+  // a fish leaps out of the water in an arc, twice
+  for(const [t0,x0,dir] of [[5.2,230,-1],[7.4,190,1]]){const u=(t-t0)/1.1;if(u<0||u>1)continue;const fx=x0+dir*u*44,fy=WY+12-Math.sin(u*Math.PI)*42,ang=dir*(u-.5)*2.4;dr1Fish(g,fx,fy,ang+(dir<0?Math.PI:0),'#ff9a3a',870+Math.floor(u*6));
+    if(u<.15||u>.85){const sx=u<.5?x0:x0+dir*44;for(let i=0;i<5;i++)scribble(g,sx-6+i*3,WY+8-Math.sin(i)*4-(u<.5?u:1-u)*20,1,1,'#bfe6ff',880+i);}}
+  // then a frog leaps off the lotus pad and lands with a big splash right in front of the bank, soaking the cat
+  {const u=clamp((t-9)/.75,0,1),fx=lerp(270,104,u),fy=t<9?WY+12:lerp(WY+12,WY+14,u)-Math.sin(u*Math.PI)*36;
+    if(t<9.75){g.save();g.translate(R(fx),R(fy));const leg=t>9?3:0;
+      dr1Blank(g,0,-4,6,4);scribble(g,0,-4,6,4,'#5ac03a',950,1.5);crayon(g,[...Array(12)].map((_,i)=>{const a=i/12*6.283;return [Math.cos(a)*6,-4+Math.sin(a)*4];}),'#2a8a2a',1,951,true);
+      for(const dd of [-1,1]){dr1Blank(g,dd*3,-8,2,2);g.fillStyle='#ffffff';g.fillRect(dd*3-1,-9,3,3);g.fillStyle='#1a1a1a';g.fillRect(dd*3-(dd<0?1:0),-8,1,1);}
+      crayon(g,[[-5,-2],[-9,1+leg],[-12,0+leg*2]],'#2a8a2a',1,952);crayon(g,[[5,-2],[9,1+leg],[12,0+leg*2]],'#2a8a2a',1,953);crayon(g,[[-2,-2],[2,-1]],'#c0303a',1,954);g.restore();}
+    if(t>=9.75&&t<11.2){const k=(t-9.75)/1.45;for(let i=0;i<14;i++){const a=-Math.PI*(.15+.7*(i/13)),sp=30+(i%4)*9,dx=Math.cos(a)*sp*k*2-(i%3===0?k*40:0),dy=-Math.sin(a)*sp*k*2+k*k*60;
+        g.globalAlpha=1-k*.7;dr1Blank(g,R(104+dx),R(WY+10-dy),2.4,2.4);scribble(g,R(104+dx),R(WY+10-dy),2.6,2.6,i%2?'#4aa8e8':'#7ac8f0',970+i,1.6);g.globalAlpha=1;}
+      if(k<.45){const hh=Math.sin(k/.45*Math.PI)*26;for(let j=0;j<hh;j+=2){const w2=5-j/hh*3;dr1Blank(g,104,WY+12-j,w2,1.5);scribble(g,104+(Math.random()-.5),WY+12-j,w2,1.2,j%4?'#7ac8f0':'#4aa8e8',995+j,1.6);}}
+      crayon(g,[...Array(14)].map((_,i)=>{const a=i/14*6.283;return [104+Math.cos(a)*(5+k*16),WY+13+Math.sin(a)*(2+k*4)];}),'#e0f4ff',1,990+Math.floor(gt*4)%2,true);}}
+}
+let DR1_FR=null;
+function drawDream1(){const d=dr1;if(!d)return;const t=d.t;ctx.drawImage(dr1Paper(),0,0);
+  // the drawing "boils" a little like hand-drawn animation: redraw with a new wobble a few times a second
+  const boil=Math.floor(gt*(t>4?8:4)),alive=clamp((t-4)/.8,0,1),run=t>4.4&&t<11.6;
+  if(!DR1_FR)DR1_FR=mkCanvas(W,H);const [fc,g]=DR1_FR;g.clearRect(0,0,W,H);
+  if(d.kind==='fish')drawDreamFish(g,t,boil,run);else{
+  // ground
+  const scroll=t<4.4?0:t<8?(t-4.4)*46:(3.6*46)-(t-8)*46;
+  crayon(g,[...Array(23)].map((_,i)=>[i*15,140+Math.sin(i*1.7)*1.5]),'#3a9a2a',2,300+boil%3);
+  for(let x=-((scroll*.9)%14);x<W;x+=14){crayon(g,[[x,141],[x+2,135],[x+4,141]],'#5aba3a',1,310+x+boil%2);}
+  for(let y=142;y<H-10;y+=4)crayon(g,[[8,y],[W-8,y+1]],'#8ad06a',1,320+y+boil%2);
+  // the forest behind: trees scroll when the drawing comes alive
+  for(let k=-1;k<6;k++){const x=((k*72-scroll*.7)%(72*6)+72*6)%(72*6)-40;dr1Tree(g,x,k%2?1:.82,500+k*31+boil%2);}
+  for(const [fx,fy,fc2] of [[40,150,'#f04a6a'],[120,156,'#ffd23a'],[210,152,'#b05ad0'],[268,157,'#f04a6a']]){const x=((fx-scroll*.95)%W+W)%W;scribble(g,x,fy,2,2,fc2,fx+boil%2);g.fillStyle='#ffe060';g.fillRect(Math.round(x),fy,1,1);}
+  // the girl and the cat: first standing side by side, then chasing each other
+  let gx=124,cx2=168,gf=1,cf=1;
+  if(t>=4.4&&t<8){const u=t-4.4;gx=110+Math.sin(u*1.3)*14;cx2=176+Math.sin(u*1.7+1)*16;gf=1;cf=Math.sin(u*2.2)>.75?-1:1;} // she chases the cat, it glances back
+  else if(t>=8&&t<11.6){const u=t-8;cx2=118+Math.sin(u*1.5)*14;gx=188+Math.sin(u*1.2+2)*12;gf=-1;cf=-1;} // now the cat chases her back the other way
+  else if(t>=11.6){gx=150;cx2=176;gf=1;cf=-1;}
+  dr1Girl(g,R(gx),140,gt*12,gf,700+boil%3*17,run);dr1Cat(g,R(cx2),140,gt*14,cf,800+boil%3*13,run);
+  // little hearts and laughter marks floating up while they play
+  if(run)for(let i=0;i<4;i++){const q=((gt*.5+i*.27)%1),hx=(i%2?gx:cx2)+Math.sin(q*6+i)*6,hy=96-q*40;g.globalAlpha=1-q;scribble(g,R(hx-2),R(hy),2,2,'#f04a6a',900+i);scribble(g,R(hx+2),R(hy),2,2,'#f04a6a',910+i);g.fillStyle='#f04a6a';g.fillRect(R(hx-2),R(hy+1),5,2);g.fillRect(R(hx-1),R(hy+3),3,1);g.fillRect(R(hx),R(hy+4),1,1);g.globalAlpha=1;}
+  }
+  ctx.drawImage(fc,0,0);
+  // a dreamy soft glow at the edges
+  const vg=ctx.createRadialGradient(W/2,H/2,60,W/2,H/2,200);vg.addColorStop(0,'rgba(255,240,220,0)');vg.addColorStop(1,'rgba(255,220,200,.45)');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+  // fades: in from the dark of sleep, out to white as the dream slips away, then dark again
+  if(t<1.4)alpha(1-t/1.4,()=>rect(0,0,W,H,'#000'));
+  if(t>11.6){const k=clamp((t-11.6)/1,0,1);alpha(k,()=>rect(0,0,W,H,'#fff8f0'));if(t>12.6)alpha(clamp((t-12.6)/.6,0,1),()=>rect(0,0,W,H,'#000'));}
+}
 function startEnding(){parts.length=0;$('bossBar').hidden=true;endS={t:0,ph:'sill',pt:0,x:52,y:112,face:1,pose:poseSit(0,0),ph2:0,bub:null,fade:1,done:false,purrT:0};setState('ending');}
 // gentle poses just for the ending: an unhurried walk, crouches, kneading
 function poseWalkE(ph,t){const P=poseStand(t),bob=-Math.abs(Math.sin(ph))*.35;
@@ -4798,11 +4946,13 @@ function update(dt){
   else if(state==='outro'){updOutro(dt);updParts(dt);if(boss)updBoss(dt);}
   else if(state==='saving'){updSaving(dt);updParts(dt);}
   else if(state==='ending'){updEnding(dt);updParts(dt);}
+  else if(state==='dream1')updDream1(dt);
   else if(state==='win'){updParts(dt);if(boss)updBoss(dt);p.vx=0;p.vy=Math.min(p.vy+G*dt,FALLMAX);moveY(p,p.vy*dt);p.pose=lerpV(p.pose,poseSit(gt,1),1-Math.exp(-dt*10));
     if(st>1.1&&$('ovWin').hidden){show('ovWin',true);$('winStats').textContent=`Cá nhặt được: ${stats.fish}/${stats.total} · Kẻ địch đã hạ: ${stats.stomps} · Đã đánh bại Ong Chúa`;$('btnAgain').focus({preventScroll:true});}}
   else if(state==='over'){updParts(dt);}
 }
 function render(){
+  if(state==='dream1'){drawDream1();return;}
   if(state==='ending'){drawEnding();drawParts(0);if(endS&&endS.fade>0)alpha(endS.fade,()=>rect(0,0,W,H,'#000'));return;}
   if(state==='cut'){
     drawInterior(st);drawParts(0);
