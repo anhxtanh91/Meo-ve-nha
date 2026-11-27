@@ -1205,14 +1205,14 @@ const RAFTS=[0,1,2].map(v=>{const [c,g]=mkCanvas(32,16),rnd=mulberry(v*71+5);con
   for(let j=0;j<16;j++)for(let i=0;i<32;i++)if(!A(i,j)&&(A(i-1,j)||A(i+1,j)||A(i,j-1)||A(i,j+1)))F(i,j,1,1,'#1e2228');
   F(1,12,30,1,'#3a5a5a');
   return {r:c,l:flipOf(c),w:32,h:16};});
-function drawPad(d,cx){const s=(d.x>100*T)?RAFTS[d.v%3]:PADS[d.v];const x=R(d.x-cx-16+(d.st==='wobble'?Math.round(Math.sin(d.t*40)):0)),y=R(padTop(d)-8);
+function drawPad(d,cx){const s=d.raft?RAFTS[d.v%3]:PADS[d.v];const x=R(d.x-cx-16+(d.st==='wobble'?Math.round(Math.sin(d.t*40)):0)),y=R(padTop(d)-8);
   if(d.st==='float'||d.st==='wobble'){ctx.drawImage(s.r,x,y);if(d.on2>0)rect(x+4,y+15,24,1,'#a8dcea');}
   else alpha(d.st==='under'?.45:clamp(1-d.dip/26,.45,1),()=>ctx.drawImage(s.r,x,y));}
 const padSolid=d=>d.st==='float'||d.st==='wobble'||(d.st==='sink'&&d.t<.2);
 function padCollide(){if(LV!==2||p.vy<0)return;for(const d of pads){if(!padSolid(d))continue;const top=padTop(d);
   if(Math.abs(p.x-d.x)<PAD_W/2+p.hw-1&&p.prevY<=top+1.5&&p.y>=top-2.5){p.y=top;p.vy=0;p.onGround=true;d.on=true;return;}}}
 function updPads(dt){for(const d of pads){d.t+=dt;d.on2=Math.max(0,(d.on2||0)-dt);
-  if(d.st==='float'){d.dip=Math.sin(gt*2+d.x*.1)*((d.x>100*T)?1.2:.5);if(d.on){d.st='wobble';d.t=0;d.on2=.3;SFX.squish();if((d.x>100*T))hiss(.14,.035,3800);puff(d.x,WATER_Y,3,'#cfeef7',20,10,.3);}}
+  if(d.st==='float'){d.dip=Math.sin(gt*2+d.x*.1)*(d.raft?1.2:.5);if(d.on){d.st='wobble';d.t=0;d.on2=.3;SFX.squish();if(d.raft)hiss(.14,.035,3800);puff(d.x,WATER_Y,3,'#cfeef7',20,10,.3);}}
   else if(d.st==='wobble'){d.dip=1+Math.abs(Math.sin(d.t*14))*1.2;if(d.t>.6){d.st='sink';d.t=0;SFX.sink();}}
   else if(d.st==='sink'){d.dip=2+d.t*34;if(d.t>.55){d.st='under';d.t=0;}}
   else if(d.st==='under'){d.dip=20;if(d.t>3.3){d.st='rise';d.t=0;}}
@@ -1430,7 +1430,7 @@ function resetLevel2(){
   const frog=(c,y)=>enemies.push({type:'frog',x:c*T+8,y:y!==undefined?y:groundY(c),vx:0,vy:0,hw:6,h:9,dir:-1,alive:true,dead:0,onGround:true,st:'sit',t:hash(c)*2,hopT:2+hash(c*3)*2,cool:.5,tg:0,ldir:-1});
   [14,34,46,66,75,93,100,122,131,155,161,190,197,218,228].forEach(c=>frog(c));frog(36,6*T);frog(126,6*T);frog(193,6*T);frog(217,5*T);
   pads=[];let i=0;
-  for(const [a,b] of GAPS2){const x0=a*T,x1=(b+1)*T,n=Math.round((x1-x0)/52)-1;if(map[8][a+2]==='p')continue;for(let k=1;k<=n;k++)pads.push({x:Math.round(x0+(x1-x0)*k/(n+1)),top0:WATER_Y-2,st:'float',t:0,dip:0,v:(i++)%4,on:false});}
+  for(const [a,b] of GAPS2){const x0=a*T,x1=(b+1)*T,n=Math.round((x1-x0)/52)-1;if(map[8][a+2]==='p')continue;const raft=a>=170;for(let k=1;k<=n;k++){const h1=hash(a*13+k*7),h2=hash(a*5+k*11);pads.push({x:Math.round(x0+(x1-x0)*k/(n+1)+(h1-.5)*(raft?22:14)),top0:WATER_Y-2+(raft?Math.round(h2*2):0),st:'float',t:0,dip:0,v:raft?Math.floor(h2*3):(i++)%4,raft,on:false});}} // rafts of rubbish only near the boss, drifted unevenly
   jumpers=GAPS2.filter(([a])=>a!==TRASH_GAP[0]).map(([a,b],k)=>({x0:a*T+12,x1:(b+1)*T-12,st:'wait',t:.3+hash(k*5)*1.2,x:0,y:0,vx:0,vy:0}));
   flags=[62,119,160,196,232].map(c=>({x:c*T+8,y:groundY(c),on:false}));
   stats={fish:0,total:0,stomps:0};
