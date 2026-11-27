@@ -2701,6 +2701,11 @@ function drawRatBoss(cx){const b=boss;if(b.state==='gone')return;const x=b.x-cx;
   const draw=()=>blit(spr,x,y+1+fy,-b.dir);
   if(b.state==='intro'||b.state==='dive'){ctx.save();ctx.beginPath();ctx.rect(0,0,W,GROUND_Y+1);ctx.clip();draw();ctx.restore();}
   else if(b.flash>0&&Math.floor(b.flash*20)%2)alpha(.5,draw);else draw();
+  // burning red eyes and toxic green drool dripping from its jaws
+  if(!spr._tip){const d=spr.r.getContext('2d').getImageData(0,0,spr.w,spr.h).data;let tx=999,ty=0;for(let yy=0;yy<spr.h*.75;yy++)for(let xx=0;xx<spr.w;xx++){if(d[(yy*spr.w+xx)*4+3]>128){if(xx<tx){tx=xx;ty=yy;}break;}}spr._tip=[tx,ty];}
+  {const [tx,ty]=spr._tip,wx=k=>b.dir<=0?R(x-spr.w/2)+k:R(x-spr.w/2)+spr.w-1-k,top=R(y+1+fy-spr.h),dz=b.state==='dizzy'||b.state==='bonk';
+    if(!dz&&b.state!=='dive'){const ex=wx(tx+11),ey=top+ty,pl=.5+.5*Math.sin(gt*9);glow(ex,ey,5+pl*2,'rgb(255,50,20)',.55+pl*.25);rect(ex-1,ey,2,1,'#ff3a20');rect(b.dir<=0?ex-1:ex,ey,1,1,'#ffe0a0');}
+    if(!dz&&Math.random()<.35){const mx=wx(tx+4)+cx,my=top+ty+9;parts.push({x:mx+(Math.random()*4-2),y:my,vx:(Math.random()-.5)*8,vy:10,life:.7,max:.7,c:Math.random()<.5?'#9adf5a':'#c8f080',g:320});}}
   if(b.state==='dizzy'||b.state==='bonk'){const px0=R(x),py=R(b.y-b.h+2-(b.state==='bonk'?Math.max(0,10-b.t*40):0));rect(px0-18,py-1,36,7,'#16181c');rect(px0-17,py,34,2,'#a8b0bc');rect(px0-17,py,34,1,'#e0e6ee');for(let k=0;k<34;k++)rect(px0-17+k,py+2,1,3,((k>>1)&1)?'#f2c43a':'#1a1a1a');for(let k=0;k<(b.dents[b.plate]||0);k++)rect(px0-3+k*3,py,2,1,'#4a5058');
     for(let i=0;i<3;i++){const a=gt*5+i*2.1;blit(STAR,x+Math.cos(a)*16,b.y-b.h-6+Math.sin(a)*3,1);}}
   if(b.state==='intro'&&b.t>4.65&&b.t<5.5)bubble(p.x-cx,p.y-22,GLY.ex);}
