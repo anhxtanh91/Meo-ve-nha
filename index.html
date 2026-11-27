@@ -4589,9 +4589,10 @@ let dr1=null,DR1_PAPER={};
 function startDream1(next,kind='forest'){parts.length=0;$('bossBar').hidden=true;dr1={t:0,next,done:false,kind};setState('dream1');
   // a soft music-box tune
   const N=[523,659,784,659,587,698,880,698,523,659,784,1047,988,784,659,523];N.forEach((f,i)=>{tone(f,f,.5,'triangle',.035,1.2+i*.42);tone(f*2,f*2,.18,'sine',.012,1.2+i*.42);});
+  if(kind==='forest'){tone(220,240,.9,'sawtooth',.012,10);tone(300,700,.18,'square',.03,10.9);tone(260,250,.5,'sawtooth',.03,11.5);tone(280,260,1.2,'sawtooth',.02,11.9);tone(900,500,.08,'square',.03,11.95);tone(900,500,.08,'square',.03,12.1);}
   if(kind==='rice'){tone(520,300,.22,'sawtooth',.03,10.5);tone(480,280,.2,'sawtooth',.025,10.8);tone(300,90,.12,'square',.05,11.5);tone(90,60,.08,'sine',.06,11.52);}} // a caw, then a plop
 function endDream1(){if(!dr1||dr1.done)return;dr1.done=true;const nx=dr1.next,k=dr1.kind;if(cutView){endCutView();return;}fadeThen(()=>{dr1=null;startLevel(nx||nextLevel(k==='fish'?2:k==='rice'?3:1));},.5);}
-function updDream1(dt){dr1.t+=dt;if(dr1.t>(dr1.kind==='rice'?14.4:13.2))endDream1();}
+function updDream1(dt){dr1.t+=dt;if(dr1.t>(dr1.kind==='fish'?13.2:dr1.kind==='rice'?14.4:14.6))endDream1();}
 // a wobbly crayon stroke: dotted, waxy, with gaps and paper showing through
 function crayon(g,pts,col,w,seed,closed){const r=mulberry(seed);g.fillStyle=col;const n=pts.length;
   for(let i=0;i<(closed?n:n-1);i++){const [x0,y0]=pts[i],[x1,y1]=pts[(i+1)%n];const L=Math.hypot(x1-x0,y1-y0),k=Math.max(1,Math.ceil(L*1.6));
@@ -4730,14 +4731,28 @@ function dreamPoop(g,t,hx,hy){if(t<10.2)return;const cy=58,cx=lerp(-20,W+20,(t-1
     for(const [ox,len] of [[-5,4],[-1,6],[4,5]]){const dl=Math.min(len,(t-TL)*9);g.fillStyle='#fbfbf4';g.fillRect(hx+ox,hy-3,2,R(dl));g.fillStyle='#7a7a70';g.fillRect(hx+ox,hy-3+R(dl),2,1);}
     if(t<12.4){crayon(g,[[hx-8,hy-12],[hx-8,hy-18]],'#e03a3a',2,736);g.fillStyle='#e03a3a';g.fillRect(hx-9,hy-10,2,2);crayon(g,[[hx-3,hy-13],[hx-3,hy-19]],'#e03a3a',2,737);g.fillRect(hx-4,hy-11,2,2);
       for(let i=0;i<3;i++){const a=-2.4+i*.6;crayon(g,[[hx+Math.cos(a)*9,hy-4+Math.sin(a)*7],[hx+Math.cos(a)*13,hy-4+Math.sin(a)*10]],'#5a5a66',1,738+i);}}}}
+// a kid's bee: yellow oval, black stripes, white wings; angry = red cheeks, frown, steam puffs
+function dreamBee(g,t,[x,y,angry],cx,cy){x=R(x);y=R(y);const fl=Math.floor(gt*20)%2;g.save();g.translate(x,y);g.scale(1.5,1.5);g.translate(-x,-y);
+  for(const dd of [-1,1]){dr1Blank(g,x+dd*2,y-5-fl,3,2.4);crayon(g,[...Array(10)].map((_,i)=>{const a=i/10*6.283;return [x+dd*2+Math.cos(a)*3,y-5-fl+Math.sin(a)*2.4];}),'#7ab8e0',1,760+dd,true);}
+  dr1Blank(g,x,y,6,4);scribble(g,x,y,6,4,angry?'#ffb020':'#ffd23a',762,1.6);for(const sx of [-2,1])crayon(g,[[x+sx,y-3],[x+sx,y+3]],'#1a1a1a',2,763+sx);
+  crayon(g,[...Array(12)].map((_,i)=>{const a=i/12*6.283;return [x+Math.cos(a)*6,y+Math.sin(a)*4];}),'#8a6010',1,765,true);crayon(g,[[x+6,y],[x+9,y+1]],'#1a1a1a',1,766);
+  g.fillStyle='#1a1a1a';g.fillRect(x-4,y-1,1,1);if(angry){crayon(g,[[x-6,y-3],[x-3,y-2]],'#1a1a1a',1,767);g.fillStyle='#e03a3a';g.fillRect(x-5,y+1,2,1);
+    for(let i=0;i<2;i++){const q=(gt*2+i*.5)%1;g.globalAlpha=1-q;scribble(g,x-3+i*6,y-10-q*8,1.5,1.5,'#9a9a9a',768+i);g.globalAlpha=1;}
+    crayon(g,[[x-10,y-6],[x-12,y-9],[x-8,y-9],[x-10,y-12]],'#e03a3a',1,770+Math.floor(gt*6)%2);}
+  else{crayon(g,[[x-14,y+2],[x-20,y+1]],'#9a9a9a',1,771);crayon(g,[[x-14,y-2],[x-19,y-4]],'#9a9a9a',1,772);}g.restore();
+  // the cat's reactions: a "?" while it watches, sweat drops and big scared eyes when it flees
+  const hx=cx-12,hy=cy-15;
+  if(t>11.9){for(let i=0;i<3;i++){const q=(gt*2.4+i*.33)%1;g.globalAlpha=1-q;g.fillStyle='#4aa8e8';g.fillRect(R(hx+4+i*3+q*4),R(hy-8-q*6+i),2,3);g.globalAlpha=1;}
+    crayon(g,[[cx+10,cy-6],[cx+18,cy-6]],'#9a9a9a',1,773);crayon(g,[[cx+12,cy-11],[cx+20,cy-11]],'#9a9a9a',1,774);}
+  else if(t<10.9&&t>10.2){crayon(g,[[cx+10,cy-31],[cx+12,cy-34],[cx+15,cy-32],[cx+13,cy-29],[cx+13,cy-27]],'#e03a3a',1,775);g.fillStyle='#e03a3a';g.fillRect(cx+12,cy-25,2,2);}}
 let DR1_FR=null;
 function drawDream1(){const d=dr1;if(!d)return;const t=d.t;ctx.drawImage(dr1Paper(d.kind==='rice'),0,0);
   // the drawing "boils" a little like hand-drawn animation: redraw with a new wobble a few times a second
-  const boil=Math.floor(gt*(t>4?8:4)),alive=clamp((t-4)/.8,0,1),CE=d.kind==='rice'?10.2:11.6,FE=d.kind==='rice'?12.8:11.6,run=t>4.4&&t<CE;
+  const boil=Math.floor(gt*(t>4?8:4)),alive=clamp((t-4)/.8,0,1),CE=d.kind==='rice'?10.2:10,FE=d.kind==='rice'?12.8:13,run=t>4.4&&t<CE;
   if(!DR1_FR)DR1_FR=mkCanvas(W,H);const [fc,g]=DR1_FR;g.clearRect(0,0,W,H);
   if(d.kind==='fish')drawDreamFish(g,t,boil,run);else{
   // ground
-  const scroll=t<4.4?0:t<8?(t-4.4)*46:(3.6*46)-(t-8)*46;
+  const ts=Math.min(t,CE),scroll=ts<4.4?0:ts<8?(ts-4.4)*46:(3.6*46)-(ts-8)*46;
   if(d.kind==='rice')drawDreamRiceBg(g,t,boil,scroll);else{
   crayon(g,[...Array(23)].map((_,i)=>[i*15,140+Math.sin(i*1.7)*1.5]),'#3a9a2a',2,300+boil%3);
   for(let x=-((scroll*.9)%14);x<W;x+=14){crayon(g,[[x,141],[x+2,135],[x+4,141]],'#5aba3a',1,310+x+boil%2);}
@@ -4749,11 +4764,19 @@ function drawDream1(){const d=dr1;if(!d)return;const t=d.t;ctx.drawImage(dr1Pape
   // the girl and the cat: first standing side by side, then chasing each other
   let gx=124,cx2=168,gf=1,cf=1;
   if(t>=4.4&&t<8){const u=t-4.4;gx=110+Math.sin(u*1.3)*14;cx2=176+Math.sin(u*1.7+1)*16;gf=1;cf=Math.sin(u*2.2)>.75?-1:1;} // she chases the cat, it glances back
-  else if(t>=8&&(t<CE||d.kind==='rice')){const u=Math.min(t,CE)-8;cx2=118+Math.sin(u*1.5)*14;gx=188+Math.sin(u*1.2+2)*12;gf=-1;cf=t<CE?-1:1;}
+  else if(t>=8){const u=Math.min(t,CE)-8;cx2=118+Math.sin(u*1.5)*14;gx=188+Math.sin(u*1.2+2)*12;gf=-1;cf=t<CE?-1:1;}
   else if(t>=8&&t<CE){const u=t-8;cx2=118+Math.sin(u*1.5)*14;gx=188+Math.sin(u*1.2+2)*12;gf=-1;cf=-1;} // now the cat chases her back the other way
   else if(t>=11.6){gx=150;cx2=176;gf=1;cf=-1;}
+  // forest ending: a bee buzzes past, the cat leaps for it and misses, the angry bee chases the scared cat off
+  let cy2=140,crun=run,bee=null;
+  if(d.kind==='forest'&&t>=CE){const cx0=cx2;cf=1;
+    if(t<10.9){const u=(t-CE)/.9;bee=[lerp(W+12,cx0+20,u),lerp(86,104,u)+Math.sin(t*9)*4,0];}
+    else if(t<11.5){const u=(t-10.9)/.6;cx2=cx0+u*18;cy2=140-Math.sin(u*Math.PI)*24;bee=[cx0+20+u*14,lerp(104,80,Math.min(1,u*2))+Math.sin(t*12)*2,0];}
+    else if(t<11.9){cx2=cx0+18;bee=[cx0+34+Math.sin(t*40)*2,80+Math.sin(t*30)*2,1];}
+    else{const u=t-11.9;cx2=cx0+18-u*120;cf=-1;crun=true;bee=[cx2+16+Math.sin(t*8)*4,118+Math.sin(t*11)*6,1];}}
   dr1Girl(g,R(gx),140,gt*12,gf,700+boil%3*17,run);const jolt=d.kind==='rice'&&t>11.5&&t<12?R(-Math.abs(Math.sin((t-11.5)*16))*4):0;
-  dr1Cat(g,R(cx2),140+jolt,gt*14,cf,800+boil%3*13,run);
+  dr1Cat(g,R(cx2),cy2+jolt,gt*(crun&&!run?24:14),cf,800+boil%3*13,crun);
+  if(bee)dreamBee(g,t,bee,R(cx2),cy2);
   if(d.kind==='rice')dreamPoop(g,t,R(cx2)+cf*12,140+jolt-15);
   if(d.kind==='rice')for(let x=-((scroll*1.1)%9);x<W;x+=9)dr1Stalk(g,x+3,152,13,boil,x); // a front row of rice brushing their feet
   // little hearts and laughter marks floating up while they play
