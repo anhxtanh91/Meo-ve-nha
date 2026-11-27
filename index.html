@@ -652,7 +652,7 @@ const BIGTREE_T=BIGTREE.map(t=>tintCv(t,'#ffe0c8')),FARTREE_T=FARTREE.map(t=>tin
 function windNow(){const g=Math.max(0,Math.sin(gt*.42)*Math.sin(gt*.13+1.3));return .3+.7*Math.min(1,g*1.6);}
 function swayK(seed){const w=windNow();return (Math.sin(gt*1.25+seed)*.6+Math.sin(gt*.55+seed*1.7)*.4)*(.55+w*.8)+w*.55+Math.sin(gt*6.3+seed*3)*.12*w;}
 // a fringe of grass blades along the top of the ground, each bending with the wind; gusts roll across as a wave
-const GRASS_PAL={1:['#2f7a36','#4fa040','#7cc858'],3:['#6a7a34','#94a648','#c4c870'],4:['#1c2e26','#2a4232','#3e5a40']};
+const GRASS_PAL={1:['#2f7a36','#4fa040','#7cc858'],3:['#3a8a3c','#5aa844','#8ad060'],4:['#1c2e26','#2a4232','#3e5a40']};
 function grassFringe(X,Y,c,wx){const P=GRASS_PAL[LV];if(!P)return;const w=windNow();
   for(let i=0;i<8;i++){const hs=hashD(c*31+i*7),h=2+Math.floor(hs*5);if(hs<.12)continue;const bx=X+i*2+(hs>.5?1:0);
     const wave=Math.sin(gt*2.4-(wx+i*2)*.045)*.5+.5,bend=Math.round((w*1.3+wave*w*1.4+Math.sin(gt*5+i+c)*.35)*(h/5));
@@ -675,6 +675,15 @@ function drawWindStuff(cx){const w=windNow();
   const n=Math.round(4+w*22);for(let i=0;i<n;i++){const s0=hashD(i*17+3),sp=40+s0*50+w*70,per=(W+60)/sp,k=((gt+s0*per*3)%per)/per;
     const x=((k*(W+60))-30-(cx*.2)%40),y=20+hashD(i*5+1)*110+Math.sin(gt*3+i*1.7)*6+k*14;const f=Math.floor(gt*10+i)%3;const [a,b]=LC[i%3];
     if(f===0){rect(x,y,2,1,a);rect(x+1,y+1,1,1,b);}else if(f===1){rect(x,y,1,2,a);rect(x+1,y,1,1,b);}else{rect(x,y,2,1,b);rect(x,y-1,1,1,a);}}
+  if(LV===3){
+    // golden chaff drifting in the last sunlight
+    for(let i=0;i<30;i++){const s0=hashD(i*13+5),k=((gt*(.04+s0*.03)+s0)%1);const x=((i*37-cx*.5+gt*(10+w*30))%(W+20)+W+20)%(W+20)-10,y=146-k*90+Math.sin(gt*1.1+i)*4;
+      alpha((1-k)*.7,()=>rect(x,y,1,1,s0>.5?'#ffe8a0':'#ffc070'));}
+    // dragonflies darting over the rice, hovering, darting again
+    for(let i=0;i<3;i++){const seg=Math.floor(gt*.7+i*1.3),f=(gt*.7+i*1.3)%1,q=f<.6?0:ease((f-.6)/.4);
+      const ax=hashD(seg*7+i)*W,ay=96+hashD(seg*11+i)*36,bx2=hashD((seg+1)*7+i)*W,by2=96+hashD((seg+1)*11+i)*36;const x=lerp(ax,bx2,q),y=lerp(ay,by2,q)+Math.sin(gt*9+i)*.6;
+      rect(x-3,y,6,1,'#2a3a5a');rect(x+3,y,1,1,'#4a7ab0');const fl=Math.floor(gt*30+i)%2;alpha(.6,()=>{rect(x-1,y-1-fl,3,1,'#d8e8ff');rect(x-1,y+1+fl,3,1,'#d8e8ff');});}
+  }
   if(LV===1){
     // pollen and dandelion seeds lifting on the breeze, catching the sun
     for(let i=0;i<24;i++){const s0=hashD(i*9+2),k=((gt*(.05+s0*.04)+s0)%1);const x=((i*41-cx*.6+gt*(8+w*26))%(W+20)+W+20)%(W+20)-10,y=140-k*120+Math.sin(gt*1.3+i)*5;
@@ -2050,7 +2059,7 @@ function drawBuffalo(cx){const off=cx*.3;
 function drawRice3(cx){const off=cx*.7;const x0=Math.floor(off/2)*2;
   for(let wx=x0;wx<x0+W+4;wx+=2){const sx=wx-off,h=hashD(wx*3+1),hh=7+Math.floor(h*9*(.6+.4*Math.sin(wx*.05)));
     // wind: a steady sway plus gusts rolling across the field
-    const gust=Math.max(0,Math.sin(wx*.012-gt*1.3))**3;const sway=Math.sin(gt*2.1+wx*.09)*.8+gust*3.2;
+    const wn=windNow(),gust=Math.max(0,Math.sin(wx*.012-gt*1.3))**3;const sway=Math.sin(gt*2.1+wx*.09)*(.5+wn*.6)+gust*(1.6+wn*2.8)+wn*.8;
     for(let q=0;q<hh;q++){const k=q/hh;const o=Math.round(sway*k*k);rect(sx+o,146-q,1,1,q>hh-3?'#f6d27a':h<.5?'#c8923a':'#a8742e');}
     const tip=Math.round(sway)+1;if(h>.3){rect(sx+tip,146-hh,2,1,'#e8b860');rect(sx+tip+1,146-hh+1,1,2,'#d8a048');}}
 }
@@ -2073,7 +2082,10 @@ function drawBack3(cx){
   // a flock of birds heading home
   for(let i=0;i<7;i++){const x=((W+40)-((gt*9+i*7)%(W+120)))+Math.abs(i-3)*7,y=46+Math.abs(i-3)*4+Math.sin(gt*2+i)*1;const f=Math.floor(gt*5+i)%2;rect(x,y,1,1,'#3a2440');rect(x-1,y-f,1,1,'#3a2440');rect(x+1,y-f,1,1,'#3a2440');rect(x-2,y-1,1,1,'#3a2440');rect(x+2,y-1,1,1,'#3a2440');}
   wrapDraw(MOUNT_SUN,cx*.1,0);wrapDraw(HILLS_SUN,cx*.17,6);
-  wrapDraw(FIELDS3,cx*.3,0);
+  // the low sun's rays fanning up from the horizon
+  ctx.save();ctx.globalCompositeOperation='lighter';for(let i=0;i<6;i++){const a=-2.6+i*.32+Math.sin(gt*.15+i)*.03,L=260;ctx.globalAlpha=.035+.02*Math.sin(gt*.5+i*1.3);ctx.fillStyle='#ffd8a0';
+    ctx.beginPath();ctx.moveTo(250,104);ctx.lineTo(250+Math.cos(a-.05)*L,104+Math.sin(a-.05)*L);ctx.lineTo(250+Math.cos(a+.05)*L,104+Math.sin(a+.05)*L);ctx.closePath();ctx.fill();}ctx.restore();
+  wrapSway(FIELDS3,cx*.3,0,11,1.2);
   drawBuffalo(cx);
   // wind rolling across the rice
   ctx.save();ctx.globalCompositeOperation='lighter';for(let i=0;i<4;i++){const x=((gt*26+i*140-cx*.3)%(W+160)+W+160)%(W+160)-80;ctx.globalAlpha=.08;ctx.fillStyle='#fff0b0';ctx.beginPath();ctx.ellipse(x,128,46,7,0,0,Math.PI*2);ctx.fill();}ctx.restore();
