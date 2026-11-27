@@ -3412,7 +3412,9 @@ function bedArt(kind){const key=kind+(kind==='roots'?LV:'');if(BEDART[key])retur
     for(let x=28;x<=38;x++){const y=G0-1-Math.round(Math.sin((x-28)/10*Math.PI)*2);Fp(x,y,1,2,'#5e422e');Fp(x,y,1,1,'#7a5a3e');}
     for(const [px,pc] of [[24,'#8a8a8a'],[66,'#7a7a70'],[70,'#9a9a90']]){Fp(px,G0-1,3,2,pc);Fp(px,G0-1,2,1,'#b8b8b0');}
     for(const [lx,lc] of [[40,'#b88a4a'],[56,'#a07a3a'],[18,'#8a6a3a']])Fp(lx,G0,3,1,lc);
-    out={back:{c:bc,ox:cx0,h:H0},front:{c:fc,ox:cx0,h:H0}};}
+    // shrink so the hollow fits the curled-up cat snugly (painted big for detail, scaled down with crisp pixels)
+    const SC=.82,sw=Math.round(W0*SC),shh=Math.round(H0*SC),sm=src=>{const [c2,g2]=mkCanvas(sw,shh);g2.imageSmoothingEnabled=false;g2.drawImage(src,0,0,sw,shh);return c2;};
+    out={back:{c:sm(bc),ox:Math.round(cx0*SC),h:shh},front:{c:sm(fc),ox:Math.round(cx0*SC),h:shh}};}
   BEDART[key]=out;return out;}
 function drawBed(cx,front){if(state==='title')return;if(LV===5)return; // no box in the city: the cat sleeps on a trash-can lid
 const b=bedSpot(),X=R(b.x-cx),G=b.gy;if(X<-50||X>W+50)return;
