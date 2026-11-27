@@ -1556,7 +1556,7 @@ function buildMapN(){
   if(LV===5){buildCity5(ground,plat);return;}
   if(LV===6){buildDump6(ground,plat);return;}
   if(LV===3){ // Màn 2: flat farmland — irrigation ditches, wooden boards on posts, a barn loft, canals to jump
-    const ditch=(c0,c1)=>{for(let c=c0;c<=c1;c++)map[9][c]=' ';ground(c0,c1,10);};
+    const ditch=()=>{}; // the sunken ditches were filled in: the ground stays level there
     ground(0,62);plat(30,34,6);ditch(47,52);plat(55,59,6);
     ground(66,113);plat(72,76,6);plat(80,84,4);plat(87,90,6);ditch(92,97);ditch(103,108);
     ground(117,140);plat(121,125,6);plat(128,132,4);plat(135,138,6);           // barn loft: stacked boards
