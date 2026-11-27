@@ -2299,6 +2299,8 @@ function tile6(t,P,rnd,deep,zone,l,r,above){
 function g6clear(P,x,h){/* irregular heap top: carve with transparent pixels */ if(h>0)P.clear(x,0,1,h);}
 
 /* ---- background ---- */
+// wrecked car from the user's reference, sitting half-buried in the scrap mounds
+const CAR6=strSprite(["....................eeeeeeeee...eeeee...........", "...................gcccccbgag...gbccbg..........", "....................gbaccgbg.....gcaccg.........", "..............ee.eeebaaagcea.....gcaaace........", "............egaegcbaaaagcgbg..gg.gaaaaaag.......", ".....gggga.ggggggggggggggcbg.geg.ggggggggg......", ".deeebbbbeebbbdbbggggbbbggeg.gegebbbbbbgbbee....", ".dbbbbbbbbbbbccggbbccbbcgeegggeeegcbcdggccbcg...", "..gdbbcbbcbbcggbbbdddccgeeeeeeddeegcbcdcgccdcg..", "eebcdcbbccbbebbccegggccgedeeddeeeeeecddcgccddce.", "ecgggcdcdccgcbccgeeeegdgeeeeeeeeeegcddggggggddg.", ".ddbbggggggggcceeeggegdgegeeeeeeegddggeeeggegdcg", ".dgecddgccgcgccgegeegegdgcgeeeeeegdgcgedgegeegcg", "..gegggaaeeggggeegedgegdcccggggggggcggegeedgegg.", ".ddgeeggggggeegedgdgedgggggbbbbcddccgedgddggdgg.", ".dgaggddeeeegdgddgedgdgcccceeeeggggegedeggeedga.", ".....gdggggggg.edegggdggggg..........gddeeddgg..", ".....gg........edddddddg..............ggddgg....", "................gggggggg.......gg..gg...gg......"],{"a": "#bcb2a3", "b": "#b19e8b", "c": "#887760", "d": "#564a3c", "e": "#2a241e", "g": "#0e0b09"});
 let SKY6=null,FAR6=null,MOUNT6=null,MID6=null,SCRAP6=null,CRANE6=null;
 function initBack6(){if(SKY6)return;
   {const [c,g]=mkCanvas(W,H);const C=['#8a96a4','#a4aab0','#c0bcb0','#d8ccb0','#e6d6b4'].map(hex);ditherFill(g,W,H,(x,y)=>{const t=clamp(y/130,0,1)*(C.length-1);const i=Math.min(C.length-2,Math.floor(t));return [C[i],C[i+1],t-i];});SKY6=c;}
