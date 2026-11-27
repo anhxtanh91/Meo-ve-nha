@@ -652,7 +652,7 @@ const BIGTREE_T=BIGTREE.map(t=>tintCv(t,'#ffe0c8')),FARTREE_T=FARTREE.map(t=>tin
 function windNow(){const g=Math.max(0,Math.sin(gt*.42)*Math.sin(gt*.13+1.3));return .3+.7*Math.min(1,g*1.6);}
 function swayK(seed){const w=windNow();return (Math.sin(gt*1.25+seed)*.6+Math.sin(gt*.55+seed*1.7)*.4)*(.55+w*.8)+w*.55+Math.sin(gt*6.3+seed*3)*.12*w;}
 // a fringe of grass blades along the top of the ground, each bending with the wind; gusts roll across as a wave
-const GRASS_PAL={1:['#2f7a36','#4fa040','#7cc858'],3:['#3a8a3c','#5aa844','#8ad060'],4:['#245a34','#36803e','#52a04c']};
+const GRASS_PAL={1:['#2f7a36','#4fa040','#7cc858'],3:['#3a8a3c','#5aa844','#8ad060'],2:['#2f7a36','#4f9a3f','#7ccc58'],4:['#245a34','#36803e','#52a04c']};
 function grassFringe(X,Y,c,wx){const P=GRASS_PAL[LV];if(!P)return;const w=windNow();
   for(let i=0;i<8;i++){const hs=hashD(c*31+i*7),h=2+Math.floor(hs*5);if(hs<.12)continue;const bx=X+i*2+(hs>.5?1:0);
     const wave=Math.sin(gt*2.4-(wx+i*2)*.045)*.5+.5,bend=Math.round((w*1.3+wave*w*1.4+Math.sin(gt*5+i+c)*.35)*(h/5));
@@ -1066,7 +1066,7 @@ function drawBack2(cx){
   wrapDraw(HILLS,cx*.17,0);
   drawFactories(cx);
   wrapSway(PINES,cx*.24,-14,1);
-  wrapDraw(BUSHES_BK,cx*.3,-17);
+  wrapSway(BUSHES_BK,cx*.3,-17,4,1.2);
   const wil=(set,yb)=>{const off=cx*.36,k0=Math.floor(off/260)-1;for(let k=k0;k<k0+4;k++){if(hash(k*7+3)<.25)continue;const t=set[(k%2+2)%2];swayImg(t,R(k*260+hash(k*3)*60-off),yb-t.height,k*2.3,4);}};
   wil(WILLOW,128);
   ctx.drawImage(POND_RAIN,0,118);rect(0,118,W,1,'#9aa6b2');
@@ -1087,8 +1087,8 @@ function drawBack2(cx){
 // rain: two layers of slanted streaks, splashes on ground/water, rare lightning
 let flashT=0,nextBolt=6,clearK=0,sprout=null; // clearK: 0 rain .. 1 sky cleared (level-2 ending)
 function drawRain(cx){
-  const drop=(i,sp,len,col,a,par)=>{const x0=hash(i*7+1)*(W+60),y0=hash(i*13+2)*(H+30);const y=((y0+gt*sp)%(H+30))-20;const x=((x0-gt*sp*.28-cx*par)%(W+60)+W+60)%(W+60)-30;
-    alpha(a,()=>{for(let k=0;k<len;k++)rect(x-k*.28,y+k,1,1,col);});};
+  const drop=(i,sp,len,col,a,par)=>{const x0=hash(i*7+1)*(W+60),y0=hash(i*13+2)*(H+30);const y=((y0+gt*sp)%(H+30))-20;const lean=.18+windNow()*.3;const x=((x0-gt*sp*lean-cx*par)%(W+60)+W+60)%(W+60)-30;
+    alpha(a,()=>{for(let k=0;k<len;k++)rect(x-k*lean,y+k,1,1,col);});};
   const amt=clamp(1-clearK*1.7,0,1);if(amt<=0){flashT=0;return;}
   alpha(.08*amt,()=>rect(0,0,W,H,'#9aa8b8'));
   for(let i=0;i<Math.floor(150*amt);i++)drop(i,280,6,'#aab6c4',.5,.3);
@@ -1102,7 +1102,11 @@ function drawRain(cx){
   nextBolt-=1/60;if(nextBolt<=0&&clearK===0){flashT=.35;nextBolt=7+Math.random()*9;if(state==='play')SFX.thunder();}
   if(flashT>0){flashT-=1/60;alpha(clamp(flashT/.35,0,1)*(Math.sin(flashT*60)>-.3?.45:.15),()=>rect(0,0,W,H,'#eef4ff'));}
 }
-function drawAmbient2(cx){
+function drawAmbient2(cx){const amt=clamp(1-clearK*1.7,0,1);
+  if(amt>0){for(let i=0;i<16;i++){const per=.9+hashD(i*3)*.8,k=((gt+hashD(i*7)*per)%per)/per,seed=Math.floor((gt+hashD(i*7)*per)/per)*31+i;
+      const x=hashD(seed)*W,y=121+hashD(seed*3)*22,r=1+k*5;alpha((1-k)*.55*amt,()=>{ctx.strokeStyle='#c8d4e0';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(R(x)+.5,R(y)+.5,r,r*.35,0,0,Math.PI*2);ctx.stroke();});}
+    for(let i=0;i<3;i++){const x=((i*170-gt*(20+windNow()*40)-cx*.5)%(W+260)+W+260)%(W+260)-130;alpha(.06*amt,()=>{ctx.fillStyle='#c0ccd8';ctx.fillRect(R(x),0,90,H);});}}
+  drawWindStuff(cx);
   // dragonflies: darting, hovering, wings flicker
   for(let i=0;i<7;i++){const sp=.35+hash(i)*.25,ph=gt*sp+i*2.1;const dart=Math.sin(ph*1.3)>.6?1:0;
     const par=i<3?.25:.7;const x=((i*71+Math.sin(ph)*70+Math.sin(ph*2.7)*16-cx*par)%(W+40)+W+40)%(W+40)-20;const y=(i<3?78:96)+hash(i*7)*36+Math.sin(ph*1.9)*8+(dart?Math.sin(gt*9+i)*2:0);
@@ -2771,8 +2775,8 @@ function drawFish(cx){for(const f of fishes){if(f.got)continue;const x=f.x-cx;if
   if((Math.floor(gt*3+f.ph))%5===0){const k=(gt*3+f.ph)%1;rect(x+3,y-8,1,1,'#ffffff');if(k<.5){rect(x+2,y-8,3,1,'#ffffff');rect(x+3,y-9,1,3,'#ffffff');}}}}
 function decor2(c,r,X,Y){
   const h1=hash(c*3+r),hd=(v=>v-Math.floor(v))(Math.sin(c*12.9898+r*78.233)*43758.5453);
-  if(h1>.5){const gx=X+Math.floor(hash(c*17)*10);const sw=Math.sin(gt*2+c)>.5?1:0;for(let i=0;i<3;i++){const hh=5+((c+i)%3)*2;rect(gx+i*2+(i===1?sw:0),Y-hh,1,hh,i===1?'#7ccc58':'#4f9a3f');}}
-  if(hd>.86){const fx=X+5+Math.floor(hash(c*43)*5);const sw=Math.sin(gt*1.5+c)>.7?1:0;rect(fx,Y-14,1,14,'#3f7f35');rect(fx-1+sw,Y-20,3,6,'#6a4226');rect(fx+sw,Y-20,1,5,'#8d5a30');rect(fx+sw,Y-22,1,2,'#3f7f35');}
+  if(h1>.5){const gx=X+Math.floor(hash(c*17)*10);const wn=windNow();for(let i=0;i<3;i++){const hh=5+((c+i)%3)*2,bd=Math.round((wn*1.4+Math.sin(gt*2.4-(X+cam)*.05+i)*.7)*hh/7);rect(gx+i*2,Y-Math.ceil(hh/2),1,Math.ceil(hh/2),'#4f9a3f');rect(gx+i*2+bd,Y-hh,1,Math.floor(hh/2),i===1?'#7ccc58':'#5aa848');}}
+  if(hd>.86){const fx=X+5+Math.floor(hash(c*43)*5);const sw=Math.round(windNow()*1.6+Math.sin(gt*1.5+c)*.7);rect(fx,Y-8,1,8,'#3f7f35');rect(fx+Math.round(sw/2),Y-14,1,6,'#3f7f35');rect(fx-1+sw,Y-20,3,6,'#6a4226');rect(fx+sw,Y-20,1,5,'#8d5a30');rect(fx+sw,Y-22,1,2,'#3f7f35');}
   else if(hd<.1){const rx=X+3+Math.floor(hash(c*47)*7);rect(rx,Y-3,5,3,'#8a8494');rect(rx+1,Y-4,3,1,'#a8a2b0');rect(rx+1,Y-3,2,1,'#c4bfcc');rect(rx,Y-1,5,1,'#5c5866');}
   else if(hd>.74){const fx=X+8;rect(fx,Y-3,1,3,'#3f7f35');rect(fx-1,Y-5,3,2,'#f4b6cc');rect(fx,Y-6,1,1,'#ffe0ea');rect(fx-2,Y-4,1,1,'#e886aa');rect(fx+2,Y-4,1,1,'#e886aa');}
   if(hash(c*29+r)>.88){const bx=X+2;rect(bx,Y-2,8,2,'#3f8a46');rect(bx+1,Y-3,6,1,'#5aa64a');}
@@ -2899,7 +2903,7 @@ function drawTiles(cx){
       else ctx.drawImage(tImg,c*T-R(cx),r*T);}
     else ctx.drawImage(tImg,c*T-R(cx),r*T);
     const above=tileAt(c,r-1);
-    if(t==='G'&&above===' '&&LV===2){const X=c*T-R(cx),Y=r*T-by;if(wl<2)decor2(c,r,X,Y);else if(hashD(c*3+r)>.6){const gx=X+4;rect(gx,Y-5,1,5,'#6a6a3a');rect(gx+2,Y-4,1,4,'#7a7444');rect(gx+1,Y-7,1,2,'#5a4a2a');}}
+    if(t==='G'&&above===' '&&LV===2){const X=c*T-R(cx),Y=r*T-by;if(wl<2){grassFringe(X,Y,c,c*T);decor2(c,r,X,Y);}else if(hashD(c*3+r)>.6){const gx=X+4;rect(gx,Y-5,1,5,'#6a6a3a');rect(gx+2,Y-4,1,4,'#7a7444');rect(gx+1,Y-7,1,2,'#5a4a2a');}}
     else if(t==='G'&&above===' '&&wl>=2){const X=c*T-R(cx),Y=r*T;if(hashD(c*11+r)>.5){const gx=X+Math.floor(hashD(c*17)*12);rect(gx,Y-2,1,2,'#a8884a');rect(gx+1,Y-3,1,3,'#c4a45a');rect(gx+3,Y-2,1,2,'#8a6a3a');}}
     else if(t==='G'&&above===' '&&LV!==5){
       const X=c*T-R(cx),Y=r*T;grassFringe(X,Y,c,c*T);
