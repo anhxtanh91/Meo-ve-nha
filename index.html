@@ -3168,6 +3168,7 @@ const CUTS=[{a:'cut1',name:'Mở đầu',note:'Chuyến xe buýt',ok:()=>true},
   {a:'cut5',name:'Màn 6',note:'Con hẻm phố đêm',ok:d=>reached(d,5)},
   {a:'boss5',name:'Màn 6',note:'Mèo hoang',ok:d=>reached(d,5)},
   {a:'dream1',name:'Màn 1',note:'Giấc mơ bức tranh',ok:d=>d.includes(1)},
+  {a:'dream3',name:'Màn 3',note:'Giấc mơ cánh đồng lúa',ok:d=>d.includes(3)},
   {a:'dream2',name:'Màn 5',note:'Giấc mơ câu cá',ok:d=>d.includes(2)},
   {a:'cutEnd',name:'Kết thúc',note:'Về đến nhà',ok:d=>d.includes(5)}];
 let cvT=0,cvEnd=0;
@@ -3224,6 +3225,7 @@ function menuDo(a){
   else if(a==='cut5'){closeMenu();cutView=true;startLevel(5);}
   else if(a==='cutEnd'){closeMenu();cutView=true;LV=5;startEnding();}
   else if(a==='dream1'){closeMenu();cutView=true;startDream1(null);}
+  else if(a==='dream3'){closeMenu();cutView=true;startDream1(null,'rice');}
   else if(a==='dream2'){closeMenu();cutView=true;startDream1(null,'fish');}
   else if(/^boss[1-6]$/.test(a)){closeMenu();ensureAudio();replayArena(+a[4],false);}
   else if(/^out[1-6]$/.test(a)){closeMenu();ensureAudio();replayArena(+a[3],true);}
@@ -3498,7 +3500,7 @@ function updOutro(dt){
     if(dream){dream.k=clamp((o.t-.9)/2.6,0,1);dream.d=clamp((o.t-3.6)/2.8,0,1);}
     if(o.t>3.4&&!o.saveShown){o.saveShown=1;$('saveText').innerHTML='Đang lưu trò chơi<span class="dots"><i>.</i><i>.</i><i>.</i></span>';show('ovSave',true);}
     if(o.t>4.6&&!o.saved){o.saved=1;if(!cutView){const ok=saveGame();$('saveText').innerHTML=ok?'Đã lưu ✓':'Không lưu được (trình duyệt chặn bộ nhớ)';}else $('saveText').innerHTML='Đã lưu ✓';}
-    if(o.t>7.2){show('ovSave',false);p.zzz=false;dream=null;if(cutView){endCutView();return;}const nx=nextLevel(LV);if((LV===1||LV===2)&&nx){startDream1(nx,LV===2?'fish':'forest');return;}if(nx){startLevel(nx);return;}if(LV===5){startEnding();return;}setState('l2');$('btnL2Again').focus({preventScroll:true});return;}}
+    if(o.t>7.2){show('ovSave',false);p.zzz=false;dream=null;if(cutView){endCutView();return;}const nx=nextLevel(LV);if((LV===1||LV===2||LV===3)&&nx){startDream1(nx,LV===2?'fish':LV===3?'rice':'forest');return;}if(nx){startLevel(nx);return;}if(LV===5){startEnding();return;}setState('l2');$('btnL2Again').focus({preventScroll:true});return;}}
   else if(o.ph==='look'){P=poseSit(gt,1);P.k='sit';p.face=1;if(o.t>.7)go('rise');}
   else if(o.ph==='rise'){P.k='crouch';p.face=1;if(o.t>.18)go('exit');}
   else if(o.ph==='exit'){p.face=1;p.vx=Math.min(130,p.vx+260*dt);p.x+=p.vx*dt;p.ph+=p.vx*dt*.19;P=poseRun(p.ph,gt);if(p.x>cam+W+26){if(cutView){endCutView();return;}fadeThen(()=>{p.x=cam+W+60;setState('saving');o.t=0;},.7);}}
@@ -4581,11 +4583,11 @@ const endSurf=x=>{ // top of the blanket over the sleeper (feet at the left, hea
   const hump=(c,w,h)=>Math.max(0,h*(1-((x-c)/w)**2));
   return 117-Math.max(hump(214,14,4),hump(236,16,8),hump(254,16,10+k*1.1),2);};
 /* ================= dream after the queen bee: a child's crayon drawing of a little girl and the black cat, which comes alive ================= */
-let dr1=null,DR1_PAPER=null;
+let dr1=null,DR1_PAPER={};
 function startDream1(next,kind='forest'){parts.length=0;$('bossBar').hidden=true;dr1={t:0,next,done:false,kind};setState('dream1');
   // a soft music-box tune
   const N=[523,659,784,659,587,698,880,698,523,659,784,1047,988,784,659,523];N.forEach((f,i)=>{tone(f,f,.5,'triangle',.035,1.2+i*.42);tone(f*2,f*2,.18,'sine',.012,1.2+i*.42);});}
-function endDream1(){if(!dr1||dr1.done)return;dr1.done=true;const nx=dr1.next,k=dr1.kind;if(cutView){endCutView();return;}fadeThen(()=>{dr1=null;startLevel(nx||nextLevel(k==='fish'?2:1));},.5);}
+function endDream1(){if(!dr1||dr1.done)return;dr1.done=true;const nx=dr1.next,k=dr1.kind;if(cutView){endCutView();return;}fadeThen(()=>{dr1=null;startLevel(nx||nextLevel(k==='fish'?2:k==='rice'?3:1));},.5);}
 function updDream1(dt){dr1.t+=dt;if(dr1.t>13.2)endDream1();}
 // a wobbly crayon stroke: dotted, waxy, with gaps and paper showing through
 function crayon(g,pts,col,w,seed,closed){const r=mulberry(seed);g.fillStyle=col;const n=pts.length;
@@ -4595,7 +4597,7 @@ function scribble(g,cx,cy,rx,ry,col,seed,dens=1){const r=mulberry(seed);const pt
   for(let i=0;i<n;i++){const a=r()*Math.PI*2,q=Math.sqrt(r());pts.push([cx+Math.cos(a)*rx*q,cy+Math.sin(a)*ry*q]);}
   // zig-zag hatching across the shape, like a kid colouring in
   g.fillStyle=col;for(let y=-ry;y<=ry;y+=1.6){const hw=rx*Math.sqrt(Math.max(0,1-(y*y)/(ry*ry)));for(let x=-hw;x<=hw;x+=.8){if(r()<.22)continue;g.globalAlpha=.45+r()*.4;g.fillRect(Math.round(cx+x),Math.round(cy+y+(r()-.5)),1,1);}}g.globalAlpha=1;}
-function dr1Paper(){if(DR1_PAPER)return DR1_PAPER;const [c,g]=mkCanvas(W,H);const r=mulberry(1717);
+function dr1Paper(noSun){const key=noSun?'n':'s';if(DR1_PAPER[key])return DR1_PAPER[key];const [c,g]=mkCanvas(W,H);const r=mulberry(1717);
   g.fillStyle='#f3ead2';g.fillRect(0,0,W,H);
   for(let i=0;i<5200;i++){const x=Math.floor(r()*W),y=Math.floor(r()*H);g.fillStyle=r()<.5?'#e8dcc0':'#faf4e4';g.fillRect(x,y,1,1);}
   // faint fold line and slightly darker edges
@@ -4603,14 +4605,14 @@ function dr1Paper(){if(DR1_PAPER)return DR1_PAPER;const [c,g]=mkCanvas(W,H);cons
   for(let i=0;i<14;i++){g.globalAlpha=.05;g.fillStyle='#8a6a3a';g.fillRect(i,0,1,H);g.fillRect(W-1-i,0,1,H);g.fillRect(0,i,W,1);g.fillRect(0,H-1-i,W,1);}g.globalAlpha=1;
   // sky colouring, a sun with rays in the corner, a couple of clouds
   for(let y=8;y<70;y+=3)crayon(g,[[10+r()*6,y],[W-10-r()*6,y+r()*3-1]],'#9cc8ea',1,40+y);
-  scribble(g,284,26,13,13,'#ffd23a',7);crayon(g,[...Array(16)].map((_,i)=>[284+Math.cos(i/16*6.283)*13,26+Math.sin(i/16*6.283)*13]),'#f0a020',2,8,true);
-  for(let i=0;i<9;i++){const a=i/9*6.283+.2;crayon(g,[[284+Math.cos(a)*17,26+Math.sin(a)*17],[284+Math.cos(a)*25,26+Math.sin(a)*25]],'#f0a020',2,90+i);}
+  if(!noSun){scribble(g,284,26,13,13,'#ffd23a',7);crayon(g,[...Array(16)].map((_,i)=>[284+Math.cos(i/16*6.283)*13,26+Math.sin(i/16*6.283)*13]),'#f0a020',2,8,true);
+  for(let i=0;i<9;i++){const a=i/9*6.283+.2;crayon(g,[[284+Math.cos(a)*17,26+Math.sin(a)*17],[284+Math.cos(a)*25,26+Math.sin(a)*25]],'#f0a020',2,90+i);}}
   for(const [x,y] of [[60,24],[150,16]]){crayon(g,[...Array(14)].map((_,i)=>{const a=i/14*6.283;return [x+Math.cos(a)*(16+3*Math.sin(a*3)),y+Math.sin(a)*7];}),'#7aa8d0',1,x,true);}
   // tape on the corners
   for(const [x,y,a] of [[4,2,1],[W-28,2,-1]]){g.globalAlpha=.55;g.fillStyle='#fff8d8';g.fillRect(x,y,24,8);g.globalAlpha=1;}
   // the child's signature-ish scrawl
   crayon(g,[[262,160],[266,154],[270,162],[274,154],[278,161],[284,156]],'#c03a5a',1,555);
-  return DR1_PAPER=c;}
+  return DR1_PAPER[key]=c;}
 // trees for the drawing: brown scribbled trunk, a lumpy green crown
 function dr1Tree(g,x,s,seed){const gy=140;crayon(g,[[x-3,gy],[x-3,gy-30*s]],'#7a4a22',2,seed);crayon(g,[[x+3,gy],[x+3,gy-30*s]],'#7a4a22',2,seed+1);
   for(let y=gy-30*s;y<gy;y+=2)crayon(g,[[x-3,y],[x+3,y+1]],'#9a6232',1,seed+y);
@@ -4694,26 +4696,49 @@ function drawDreamFish(g,t,boil,run){const WY=116;
       if(k<.45){const hh=Math.sin(k/.45*Math.PI)*26;for(let j=0;j<hh;j+=2){const w2=5-j/hh*3;dr1Blank(g,104,WY+12-j,w2,1.5);scribble(g,104+(Math.random()-.5),WY+12-j,w2,1.2,j%4?'#7ac8f0':'#4aa8e8',995+j,1.6);}}
       crayon(g,[...Array(14)].map((_,i)=>{const a=i/14*6.283;return [104+Math.cos(a)*(5+k*16),WY+13+Math.sin(a)*(2+k*4)];}),'#e0f4ff',1,990+Math.floor(gt*4)%2,true);}}
 }
+// one ripe rice stalk as a kid draws it: a gold-green stem with a drooping head of yellow dots
+function dr1Stalk(g,x,y,h,boil,seed){const sw=Math.sin(gt*1.6+x*.07)*1.2,tx=x+sw+2,ty=y-h;crayon(g,[[x,y],[tx,ty]],'#a89a2a',1,seed+boil%2);
+  for(let i=0;i<4;i++){g.fillStyle=i%2?'#f0b820':'#e89a10';g.fillRect(R(tx+1+i*1.1),R(ty+i*1.4),2,2);}}
+// the ripe rice field at sunset, with crows flying away toward the horizon
+function drawDreamRiceBg(g,t,boil,scroll){const HY=100;
+  // the child coloured the low sky warm: pink, then orange at the horizon, and a big setting sun
+  for(let y=54;y<HY;y+=3)crayon(g,[[10,y],[W-10,y+((y%6)?1:0)]],y<74?'#f8a0b8':'#f8b050',1,600+y+boil%2);
+  scribble(g,236,HY-2,16,12,'#f06a30',610+boil%2);crayon(g,[...Array(12)].map((_,i)=>{const a=Math.PI+i/11*Math.PI;return [236+Math.cos(a)*16,HY+Math.sin(a)*13];}),'#d84a20',2,611+boil%2);
+  // distant line of little trees and a tiny hut on the horizon
+  crayon(g,[[8,HY],[W-8,HY+1]],'#b07a20',2,620+boil%2);
+  for(const x of [30,48,120,150,300]){scribble(g,x,HY-5,5,5,'#6a9a3a',630+x+boil%2);crayon(g,[[x,HY-1],[x,HY+1]],'#7a4a22',1,640+x);}
+  crayon(g,[[78,HY],[78,HY-7],[90,HY-7],[90,HY]],'#8a5a2a',1,650,true);crayon(g,[[75,HY-7],[84,HY-13],[93,HY-7]],'#c0402a',2,651);
+  // the golden field: rows of rice getting bigger toward us, each scrolling a little faster
+  for(let y=HY+2;y<H-8;y+=2)crayon(g,[[8+((y*5)%6),y],[W-8,y+((y%4)?1:0)]],y<120?'#f0cc60':'#e8b840',1,660+y+boil%3);
+  for(let r=0;r<6;r++){const ry=HY+8+r*7,h=4+r*2,sp=6+r*1.6,par=.25+r*.14;for(let x=-((scroll*par)%sp);x<W;x+=sp)dr1Stalk(g,x+(r%2)*3,ry,h,boil,r*97+R(x));}
+  // crows: kid's black "v" birds, flapping, flying off and shrinking toward the sunset
+  for(let i=0;i<6;i++){const u=clamp((t-4.2-i*.5)/6.8,0,1);if(u>=1)continue;const x0=[40,90,20,130,60,110][i],y0=[34,22,48,40,28,52][i];
+    const x=lerp(x0,226+i*4,u),y=lerp(y0,HY-18+(i%3)*3,u)+Math.sin(u*9+i)*2,s=lerp(1.4,.35,u),f=t>4?Math.sin(gt*9+i*2)*3*s:2*s;
+    crayon(g,[[x-7*s,y-f],[x-3*s,y-1*s],[x,y+1*s],[x+3*s,y-1*s],[x+7*s,y-f]],'#14141c',s>.8?2:1,700+i+boil%2);}
+}
 let DR1_FR=null;
-function drawDream1(){const d=dr1;if(!d)return;const t=d.t;ctx.drawImage(dr1Paper(),0,0);
+function drawDream1(){const d=dr1;if(!d)return;const t=d.t;ctx.drawImage(dr1Paper(d.kind==='rice'),0,0);
   // the drawing "boils" a little like hand-drawn animation: redraw with a new wobble a few times a second
   const boil=Math.floor(gt*(t>4?8:4)),alive=clamp((t-4)/.8,0,1),run=t>4.4&&t<11.6;
   if(!DR1_FR)DR1_FR=mkCanvas(W,H);const [fc,g]=DR1_FR;g.clearRect(0,0,W,H);
   if(d.kind==='fish')drawDreamFish(g,t,boil,run);else{
   // ground
   const scroll=t<4.4?0:t<8?(t-4.4)*46:(3.6*46)-(t-8)*46;
+  if(d.kind==='rice')drawDreamRiceBg(g,t,boil,scroll);else{
   crayon(g,[...Array(23)].map((_,i)=>[i*15,140+Math.sin(i*1.7)*1.5]),'#3a9a2a',2,300+boil%3);
   for(let x=-((scroll*.9)%14);x<W;x+=14){crayon(g,[[x,141],[x+2,135],[x+4,141]],'#5aba3a',1,310+x+boil%2);}
   for(let y=142;y<H-10;y+=4)crayon(g,[[8,y],[W-8,y+1]],'#8ad06a',1,320+y+boil%2);
   // the forest behind: trees scroll when the drawing comes alive
   for(let k=-1;k<6;k++){const x=((k*72-scroll*.7)%(72*6)+72*6)%(72*6)-40;dr1Tree(g,x,k%2?1:.82,500+k*31+boil%2);}
   for(const [fx,fy,fc2] of [[40,150,'#f04a6a'],[120,156,'#ffd23a'],[210,152,'#b05ad0'],[268,157,'#f04a6a']]){const x=((fx-scroll*.95)%W+W)%W;scribble(g,x,fy,2,2,fc2,fx+boil%2);g.fillStyle='#ffe060';g.fillRect(Math.round(x),fy,1,1);}
+  }
   // the girl and the cat: first standing side by side, then chasing each other
   let gx=124,cx2=168,gf=1,cf=1;
   if(t>=4.4&&t<8){const u=t-4.4;gx=110+Math.sin(u*1.3)*14;cx2=176+Math.sin(u*1.7+1)*16;gf=1;cf=Math.sin(u*2.2)>.75?-1:1;} // she chases the cat, it glances back
   else if(t>=8&&t<11.6){const u=t-8;cx2=118+Math.sin(u*1.5)*14;gx=188+Math.sin(u*1.2+2)*12;gf=-1;cf=-1;} // now the cat chases her back the other way
   else if(t>=11.6){gx=150;cx2=176;gf=1;cf=-1;}
   dr1Girl(g,R(gx),140,gt*12,gf,700+boil%3*17,run);dr1Cat(g,R(cx2),140,gt*14,cf,800+boil%3*13,run);
+  if(d.kind==='rice')for(let x=-((scroll*1.1)%9);x<W;x+=9)dr1Stalk(g,x+3,152,13,boil,x); // a front row of rice brushing their feet
   // little hearts and laughter marks floating up while they play
   if(run)for(let i=0;i<4;i++){const q=((gt*.5+i*.27)%1),hx=(i%2?gx:cx2)+Math.sin(q*6+i)*6,hy=96-q*40;g.globalAlpha=1-q;scribble(g,R(hx-2),R(hy),2,2,'#f04a6a',900+i);scribble(g,R(hx+2),R(hy),2,2,'#f04a6a',910+i);g.fillStyle='#f04a6a';g.fillRect(R(hx-2),R(hy+1),5,2);g.fillRect(R(hx-1),R(hy+3),3,1);g.fillRect(R(hx),R(hy+4),1,1);g.globalAlpha=1;}
   }
