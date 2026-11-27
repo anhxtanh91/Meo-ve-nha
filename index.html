@@ -2210,7 +2210,10 @@ function updHeaps6(dt){if(LV!==6)return;
     else if(h.st==='shake'){h.t+=dt;heapDust(x0,x1,topY);if(h.t>.5){h.st='sink';h.t=.2;
         // a tall heap sheds a tyre that rolls off downhill
         const nb=h.ridge.segs,L=nb[h.ri-1],Rn=nb[h.ri+1];if(h.bot-h.top>=2&&Math.random()<(h.ridge.chain?.45:.7)){const dl=L?L.cur:9,dr=Rn?Rn.cur:9;const dir=dl===dr?(Math.random()<.5?-1:1):dl>dr?-1:1;spawnTyre((x0+x1)/2,topY-2,dir);}}}
-    else if(h.st==='sink'){h.t+=dt;if(h.t>.2){h.t=0;for(let c=h.c0;c<=h.c1;c++)map[h.cur][c]=' ';
+    else if(h.st==='sink'){h.t+=dt;if(h.t>.2){h.t=0;
+        // too slow: the cat is dragged down with the rubbish, just like falling into a pit
+        if(on&&!boss){puff(p.x,p.y-4,14,'#5a4a38',70,60,.6);tone(300,80,.4,'sawtooth',.05);hurt(p.x,true);return;}
+        for(let c=h.c0;c<=h.c1;c++)map[h.cur][c]=' ';
         for(let i=0;i<10;i++)parts.push({x:x0+Math.random()*(x1-x0),y:topY+4+Math.random()*10,vx:(Math.random()*2-1)*40,vy:-30-Math.random()*50,life:.6,max:.6,c:['#5a4a38','#2a2a34','#e8e0c8','#9a4a3a','#3a6ad0'][Math.floor(Math.random()*5)],g:500});
         tone(110,60,.18,'square',.035);hiss(.25,.05,500);shakeT=Math.max(shakeT,.12);shakeA=1;
         // rats on (or hiding in) the heap get buried
@@ -3557,7 +3560,7 @@ function drawPlayer(cx){if(p.stepV)p.stepV=p.stepV<.5?0:p.stepV*.62;
 }
 /* ================= foreground strip: a parallax band in front of the ground, themed per level ================= */
 const FK=1.35,FB=16,FH=40+FB; // FB: a band of near ground below the props that hides most of the dirt // scrolls a bit faster than the play layer, so it reads as closer to us
-let foreCv=null,foreKey='',foreLive=[];
+let foreCv=null,foreLow=null,foreKey='',foreLive=[];
 const foreWX=fx=>(fx-W/2)/FK+W/2; // world x of the play layer behind a foreground x when it is mid-screen
 // detailed foreground painter: returns {cv, live}. env: {LV,w,FH,T,wx:fx=>worldX,decay:worldX=>0..1,fireX,seed}
 function paintFore(env){
@@ -3662,6 +3665,25 @@ function paintFore(env){
     if(LV!==2){for(let i=0;i<w/5;i++){const x=ri(0,w),y=B+ri(1,FB-3),c=pick(SPK),k=rnd();
         if(k<.5){hl(x,y,ri(2,4),c);hl(x+1,y+1,ri(1,3),UP[0]);}else if(k<.8)px(x,y,c);
         else{const len=ri(6,14);for(let j=0;j<len;j++)px(x+j,y+Math.round(Math.sin(j*.5+x)*1.2),LV===6?pick(SPK):UP[4]);}}}}
+  // ---- low version of the strip, shown over pits and water so the gap stays readable: nothing taller than ~8px ----
+  if(env.low){
+    const tuft=(x,pal,hmax)=>blades(x,ri(3,5),2,hmax,pal,3);
+    if(LV===1){ground(['#0e2212','#163018','#1e3e1e','#2a5226'],3,'#3a6a2c');const G=['#0c2414','#123219','#1a4420','#245a28','#33722f','#4c8c38','#6aa844'];
+      for(let x=-8;x<w;){const q=rnd();if(q<.6){const s=r(4,6),n=ri(2,3),L=[];for(let i=0;i<n;i++)L.push({x:x+s+i*s*1.1,y:B-s*.35,rx:s*1.2,ry:s*.62,z:i%2});foliage(L,G,{amb:.12,rim:'#8ac454'});
+          if(rnd()<.4){const l=pick(L);flower(Math.round(l.x),Math.round(l.y-l.ry*.5),pick(['daisy','poppy','yellow']));}x+=s*(n+1)+ri(2,6);}
+        else{tuft(x+3,['#14341a','#2a5a26','#4c8c38','#7ab84a'],7);x+=ri(6,10);}}}
+    else if(LV===3){ground(['#2a160a','#3a200e','#4e2c12','#64391a'],3,'#7a4a20');
+      for(let x=-4;x<w;x+=ri(4,8)){tuft(x,['#3e260c','#6a4416','#a8722a','#d8a440'],7);if(rnd()<.25)for(let i=0;i<3;i++)px(x+ri(-2,3),B-ri(1,2),pick(['#ecc468','#d4a046']));}}
+    else if(LV===4){ground(['#060e0a','#0c1a12','#13261a','#1c3424'],3);const G4=['#050d09','#081610','#0d2118','#142e21','#1d3e2b','#2a5236'];
+      for(let x=-8;x<w;){if(rnd()<.55){const s=r(4,5.5);foliage([{x:x+s,y:B-s*.35,rx:s*1.3,ry:s*.6},{x:x+s*2.2,y:B-s*.3,rx:s,ry:s*.5,z:1}],G4,{amb:.1});x+=s*3+ri(2,6);}else{tuft(x+3,['#081610','#0d2118','#142e21','#1d3e2b'],7);x+=ri(6,10);}}}
+    else if(LV===2){const LP=['#123a1a','#1e5226','#2a6a30','#3e8a3e','#5aa84a'];
+      for(let x=-6;x<w;){const q=rnd();if(q<.55){const rx=r(4,7);blob([{x:x+rx,y:B-2,rx,ry:1.8}],LP,{amb:.3});px(x+rx,B-3,LP[4]);x+=rx*2+ri(3,8);}
+        else if(q<.75){for(let i=0;i<ri(2,4);i++)vl(x+i*2,B-ri(4,7),5,i%2?'#4a6a2a':'#6a8a3a');x+=ri(8,12);}else{if(rnd()<.5){px(x+2,B-4,'#f6c2d6');px(x+3,B-4,'#ee8fb2');px(x+2,B-5,'#fbd8e6');}x+=ri(6,12);}}}
+    else if(LV===6){ground(['#2a2018','#3a2e22','#4a3c2c','#5e4e38'],3,'#7a6a4a');
+      for(let x=-6;x<w;){const q=rnd();if(q<.3){const rr=r(3,4.5);blob([{x:x+rr,y:B-rr*.6,rx:rr*1.1,ry:rr*.7}],pick([['#07060a','#121018','#1e1a26','#2c2836','#403a4c'],['#0a1408','#142410','#1e3418','#2a4622','#3a5a30']]),{amb:.08});x+=rr*2+ri(3,7);}
+        else if(q<.6){const c=pick(['#a81e1e','#1e4aa8','#a8a820','#3a8a4a']);hl(x,B-3,4,c);hl(x,B-4,4,'#d8d8e0');x+=ri(7,12);}else{hl(x,B-ri(2,4),ri(3,5),'#e8e4d8');x+=ri(5,10);}}}
+    else{ground(['#0c0a10','#1e1a26','#2a2534','#363042'],3);for(let x=0;x<w;x+=ri(8,16))tuft(x,['#0e140e','#162016','#1e2c1e','#2a3a2a'],5);}
+    g.putImageData(img,0,0);return {cv,live:[]};}
   // ======================================================================
   if(LV===1){
     const G=['#0c2414','#123219','#1a4420','#245a28','#33722f','#4c8c38','#6aa844'];
@@ -3860,7 +3882,7 @@ function paintFore(env){
   g.putImageData(img,0,0);
   return {cv,live};
 }
-function buildFore(){const w=Math.ceil((LW-W)*FK+W+48);const res=paintFore({LV,w,FH,T,fb:FB,wx:foreWX,decay:decayAt,fireX:116*T,fenceX:FENCE6_X,seed:4242+LV*97});foreCv=res.cv;foreLive=res.live;}
+function buildFore(){const w=Math.ceil((LW-W)*FK+W+48);const res=paintFore({LV,w,FH,T,fb:FB,wx:foreWX,decay:decayAt,fireX:116*T,fenceX:FENCE6_X,seed:4242+LV*97});foreCv=res.cv;foreLive=res.live;foreLow=paintFore({LV,w,FH,T,fb:FB,wx:foreWX,decay:decayAt,fireX:116*T,fenceX:FENCE6_X,seed:777+LV*31,low:true}).cv;}
 function drawFore(cx){
   const key=LV+':'+LW;if(foreKey!==key){foreKey=key;buildFore();}
   const fx=Math.max(0,R(cx*FK)),y0=H-FH;
@@ -3868,7 +3890,7 @@ function drawFore(cx){
   const pitAt=sx=>{const c=Math.floor((cx+sx)/T);return c>=0&&c<COLS&&groundY(c)>H;};
   const SW=2,n=Math.ceil(W/SW),pit=[];for(let i=0;i<n;i++)pit.push(pitAt(i*SW+1));
   const fade=[];for(let i=0;i<n;i++){let d=99;if(pit[i])d=0;else for(let k=1;k<=6&&d===99;k++)if(pit[i-k]||pit[i+k])d=k;fade.push(d>=6?1:d/6);}
-  const LOW=9;for(let i=0;i<n;){const a=fade[i];let j=i+1;while(j<n&&fade[j]===a)j++;const x0=i*SW,ww=(j-i)*SW,hh=Math.round(LOW+(FH-LOW)*a);ctx.drawImage(foreCv,fx+x0,FH-hh,ww,hh,x0,y0+FH-hh,ww,hh);i=j;}
+  for(let i=0;i<n;){const a=fade[i];let j=i+1;while(j<n&&fade[j]===a)j++;const x0=i*SW,ww=(j-i)*SW;if(a<1)ctx.drawImage(foreLow,fx+x0,0,ww,FH,x0,y0,ww,FH);if(a>0){if(a<1)ctx.globalAlpha=a;ctx.drawImage(foreCv,fx+x0,0,ww,FH,x0,y0,ww,FH);ctx.globalAlpha=1;}i=j;}
   for(const L of foreLive){const sx=L.x-fx;if(sx<-12||sx>W+12)continue;if(fade[Math.max(0,Math.min(n-1,Math.floor(sx/SW)))]<1)continue;
     if(L.k==='ember'){const a=.55+.45*Math.sin(gt*2.2+L.ph);rect(sx,y0+L.y,1,1,a>.75?'#ffd060':'#ff7a20');if(a>.8)rect(sx,y0+L.y-1,1,1,'#ff9a30');}
     else if(L.k==='smoke'){const t=(gt*.35+L.ph)%1;alpha(.22*(1-t),()=>{rect(sx+Math.sin(t*6+L.ph)*2,y0+L.y-t*14,2,2,'#8a8478');});}
