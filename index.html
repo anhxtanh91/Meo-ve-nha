@@ -2002,6 +2002,9 @@ function strayPounce(b){const L=ARENA_X+40,Rx=ARENA_X+280;const up=p.onGround&&p
 function updStrayBoss(dt){
   const b=boss;b.t+=dt;b.flash=Math.max(0,b.flash-dt);b.shake=Math.max(0,b.shake-dt);
   const L=ARENA_X+40,Rx=ARENA_X+280,CX=ARENA_X+160;const face=()=>{b.dir=p.x<b.x?-1:1;};
+  b.balls=b.balls||[];for(const h of b.balls){h.t+=dt;h.vy+=G*.7*dt;h.x+=h.vx*dt;h.y+=h.vy*dt;if(h.y>=GROUND_Y-2){h.y=GROUND_Y-2;if(h.b<1){h.b++;h.vy*=-.45;h.vx*=.7;puff(h.x,GROUND_Y,3,'#6a625a',30,10,.25);}else{h.vy=0;h.vx*=Math.exp(-dt*2);}}
+    if(state==='play'&&Math.abs(p.x-h.x)<p.hw+3&&p.y>h.y-2&&p.y-p.h<h.y+3&&p.inv<=0&&!(p.safe>0)){h.done=1;hurt(h.x,false);}if(h.t>2.4||h.x<L-30||h.x>Rx+30)h.done=1;}
+  b.balls=b.balls.filter(h=>!h.done);
   switch(b.state){
     case 'intro':{const t=b.t,bn=bins5[2],GX=ARENA_X+196,T0=3.4,ST=.42,PA=.45,N=6,TE=T0+N*(ST+PA);
       if(!b.seen){b.seen=1;if(seenIntro[5]){b.t=T0+4*(ST+PA)-.3;b.out=1;b.hidden=false;b.x=GX-4*8;b.y=GROUND_Y;b.puffed=1;p.x=ARENA_X+84-4*7;}seenIntro[5]=1;}
@@ -2025,10 +2028,20 @@ function updStrayBoss(dt){
       if(k>=1){b.x=b.tx;b.y=b.ty;const n=b.next;b.state=n;b.t=0;
         if(n==='land'||n==='skid'||n==='dizzy'){shakeT=.1;shakeA=1;puff(b.x,b.y,6,'#4a4c50',50,14,.35);}
         if(n==='land')b.state=b.y<GROUND_Y-2?'perch':'skid';
-        if(n==='dive'){const bn=bins5[b.bin];b.hidden=true;bn.lid=1;SFX.lid();b.state='hide';b.hideT=4.4/Math.sqrt(b.spd);b.rT=.5;b.fakeN=0;b.eyeShown=0;b.hideT0=b.hideT;b.eyeDue=.5+Math.random()*.6;b.swapLeft=(Math.random()<.6?1:0)+b.hits;b.swapT=.9+Math.random()*1.4;}
+        if(n==='dive'){const bn=bins5[b.bin];b.hidden=true;bn.lid=1;SFX.lid();b.state='hide';b.hideT=4.4/Math.sqrt(b.spd);b.rT=.5;b.fakeN=0;b.eyeShown=0;b.hideT0=b.hideT;b.eyeDue=.5+Math.random()*.6;b.swapLeft=(Math.random()<.6?1:0)+b.hits;b.swapT=2.4+Math.random()*1.2;}
         if(n==='gone'){b.hidden=true;b.state='gone';}}
       break;}
-    case 'skid':{if(Math.random()<.4)puff(b.x+b.dir*8,GROUND_Y,1,'#4a4c50',30,8,.3);if(b.t>.45/b.spd){b.cnt++;if(b.cnt>=2+(b.hits>0?1:0)){b.cnt=0;let i;do{i=Math.floor(Math.random()*3);}while(i===b.lastBin);b.bin=i;b.lastBin=i;b.state='tobin';b.t=0;}else{b.state='prowl';b.t=0;}}break;}
+    case 'skid':{if(Math.random()<.4)puff(b.x+b.dir*8,GROUND_Y,1,'#4a4c50',30,8,.3);if(b.t>.45/b.spd){b.cnt++;if(b.cnt>=2+(b.hits>0?1:0)){b.cnt=0;let i;do{i=Math.floor(Math.random()*3);}while(i===b.lastBin);b.bin=i;b.lastBin=i;b.state='tobin';b.t=0;}else{const r=Math.random();b.state=b.hits>=1&&r<.34?'spitprep':r<.67?'clawprep':'prowl';b.t=0;if(b.state==='clawprep'){face();SFX.catHiss();}}}break;}
+    // CLAW COMBO: crouches low with its claws out (red glint), then rakes along the street in three quick swipes — jump over it
+    case 'clawprep':{face();if(b.t>.6/b.spd){b.state='claw';b.t=0;b.sw=0;}break;}
+    case 'claw':{b.ph+=dt*16;const nx=b.x+b.dir*175*b.spd*dt;b.x=clamp(nx,L,Rx);if(Math.random()<.5)puff(b.x-b.dir*8,GROUND_Y,1,'#4a4c50',30,8,.3);
+      if(Math.floor(b.t/.16)>b.sw-1&&b.sw<3){b.sw++;SFX.swipe();}
+      if(state==='play'&&Math.abs(p.x-(b.x+b.dir*8))<15&&p.y>GROUND_Y-15&&p.inv<=0&&!(p.safe>0))hurt(b.x,false);
+      if(b.t>.62||nx<=L||nx>=Rx){b.sw=0;b.state='skid';b.t=0;}break;}
+    // HAIRBALL VOLLEY (once it has been hurt): hunches and hacks, then coughs up three hairballs that arc, bounce and roll
+    case 'spitprep':{face();b.puffed=Math.min(.7,b.t*1.4);if(Math.random()<dt*6)tone(180+Math.random()*60,120,.05,'square',.025);if(b.t>.75/b.spd){b.puffed=0;b.state='spit';b.t=0;b.sn=0;}break;}
+    case 'spit':{face();if(b.sn<3&&b.t>b.sn*.16){const d=clamp(Math.abs(p.x-b.x),30,150)*(.6+b.sn*.35);b.balls.push({x:b.x+b.dir*10,y:b.y-12,vx:b.dir*d/.75,vy:-150-b.sn*25,b:0,t:0});b.sn++;tone(240,90,.08,'triangle',.05);}
+      if(b.t>.8){b.state='skid';b.t=0;}break;}
     case 'prowl':{face();const dx=p.x-b.x;if(Math.abs(dx)>34)b.x=clamp(b.x+Math.sign(dx)*58*b.spd*dt,L,Rx);b.ph+=dt*8;if(b.t>.85/b.spd){b.state='wiggle';b.t=0;}break;}
     case 'wiggle':{face();if(b.t>.6/b.spd)strayPounce(b);break;}
     case 'perch':{if(b.t>.18&&!b.sw){b.sw=1;SFX.swipe();}
@@ -2042,10 +2055,10 @@ function updStrayBoss(dt){
       if(b.eyeDue<=0){bins5[b.bin].eyes=.2;b.eyeShown=1;b.eyeDue=(1.1+Math.random()*.9)/Math.sqrt(b.spd);}
       // it creeps through the rubbish into another can without a sound or a shadow, at random, more often once hurt
       if(b.swapLeft>0&&b.swapT<=0&&b.hideT>1){b.swapLeft--;let j;do{j=Math.floor(Math.random()*3);}while(j===b.bin);
-        for(const bn of bins5)bn.eyes=0;b.bin=j;b.eyeShown=0;b.eyeDue=.35+Math.random()*.4;b.hideT=Math.max(b.hideT,1.6);b.swapT=1+Math.random()*1.2;}
+        for(const bn of bins5)bn.eyes=0;b.bin=j;b.eyeShown=0;b.eyeDue=.35+Math.random()*.4;b.hideT=Math.max(b.hideT,2.2);b.swapT=2.6+Math.random()*1.4;}
       if(b.hideT<=0){const bn=bins5[b.bin];b.hidden=false;b.x=bn.x;b.y=GROUND_Y-22;bn.lid=1;SFX.lid();b.cnt=0;strayPounce(b);}
       break;}
-    case 'dizzy':{if(b.t>1.7){if(b.hits>=3){b.state='flee';b.t=0;SFX.yowl();}else{b.spd*=1.15;b.cnt=0;b.state='prowl';b.t=0;}}break;}
+    case 'dizzy':{if(b.t>(b.stomped?.9:2.6)){if(b.hits>=3){b.state='flee';b.t=0;SFX.yowl();}else{if(b.stomped)b.spd*=1.15;b.cnt=0;b.state='prowl';b.t=0;}}break;}
     case 'flee':{b.dir=1;b.ph+=dt*14;b.x+=150*dt;if(b.x>ARENA_X+262)strayArc(b,ARENA_X+300,-40,.8,30,'gone');break;}
     case 'gone':{if(b.t>.8&&state==='play')winLevel();break;}
   }
@@ -2054,20 +2067,26 @@ function updStrayBoss(dt){
   for(let i=0;i<bins5.length;i++){const bn=bins5[i],top=GROUND_Y-22;
     if(p.vy>0&&p.prevY<=top+1&&p.y>=top&&Math.abs(p.x-bn.x)<12){p.y=top;p.vy=keys.J?-330:-250;p.jumping=keys.J;p.onGround=false;p.safe=.4;SFX.lid();bn.dent=.25;
       if(b.state==='hide'){
-        if(i===b.bin){b.hits++;b.flash=.6;bossBar();SFX.bossHit();SFX.yowl();b.hidden=false;b.x=bn.x;b.y=top;bn.lid=1;puff(bn.x,top,12,'#fff3a0',70,60,.5);
+        if(i===b.bin){b.flash=.3;SFX.yowl();b.stomped=0;b.hidden=false;b.x=bn.x;b.y=top;bn.lid=1;puff(bn.x,top,12,'#fff3a0',70,60,.5);
           strayArc(b,clamp(bn.x+(bn.x<CX?26:-26),L,Rx),GROUND_Y,.5,26,'dizzy');}
         else{bn.lid=1;rats5.push({x:bn.x,dir:p.x<bn.x?1:-1,t:0});SFX.squeak();puff(bn.x,top,8,'#8a8478',50,40,.4);b.hideT=Math.min(b.hideT,.3);}}}}
+  if(b.state==='dizzy'&&!b.stomped&&b.t>.1&&p.vy>20&&p.prevY<=b.y-b.h+8&&overlap(p,b)){b.stomped=1;b.hits++;b.flash=.6;bossBar();SFX.stomp();SFX.bossHit();SFX.yowl();p.vy=keys.J?-340:-260;p.jumping=keys.J;p.y=b.y-b.h-.1;p.safe=.6;puff(b.x,b.y-b.h,12,'#fff3a0',70,60,.5);b.t=0;}
   if(b.hidden||b.state==='dizzy'||b.state==='flee'||b.state==='gone')return;
   if(overlap(p,b)){const fromAbove=p.vy>20&&p.prevY<=b.y-b.h+8;
     if(fromAbove){p.vy=-240;p.y=b.y-b.h-.1;p.safe=.5;SFX.clank();b.shake=.2;}
     else if(p.inv<=0&&!(p.safe>0))hurt(b.x,false);}
 }
-function drawStrayBoss(cx){const b=boss;if(b.hidden||b.state==='gone')return;if(b.flash>0&&Math.floor(b.flash*20)%2)return;
+function drawStrayBoss(cx){const b=boss;
+  for(const h of b.balls||[]){const x=R(h.x-cx),y=R(h.y),r=Math.floor(h.t*12)%2,fade=h.t>2?1-(h.t-2)/.4:1;alpha(fade,()=>{rect(x-3,y-2,7,5,'#2a2420');rect(x-2,y-3,5,7,'#2a2420');rect(x-2,y-2,5,4,'#a89c8c');rect(x-1,y-3,3,1,'#c8bcac');rect(x-2+r,y-1,2,1,'#e0d4c0');rect(x+1-r,y,2,1,'#6a5e52');rect(x+3,y-2+r,1,1,'#c8bcac');rect(x-3,y-r,1,1,'#c8bcac');});}
+  if(b.hidden||b.state==='gone')return;if(b.flash>0&&Math.floor(b.flash*20)%2)return;
   const s=b.state;let k='stand',eye='open',ox=0;
   if(s==='prowl')k='walk'+(Math.floor(b.ph)%8);
   else if(s==='tobin'||s==='flee')k='run'+(Math.floor(b.ph)%6);
   else if(s==='wiggle'){k='crouch';ox=Math.round(Math.sin(gt*34));}
-  else if(s==='skid')k='crouch';
+  else if(s==='skid'||s==='clawprep')k='crouch';
+  else if(s==='claw')k='run'+(Math.floor(b.ph)%6);
+  else if(s==='spitprep'||s==='spit'){k='stand';ox=s==='spitprep'?Math.round(Math.sin(gt*40)*.6):0;}
+  if(s==='clawprep')ox=Math.round(Math.sin(gt*34));
   else if(s==='arc'){const q=b.t/b.dur;k=q<.4?'jumpup':q<.6?'apex':'fall';}
   else if(s==='intro'&&b.stepF!=null)k='walk'+b.stepF;
   else if(s==='intro'&&!b.puffed&&b.y<GROUND_Y-4)k=b.t<2.2?'jumpup':'fall';
@@ -2080,6 +2099,9 @@ function drawStrayBoss(cx){const b=boss;if(b.hidden||b.state==='gone')return;if(
   // scar across the brow
   if(s==='perch'&&b.t>.16&&b.t<.4){const q=(b.t-.16)/.24;for(let i=0;i<3;i++){const ax=x+b.dir*(10+q*8),ay=b.y-14+i*4;rect(ax,ay,b.dir*6,1,'#f0f0f0');rect(ax+b.dir*2,ay+1,b.dir*4,1,'#b0b0b0');}}
   if(s==='dizzy'){for(let i=0;i<3;i++){const a=gt*5+i*2.1;blit(STAR,x+Math.cos(a)*8,b.y-20+Math.sin(a)*2,1);}}
+  if(s==='clawprep'){if(Math.floor(gt*10)%2){rect(x-1,b.y-30,2,5,'#ff4030');rect(x-1,b.y-24,2,2,'#ff4030');}for(let i=0;i<3;i++)rect(x+b.dir*(12+i),b.y-3-i*2,b.dir*2,1,Math.floor(gt*12+i)%2?'#ffffff':'#ff8070');}
+  if(s==='claw'){const q=(b.t%.16)/.16;for(let i=0;i<3;i++){const ax=x+b.dir*(8+q*10),ay=b.y-12+i*4-q*3;rect(ax,ay,b.dir*7,1,'#f4f4f4');rect(ax+b.dir*2,ay+1,b.dir*5,1,'#b0b0b0');}}
+  if(s==='spitprep'&&Math.floor(gt*8)%2)rect(x+b.dir*12,b.y-12,2,2,'#8a8070');
 }
 // small city pests: cockroaches on the roofs, pigeons in the air (both face left like the other enemy sprites)
 function roachS(f){return shapeSprite(15,7,'#120a06',m=>{const o=f?1:-1;for(const [x,d] of [[5,o],[8,-o],[11,o]]){m.cap(x,5,x-1+d,6.6,.6,'#2a1a10');}
@@ -3315,7 +3337,9 @@ function completedLevels(){const sv=loadSave();return sv.completed||(sv.level>=2
 function saveGame(){try{const done=new Set(completedLevels());done.add(LV);localStorage.setItem(SAVE_KEY,JSON.stringify({level:Math.max(loadSave().level||1,LV+1),completed:[...done],fish:stats.fish,stomps:stats.stomps,at:Date.now()}));return true;}catch(e){return false;}}
 /* ---- after the boss the cat walks to a dry, cosy spot to sleep: a cardboard box (junkyard, city), an old wool sweater (fields, pond), the root hollow of an old surviving tree (forests) ---- */
 let bedS=null;
-function bedSpot(){const key=LV+':'+LW;if(bedS&&bedS.key===key)return bedS;const kind={1:'roots',4:'roots',6:'box',5:'box',3:'sweater',2:'sweater'}[LV]||'box';
+function bedSpot(){const key=LV+':'+LW+':'+(LV===5&&boss?boss.bin:'');if(bedS&&bedS.key===key)return bedS;
+  if(LV===5){const bn=bins5[boss&&boss.bin>=0?boss.bin:2]||{x:ARENA_X+250};bedS={key,kind:'lid',x:bn.x,gy:GROUND_Y-22,y:GROUND_Y-22};return bedS;} // the city: curls up on the lid of the can the stray hid in
+const kind={1:'roots',4:'roots',6:'box',5:'box',3:'sweater',2:'sweater'}[LV]||'box';
   let c=Math.floor((ARENA_X+(LV===6?205:LV===2?236:248))/T);for(let k=0;k<12&&groundY(c)>H;k++)c--;
   const gy=groundY(c),x=c*T+8;bedS={key,kind,x,gy,y:gy-(kind==='sweater'?3:kind==='box'?3:1)};return bedS;}
 // finely drawn sleeping spots, painted once into canvases: [back layer, front layer] drawn around the sleeping cat
@@ -3383,7 +3407,8 @@ function bedArt(kind){const key=kind+(kind==='roots'?LV:'');if(BEDART[key])retur
     for(const [lx,lc] of [[40,'#b88a4a'],[56,'#a07a3a'],[18,'#8a6a3a']])Fp(lx,G0,3,1,lc);
     out={back:{c:bc,ox:cx0,h:H0},front:{c:fc,ox:cx0,h:H0}};}
   BEDART[key]=out;return out;}
-function drawBed(cx,front){if(state==='title')return;const b=bedSpot(),X=R(b.x-cx),G=b.gy;if(X<-50||X>W+50)return;
+function drawBed(cx,front){if(state==='title')return;if(LV===5)return; // no box in the city: the cat sleeps on a trash-can lid
+const b=bedSpot(),X=R(b.x-cx),G=b.gy;if(X<-50||X>W+50)return;
   if(b.kind==='box'||b.kind==='roots'){const A=bedArt(b.kind)[front?'front':'back'];ctx.drawImage(A.c,X-A.ox,G-A.h+(b.kind==='box'?0:1));
     if(b.kind==='roots'&&!front){const sw=Math.round(Math.sin(gt*1.5)*.6);rect(X-7+sw,G-A.h+5,2,1,'#7aaa4a');rect(X-6+sw,G-A.h+4,1,1,'#9ac860');}return;}
   if(b.kind==='sweater'){ // a discarded old wool sweater, maroon knit with a mustard band, a hole and a loose thread
@@ -3407,7 +3432,10 @@ function updOutro(dt){
   else if(o.ph==='sprout'){P=poseSit(gt,1);P.k=o.t>1.2&&o.t<2.4?'sitwag':'sit';if(o.t>3.6)go('seek');}
   else if(o.ph==='groom'){P=poseSit(gt,1);P.k='groom';P.eye='closed';if(o.t>3.6)go('look');}
   else if(o.ph==='seek'){if(o.tx===undefined){o.tx=bedSpot().x;}
-    const d=o.tx-p.x;if(Math.abs(d)<2||o.t>7){p.vx=0;p.x=o.tx;o.onBed=1;go('look');}else{p.face=Math.sign(d);p.vx=p.face*38;moveX(p,p.vx*dt);p.ph+=38*dt*.19;P=lerpV(poseStand(gt),poseRun(p.ph,gt),.45);P.k='run';}}
+    const d=o.tx-p.x;if(bedSpot().kind==='lid'&&Math.abs(d)<24&&p.onGround){o.hx=p.x;o.hy=p.y;p.face=Math.sign(d)||1;go('hop');}
+    else if(Math.abs(d)<2||o.t>7){p.vx=0;p.x=o.tx;o.onBed=1;go('look');}else{p.face=Math.sign(d);p.vx=p.face*38;moveX(p,p.vx*dt);p.ph+=38*dt*.19;P=lerpV(poseStand(gt),poseRun(p.ph,gt),.45);P.k='run';}}
+  else if(o.ph==='hop'){const k=clamp(o.t/.42,0,1),bd=bedSpot();p.x=lerp(o.hx,o.tx,k);p.y=lerp(o.hy,bd.y,k)-Math.sin(k*Math.PI)*16;p.vy=0;P=poseStand(gt);P.k=k<.5?'jumpup':'fall';
+    if(k>=1){p.x=o.tx;o.onBed=1;SFX.lid();const bn=bins5[boss&&boss.bin>=0?boss.bin:2];if(bn)bn.dent=.25;go('look');}}
   else if(o.ph==='look'&&o.tx!==undefined){P=poseSit(gt,1);P.k='sit';const t=o.t,f0=o.f0||(o.f0=p.face);
     // glance one way, over the shoulder, then the other way; ears up, a slow blink
     if(t<.8){p.face=f0;}else if(t<1.6){p.face=f0;P.hf=-1;}else if(t<2.4){p.face=-f0;}else if(t<3.1){p.face=-f0;P.hf=-1;}else p.face=f0;
