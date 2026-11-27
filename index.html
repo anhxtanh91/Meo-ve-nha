@@ -3102,7 +3102,7 @@ const EFL=150; // room floor
 const endSurf=x=>{ // top of the blanket over the sleeper (feet at the left, head on the pillow at the right)
   const k=endS?Math.sin(endS.t*1.25):0;
   const hump=(c,w,h)=>Math.max(0,h*(1-((x-c)/w)**2));
-  return 117-Math.max(hump(166,22,5),hump(204,30,9),hump(244,26,10+k*1.1),2);};
+  return 117-Math.max(hump(214,14,4),hump(236,16,8),hump(254,16,10+k*1.1),2);};
 function startEnding(){parts.length=0;$('bossBar').hidden=true;endS={t:0,ph:'sill',pt:0,x:52,y:112,face:1,pose:poseSit(0,0),ph2:0,bub:null,fade:1,done:false,purrT:0};setState('ending');}
 function updEnding(dt){const e=endS;if(!e)return;e.t+=dt;e.pt+=dt;const t=e.pt;let P=poseStand(gt);
   const go=n=>{e.ph=n;e.pt=0;};const arc=(x0,y0,x1,y1,hgt,dur)=>{const k=clamp(t/dur,0,1);e.x=lerp(x0,x1,k);e.y=lerp(y0,y1,k)-Math.sin(k*Math.PI)*hgt;return k;};
@@ -3110,19 +3110,19 @@ function updEnding(dt){const e=endS;if(!e)return;e.t+=dt;e.pt+=dt;const t=e.pt;l
   if(e.ph==='sill'){P=poseSit(gt,t>.9&&t<1.6?1:0);e.bub=t>1.1&&t<1.9?'?':null;if(t>1.2&&!e.mw){e.mw=1;SFX.meow();}if(t>2.6){e.bub=null;go('hop1');}}
   else if(e.ph==='hop1'){const k=arc(52,112,100,EFL,16,.62);P=lerpV(AIR_UP,AIR_DN,k);if(k>=1){puff(100,EFL,3,'#c8a070',18,6,.3);tone(300,420,.08,'triangle',.025);go('land');}}
   else if(e.ph==='land'){P=poseStand(gt);P.k='crouch';if(t>.25)go('walk');}
-  else if(e.ph==='walk'){e.ph2+=dt*22*.115;e.x+=22*dt;e.y=EFL;P=lerpV(poseStand(gt),poseRun(e.ph2,gt),.4);if(e.x>=126){e.x=126;go('ready');}}
+  else if(e.ph==='walk'){e.ph2+=dt*22*.115;e.x+=22*dt;e.y=EFL;P=lerpV(poseStand(gt),poseRun(e.ph2,gt),.4);if(e.x>=178){e.x=178;go('ready');}}
   else if(e.ph==='ready'){P=poseSit(gt,1);if(t>.7){P=poseStand(gt);P.k='crouch';}if(t>1.0)go('hop2');}
-  else if(e.ph==='hop2'){const k=arc(126,EFL,158,endSurf(158),24,.6);P=lerpV(AIR_UP,AIR_DN,k);if(k>=1){tone(240,300,.08,'triangle',.02);go('pad');}}
-  else if(e.ph==='pad'){e.ph2+=dt*12*.115;e.x+=12*dt;e.y=endSurf(e.x);P=lerpV(poseStand(gt),poseRun(e.ph2,gt),.3);if(e.x>=180){e.x=180;go('look');}}
+  else if(e.ph==='hop2'){const k=arc(178,EFL,206,endSurf(206),24,.6);P=lerpV(AIR_UP,AIR_DN,k);if(k>=1){tone(240,300,.08,'triangle',.02);go('pad');}}
+  else if(e.ph==='pad'){e.ph2+=dt*12*.115;e.x+=12*dt;e.y=endSurf(e.x);P=lerpV(poseStand(gt),poseRun(e.ph2,gt),.3);if(e.x>=222){e.x=222;go('look');}}
   else if(e.ph==='look'){P=poseSit(gt,1);e.face=1;if(t>1.6)go('turn');}
-  else if(e.ph==='turn'){P=poseStand(gt);e.face=[1,-1,1,-1][Math.min(3,Math.floor(t/.4))];e.x=180+Math.sin(t*7.8)*1.5;e.y=endSurf(e.x);if(t>1.6){e.face=-1;go('curl');}}
+  else if(e.ph==='turn'){P=poseStand(gt);e.face=[1,-1,1,-1][Math.min(3,Math.floor(t/.4))];e.x=222+Math.sin(t*7.8)*1.5;e.y=endSurf(e.x);if(t>1.6){e.face=-1;go('curl');}}
   else if(e.ph==='curl'){P=lerpV(poseStand(gt),poseSleep(gt),clamp(t/.7,0,1));if(t>.7)go('sleep');}
   else if(e.ph==='sleep'){P=poseSleep(gt);e.purrT-=dt;if(e.purrT<=0){e.purrT=1.1;tone(52,46,.5,'sine',.035);tone(50,44,.4,'sine',.03,.55);}
     if(t>3.5)e.fade=clamp((t-3.5)/3,0,1);if(t>7&&cutView){endCutView();return;}if(t>7&&!e.done){e.done=true;show('ovL2',true);show('skip',false);$('btnL2Again').focus({preventScroll:true});}}
   e.y=e.ph==='turn'||e.ph==='pad'||e.ph==='curl'||e.ph==='sleep'||e.ph==='look'?endSurf(e.x):e.y;
   e.pose=lerpV(e.pose,P,1-Math.exp(-dt*(e.ph==='curl'||e.ph==='sleep'?5:18)));
 }
-function skipEnding(){if(!endS)return;endS.ph='sleep';endS.pt=7;endS.x=180;endS.face=-1;endS.pose=poseSleep(gt);endS.fade=1;if(!endS.done){endS.done=true;show('ovL2',true);}}
+function skipEnding(){if(!endS)return;endS.ph='sleep';endS.pt=7;endS.x=222;endS.face=-1;endS.pose=poseSleep(gt);endS.fade=1;if(!endS.done){endS.done=true;show('ovL2',true);}}
 const END_STARS=(()=>{const r=mulberry(77);return Array.from({length:18},()=>[22+r()*60,32+r()*26,r()]);})();
 const END_DUST=(()=>{const r=mulberry(31);return Array.from({length:70},()=>({x:r()*W,y:r()*150,s:r(),z:r()}));})();
 const FAIRY=[[86,38],[94,42],[102,45],[110,47],[118,47],[126,45],[134,42],[142,38],[150,35]];
@@ -3188,10 +3188,17 @@ function buildRoom(){const [c,g]=mkCanvas(W,H);const keep=ctx;ctx=g;const r=mulb
   rect(219,66,5,6,'#8a4a2a');for(let k=0;k<14;k+=2)rect(221+Math.round(Math.sin(k*.5)),72+k,2,2,'#4a7a3a');disc(221,64,2,'#5a8a44');
   // bed frame, headboard, under-bed drawers, sheet and pillow
   rect(286,64,18,86,'#5a321e');rect(286,64,18,3,'#8a5a36');rect(289,70,12,46,'#4a2816');for(let k=0;k<4;k++)rect(290+k*3,72,1,42,'#55301c');
-  rect(128,124,176,22,'#6a3e24');rect(128,124,176,2,'#8a5a36');for(const dx of [140,190,240]){rect(dx,130,40,12,'#5a3420');rect(dx,130,40,1,'#7a4a2c');rect(dx+18,135,4,1,'#c8a060');}
-  rect(130,146,5,4,'#3a2014');rect(296,146,5,4,'#3a2014');rect(130,114,158,8,'#e8e0d0');rect(130,121,158,1,'#c8bca8');
+  rect(196,124,108,22,'#6a3e24');rect(196,124,108,2,'#8a5a36');for(const dx of [204,246]){rect(dx,130,36,12,'#5a3420');rect(dx,130,36,1,'#7a4a2c');rect(dx+16,135,4,1,'#c8a060');}
+  rect(198,146,5,4,'#3a2014');rect(296,146,5,4,'#3a2014');rect(198,114,90,8,'#e8e0d0');rect(198,121,90,1,'#c8bca8');
+  // a low chest of drawers beside the bed: a radio, a plant, a photo, a stack of books
+  rect(140,118,48,28,'#5a3420');rect(140,118,48,3,'#8a5a36');rect(140,118,48,1,'#a06a40');rect(142,146,4,4,'#3a2014');rect(182,146,4,4,'#3a2014');
+  for(const dy of [123,131,139]){rect(143,dy,42,6,'#6a3e24');rect(143,dy,42,1,'#8a5a36');rect(156,dy+3,3,1,'#c8a060');rect(170,dy+3,3,1,'#c8a060');}
+  rect(144,108,16,10,'#7a3a2a');rect(144,108,16,1,'#a85a40');rect(146,110,6,6,'#2a1a14');for(let k=0;k<3;k++)rect(147,111+k*2,4,1,'#5a3a2a');rect(154,111,4,2,'#d8c890');rect(155,114,2,2,'#c8a060');rect(158,104,1,4,'#9a9a9a');
+  rect(164,111,8,7,'#c87a48');rect(164,111,8,1,'#e09a60');disc(168,107,4,'#4a7a3a');disc(165,106,2,'#5a9a4a');disc(171,105,2,'#5a9a4a');rect(168,101,1,4,'#4a7a3a');
+  rect(176,108,8,10,'#c8a060');rect(177,109,6,8,'#4a5a6a');disc(180,114,2,'#18161c');disc(180,112,1,'#e0b090');
+  rect(174,116,12,2,'#3a5a6a');
   // slippers, and a stack of comics on the floor
-  for(const sx of [138,148]){rect(sx,147,8,3,'#c86a7a');rect(sx,147,4,2,'#e8a0b0');rect(sx+6,148,2,2,'#a04a5a');}
+  for(const sx of [190,200]){rect(sx,147,8,3,'#c86a7a');rect(sx,147,4,2,'#e8a0b0');rect(sx+6,148,2,2,'#a04a5a');}
   rect(108,146,12,2,'#3a5a6a');rect(109,144,11,2,'#c8a040');rect(108,142,12,2,'#8a3a2a');
   // rug with a pattern and fringe
   rect(150,156,124,14,'#7a2e2a');rect(152,158,120,10,'#9a3e36');for(let x=156;x<268;x+=10){rect(x,160,4,4,'#d8a060');rect(x+1,161,2,2,'#7a2e2a');}rect(152,158,120,1,'#c86a4a');rect(152,167,120,1,'#c86a4a');
@@ -3243,10 +3250,10 @@ function drawEnding(){const e=endS;if(!e)return;const T0=e.t;if(!ROOM_CV)ROOM_CV
   rect(266,105,4,1,'#8a5a40');rect(265,102,4,1,'#4a2e1e');rect(263,107,1,2,'#c8987a');rect(268,110,2,1,'#b87a60');disc(270,108,1,'#e8a090');rect(272,100,5,3,'#3a2418');
   // patchwork quilt rising and falling with the breathing
   const pc=['#c8644a','#d88a5a','#b85a48','#e0a070','#a85a6a'];
-  for(let x=130;x<268;x++){const top=Math.round(endSurf(x));for(let y=top;y<139;y++){const q=pc[(Math.floor((x-130)/12)+Math.floor((y-top)/9)*2)%5];rect(x,y,1,1,q);}rect(x,top,1,1,'#f4c49a');}
-  for(let x=130;x<268;x+=12)alpha(.3,()=>rect(x,endSurf(x),1,139-endSurf(x),'#6a2a20'));
-  for(let x=130;x<268;x+=4)rect(x+1,Math.round(endSurf(x))+5,2,1,'rgba(255,230,190,.35)');
-  for(let x=130;x<268;x+=3)rect(x,139+((x/3)%2),3,1,'#9a4a38');
+  for(let x=198;x<268;x++){const top=Math.round(endSurf(x));for(let y=top;y<139;y++){const q=pc[(Math.floor((x-198)/10)+Math.floor((y-top)/9)*2)%5];rect(x,y,1,1,q);}rect(x,top,1,1,'#f4c49a');}
+  for(let x=198;x<268;x+=10)alpha(.3,()=>rect(x,endSurf(x),1,139-endSurf(x),'#6a2a20'));
+  for(let x=198;x<268;x+=4)rect(x+1,Math.round(endSurf(x))+5,2,1,'rgba(255,230,190,.35)');
+  for(let x=198;x<268;x+=3)rect(x,139+((x/3)%2),3,1,'#9a4a38');
   rect(262,Math.round(endSurf(262))-1,7,3,'#f0d8b0');rect(248,Math.round(endSurf(248))-2,6,3,'#e0b090');rect(249,Math.round(endSurf(248))-2,1,1,'#f0c8a8');
   for(let i=0;i<3;i++){const q=(T0*.35+i/3)%1;alpha(Math.min(1,(1-q)*1.4)*.8,()=>blit(GLY.z,262-q*8,96-q*22,1));}
   // the cat
