@@ -649,13 +649,13 @@ function tintCv(src,col){const [c,g]=mkCanvas(src.width,src.height);g.drawImage(
 const BIGTREE_T=BIGTREE.map(t=>tintCv(t,'#ffe0c8')),FARTREE_T=FARTREE.map(t=>tintCv(t,'#ffe0c8'));
 // wind: background trees sway — slices drawn with an offset that grows toward the crown, base stays rooted
 // wind: a steady breeze with gusts rolling through every so often (0 = calm, 1 = strong gust)
-function windNow(){const g=Math.max(0,Math.sin(gt*.42)*Math.sin(gt*.13+1.3));return .3+.7*Math.min(1,g*1.6);}
-function swayK(seed){const w=windNow();return (Math.sin(gt*1.25+seed)*.6+Math.sin(gt*.55+seed*1.7)*.4)*(.55+w*.8)+w*.55+Math.sin(gt*6.3+seed*3)*.12*w;}
+function windNow(){const g=Math.max(0,Math.sin(gt*.42)*Math.sin(gt*.13+1.3));return .25+.4*Math.min(1,g*1.4);}
+function swayK(seed){const w=windNow();return (Math.sin(gt*1.25+seed)*.6+Math.sin(gt*.55+seed*1.7)*.4)*(.6+w*.4)+w*.2+Math.sin(gt*6.3+seed*3)*.05*w;}
 // a fringe of grass blades along the top of the ground, each bending with the wind; gusts roll across as a wave
 const GRASS_PAL={1:['#2f7a36','#4fa040','#7cc858'],3:['#3a8a3c','#5aa844','#8ad060'],2:['#2f7a36','#4f9a3f','#7ccc58'],4:['#245a34','#36803e','#52a04c']};
 function grassFringe(X,Y,c,wx){const P=GRASS_PAL[LV];if(!P)return;const w=windNow();
   for(let i=0;i<8;i++){const hs=hashD(c*31+i*7),h=2+Math.floor(hs*5);if(hs<.12)continue;const bx=X+i*2+(hs>.5?1:0);
-    const wave=Math.sin(gt*2.4-(wx+i*2)*.045)*.5+.5,bend=Math.round((w*1.3+wave*w*1.4+Math.sin(gt*5+i+c)*.35)*(h/5));
+    const wave=Math.sin(gt*2.4-(wx+i*2)*.045)*.5+.5,bend=Math.round((w*.8+wave*w*.8+Math.sin(gt*3+i+c)*.25)*(h/5));
     rect(bx,Y-Math.ceil(h/2),1,Math.ceil(h/2),P[0]);rect(bx+Math.round(bend/2),Y-h+1,1,Math.floor(h/2),P[1]);if(h>4)rect(bx+bend,Y-h,1,1,P[2]);}}
 function imgTop(img){if(img._top!==undefined)return img._top;let t=0;try{const d=img.getContext('2d').getImageData(0,0,img.width,img.height).data;
   outer:for(let y=0;y<img.height;y++)for(let x=0;x<img.width;x++)if(d[(y*img.width+x)*4+3]>0){t=y;break outer;}}catch(e){}return img._top=t;}
@@ -672,7 +672,7 @@ function drawBirds(cx){for(let i=0;i<4;i++){const sp=8+hash(i*7)*6;const x=((has
 function drawWindStuff(cx){const w=windNow();
   // leaves torn off by the gusts stream across the screen
   const LC=LV===3?[['#e0a43a','#b8742a'],['#c8642a','#8a3a1a'],['#d8c050','#a08a30']]:LV===4?[['#5a4a3a','#3a2a20'],['#e07a2a','#a04a1a'],['#3a3a30','#22201a']]:[['#7cc048','#4f9a3f'],['#a8d850','#6aa83a'],['#e0a43a','#b8742a']];
-  const n=Math.round(4+w*22);for(let i=0;i<n;i++){const s0=hashD(i*17+3),sp=40+s0*50+w*70,per=(W+60)/sp,k=((gt+s0*per*3)%per)/per;
+  const n=Math.round(1+w*6);for(let i=0;i<n;i++){const s0=hashD(i*17+3),sp=40+s0*50+w*70,per=(W+60)/sp,k=((gt+s0*per*3)%per)/per;
     const x=((k*(W+60))-30-(cx*.2)%40),y=20+hashD(i*5+1)*110+Math.sin(gt*3+i*1.7)*6+k*14;const f=Math.floor(gt*10+i)%3;const [a,b]=LC[i%3];
     if(f===0){rect(x,y,2,1,a);rect(x+1,y+1,1,1,b);}else if(f===1){rect(x,y,1,2,a);rect(x+1,y,1,1,b);}else{rect(x,y,2,1,b);rect(x,y-1,1,1,a);}}
   if(LV===4){const fv=fireAt(cx+W/2);
@@ -682,19 +682,19 @@ function drawWindStuff(cx){const w=windNow();
   }
   if(LV===3){
     // golden chaff drifting in the last sunlight
-    for(let i=0;i<30;i++){const s0=hashD(i*13+5),k=((gt*(.04+s0*.03)+s0)%1);const x=((i*37-cx*.5+gt*(10+w*30))%(W+20)+W+20)%(W+20)-10,y=146-k*90+Math.sin(gt*1.1+i)*4;
+    for(let i=0;i<12;i++){const s0=hashD(i*13+5),k=((gt*(.04+s0*.03)+s0)%1);const x=((i*37-cx*.5+gt*(10+w*30))%(W+20)+W+20)%(W+20)-10,y=146-k*90+Math.sin(gt*1.1+i)*4;
       alpha((1-k)*.7,()=>rect(x,y,1,1,s0>.5?'#ffe8a0':'#ffc070'));}
     // dragonflies darting over the rice, hovering, darting again
-    for(let i=0;i<3;i++){const seg=Math.floor(gt*.7+i*1.3),f=(gt*.7+i*1.3)%1,q=f<.6?0:ease((f-.6)/.4);
+    for(let i=0;i<2;i++){const seg=Math.floor(gt*.7+i*1.3),f=(gt*.7+i*1.3)%1,q=f<.6?0:ease((f-.6)/.4);
       const ax=hashD(seg*7+i)*W,ay=96+hashD(seg*11+i)*36,bx2=hashD((seg+1)*7+i)*W,by2=96+hashD((seg+1)*11+i)*36;const x=lerp(ax,bx2,q),y=lerp(ay,by2,q)+Math.sin(gt*9+i)*.6;
       rect(x-3,y,6,1,'#2a3a5a');rect(x+3,y,1,1,'#4a7ab0');const fl=Math.floor(gt*30+i)%2;alpha(.6,()=>{rect(x-1,y-1-fl,3,1,'#d8e8ff');rect(x-1,y+1+fl,3,1,'#d8e8ff');});}
   }
   if(LV===1){
     // pollen and dandelion seeds lifting on the breeze, catching the sun
-    for(let i=0;i<24;i++){const s0=hashD(i*9+2),k=((gt*(.05+s0*.04)+s0)%1);const x=((i*41-cx*.6+gt*(8+w*26))%(W+20)+W+20)%(W+20)-10,y=140-k*120+Math.sin(gt*1.3+i)*5;
+    for(let i=0;i<10;i++){const s0=hashD(i*9+2),k=((gt*(.05+s0*.04)+s0)%1);const x=((i*41-cx*.6+gt*(8+w*26))%(W+20)+W+20)%(W+20)-10,y=140-k*120+Math.sin(gt*1.3+i)*5;
       alpha(.55*(1-k)+.2,()=>{rect(x,y,1,1,'#fffbe0');if(s0>.7){rect(x-1,y-1,1,1,'#fffbe0');rect(x+1,y-1,1,1,'#fffbe0');}});}
     // butterflies dancing over the bushes
-    for(let i=0;i<4;i++){const ph=gt*.5+i*2.1,bx=((i*97+Math.sin(ph)*30+Math.sin(ph*2.3)*10-cx*.9)%(W+40)+W+40)%(W+40)-20,by=104+Math.sin(ph*1.7+i)*12+Math.sin(gt*7+i)*1.5;
+    for(let i=0;i<2;i++){const ph=gt*.5+i*2.1,bx=((i*97+Math.sin(ph)*30+Math.sin(ph*2.3)*10-cx*.9)%(W+40)+W+40)%(W+40)-20,by=104+Math.sin(ph*1.7+i)*12+Math.sin(gt*7+i)*1.5;
       const C=[['#ffd84a','#c89a20'],['#ff8fb0','#c85a7a'],['#ffffff','#c8c8d8'],['#8ac8ff','#4a8ac8']][i],f=Math.floor(gt*14+i*3)%2;
       rect(bx,by,1,3,'#3a2a20');if(f){rect(bx-2,by,2,2,C[0]);rect(bx+1,by,2,2,C[0]);rect(bx-2,by+2,2,1,C[1]);rect(bx+1,by+2,2,1,C[1]);}else{rect(bx-1,by,1,2,C[0]);rect(bx+1,by,1,2,C[0]);}}
   }
@@ -703,7 +703,7 @@ function drawAmbient(cx){
   if(LV===2){drawAmbient2(cx);return;}if(LV===5){drawAmbient5(cx);return;}
   drawWindStuff(cx);
   // drifting leaves
-  for(let i=0;i<10;i++){const s0=hash(i*13+1);const per0=7+s0*5;const k=((gt+s0*per0)%per0)/per0;
+  for(let i=0;i<5;i++){const s0=hash(i*13+1);const per0=7+s0*5;const k=((gt+s0*per0)%per0)/per0;
     const x=((i*53-cx*.85)%(W+40)+W+40)%(W+40)-20+Math.sin(k*12+i)*8;const y=-6+k*(H-20);
     const flip=Math.sin(k*20+i)>0;const c=i%3?'#7cc048':'#e0a43a';rect(x,y,2,1,c);rect(x+(flip?1:0),y+1,1,1,i%3?'#4f9a3f':'#b8742a');}
   // fireflies over the bushes at dusk
@@ -1584,7 +1584,7 @@ function drawBack5(cx){initCity5();
   ctx.drawImage(SKY5,0,0);
   for(let i=0;i<3;i++){const L=CITY5L[i];wrapDraw(L.img,cx*L.k,0);
     const o=((Math.floor(cx*L.k)%LWID)+LWID)%LWID;for(const [bx,by] of L.b){let x=bx-o;if(x<-4)x+=LWID;if(x>W)continue;if(Math.sin(gt*2.2+bx)>.2)rect(x,by,1,1,'#ff4a3a');}
-    if(i===0){for(let q=0;q<Math.min(6,L.b.length);q++){let [bx,by]=L.b[q];let x=bx-o;if(x<-60)x+=LWID;if(x>W+60)continue;for(let k=0;k<9;k++){const u=((gt*.05+k/9)%1);alpha((1-u)*.22,()=>ctx.drawImage(SMOKE5,R(x+u*46+Math.sin(gt*.4+k)*3-(6+u*26)),R(by-u*70-(6+u*26)),R(12+u*52),R(12+u*52)));}}}
+    if(i===0){for(let q=0;q<Math.min(6,L.b.length);q++){let [bx,by]=L.b[q];let x=bx-o;if(x<-60)x+=LWID;if(x>W+60)continue;for(let k=0;k<9;k++){const u=((gt*.05+k/9)%1);alpha((1-u)*.22,()=>ctx.drawImage(SMOKE5,R(x+u*(30+windNow()*40)+Math.sin(gt*.4+k)*3-(6+u*26)),R(by-u*70-(6+u*26)),R(12+u*52),R(12+u*52)));}}}
     if(i<2){ctx.drawImage(FOG5,0,i?96:70);for(let q=0;q<4;q++){const x=((q*140-cx*L.k*1.4+gt*(3+q))%(W+200)+W+200)%(W+200)-140;alpha(.35,()=>ctx.drawImage(HAZE5,R(x),i?100:76,180,40));}}}
   // the dark canal at the foot of the buildings
   rect(0,160,W,16,'#0a1416');for(let i=0;i<14;i++){const x=((i*47-cx*.9+gt*(i%2?6:-4))%(W+30)+W+30)%(W+30)-15,y=163+(i*5)%11;rect(x,y,8+(i%3)*4,1,'#1a2c30');}
@@ -1633,7 +1633,9 @@ function drawBalcony(x,y,w,seed){x=R(x);
   rect(x-1,y-11,w+2,2,'#8a929e');rect(x-1,y-11,w+2,1,'#b4bcc8');rect(x-1,y-5,w+2,1,'#4a505a');for(let k=0;k<=w+1;k+=3)rect(x-1+k,y-9,1,9,'#5a606c');
   if(hashD(seed*5)<.55){const px=x+3+Math.floor(hashD(seed*7)*(w-12));rect(px,y-14,6,4,'#8a4a2a');rect(px,y-14,6,1,'#b07040');disc(px+3,y-17,2,'#3e6e3c');rect(px+1,y-20,1,3,'#5a8a4a');rect(px+4,y-19,1,2,'#5a8a4a');}
   // washing hung over the rail
-  if(hashD(seed*9)<.35){const cx2=x+4+Math.floor(hashD(seed*11)*(w-14));const C=['#a84a4a','#4a6aa8','#d0c8b0','#5a8a5a'];rect(cx2,y-10,6,7,C[seed%4]);rect(cx2+1,y-3,4,1,C[(seed+1)%4]);}
+  if(hashD(seed*9)<.35){const cx2=x+4+Math.floor(hashD(seed*11)*(w-14));const C=['#a84a4a','#4a6aa8','#d0c8b0','#5a8a5a'];const wn=windNow();
+    for(let j=0;j<7;j++){const o=Math.round((wn*2.2+Math.sin(gt*5+seed+j*.7)*(.5+wn))*j/6);rect(cx2+o,y-10+j,6,1,j===0?'#1a1a1e':C[seed%4]);if(j>2&&(j+seed)%3===0)rect(cx2+o+1,y-10+j,4,1,'rgba(0,0,0,.25)');}
+    const o2=Math.round(wn*2.6+Math.sin(gt*5+seed+5)*(.6+wn));rect(cx2+1+o2,y-3,4,1,C[(seed+1)%4]);}
 }
 function drawDumpster5(cx){const x=DUMP5[0]*T-cx,y=8*T;if(x>W||x<-60)return;
   rect(x,y,48,17,'#14281e');rect(x+1,y+1,46,15,'#2e5a40');rect(x+1,y+1,46,2,'#3e7050');for(let k=5;k<46;k+=6)rect(x+k,y+4,1,11,'#22442e');
@@ -1787,8 +1789,13 @@ function drawThrows5(cx){
 function drawBag5(x,y,r){ctx.save();ctx.translate(R(x),R(y));ctx.rotate(r);ctx.fillStyle='#08090c';ctx.fillRect(-6,-5,12,10);ctx.fillRect(-5,-6,10,12);ctx.fillStyle='#34404e';ctx.fillRect(-5,-4,10,8);ctx.fillRect(-4,-5,8,10);
   ctx.fillStyle='#6a7a90';ctx.fillRect(-3,-4,3,2);ctx.fillRect(-4,-2,1,2);ctx.fillStyle='#08090c';ctx.fillRect(-1,-9,2,4);ctx.fillStyle='#34404e';ctx.fillRect(-2,-10,1,2);ctx.fillRect(1,-10,1,2);ctx.fillStyle='#8a7a4a';ctx.fillRect(2,1,2,1);ctx.restore();}
 function drawAmbient5(cx){
+  // scraps of paper and a plastic bag tumbling past on the gusts
+  {const w=windNow();for(let i=0;i<6;i++){const s0=hashD(i*23+9),sp=30+s0*30+w*70,per=(W+80)/sp,k=((gt+s0*per*2)%per)/per;const x=k*(W+80)-40,baseY=i<3?GROUND_Y-2:30+hashD(i*5)*90;
+    const y=baseY-Math.abs(Math.sin(gt*3+i*2))*(i<3?6+w*10:8)+Math.sin(gt*1.3+i)*4,f=Math.floor(gt*8+i)%4;
+    if(i===2){alpha(.8,()=>{rect(x,y-3,5+(f%2),4,'#c8ccd0');rect(x+1,y-4,3,1,'#e8ecf0');rect(x+5,y-2,2,1,'#c8ccd0');});}
+    else{const c=i%2?'#d8d0b8':'#b8b0a0';if(f===0)rect(x,y,4,1,c);else if(f===1){rect(x,y,3,2,c);rect(x+1,y,1,1,'#8a8270');}else if(f===2)rect(x+1,y-1,1,3,c);else{rect(x,y,2,2,c);rect(x+2,y+1,2,1,c);}}}}
   // fine drizzle and moths around the lamps
-  for(let i=0;i<90;i++){const s=hashD(i*7+3),k=((gt*(1.4+s*.6)+s)%1),x=((i*37-cx*.95-k*30)%(W+40)+W+40)%(W+40)-20,y=k*H;alpha(.28+s*.15,()=>{rect(x,y,1,2,'#8aa0b4');rect(x-1,y+2,1,2,'#8aa0b4');});if(k>.97&&s>.5)rect(x-3,GROUND_Y-1,3,1,'#8aa0b4');}
+  for(let i=0;i<90;i++){const s=hashD(i*7+3),k=((gt*(1.4+s*.6)+s)%1),x=((i*37-cx*.95-k*(20+windNow()*40))%(W+40)+W+40)%(W+40)-20,y=k*H;alpha(.28+s*.15,()=>{rect(x,y,1,2,'#8aa0b4');rect(x-1,y+2,1,2,'#8aa0b4');});if(k>.97&&s>.5)rect(x-3,GROUND_Y-1,3,1,'#8aa0b4');}
   // steam from a manhole in the street
   if(cx<400)for(let i=0;i<6;i++){const k=((gt*.22+i/6)%1),x=108-cx+Math.sin(gt*.8+i)*4+k*10,y=GROUND_Y-k*60;alpha((1-k)*.18,()=>{ctx.fillStyle='#a0aab0';ctx.beginPath();ctx.arc(R(x),R(y),4+k*12,0,Math.PI*2);ctx.fill();});}
   for(const L of LAMPS5){const hx=L.x+L.d*9-cx;if(hx<-20||hx>W+20)continue;for(let i=0;i<3;i++){const a=gt*(2+i)+i*2;rect(hx+Math.cos(a)*(5+i*2),80+Math.sin(a*1.3)*4,1,1,'#e8dcb0');}}
@@ -2068,7 +2075,7 @@ function drawBuffalo(cx){const off=cx*.3;
 function drawRice3(cx){const off=cx*.7;const x0=Math.floor(off/2)*2;
   for(let wx=x0;wx<x0+W+4;wx+=2){const sx=wx-off,h=hashD(wx*3+1),hh=7+Math.floor(h*9*(.6+.4*Math.sin(wx*.05)));
     // wind: a steady sway plus gusts rolling across the field
-    const wn=windNow(),gust=Math.max(0,Math.sin(wx*.012-gt*1.3))**3;const sway=Math.sin(gt*2.1+wx*.09)*(.5+wn*.6)+gust*(1.6+wn*2.8)+wn*.8;
+    const wn=windNow(),gust=Math.max(0,Math.sin(wx*.012-gt*1.3))**3;const sway=Math.sin(gt*2.1+wx*.09)*(.5+wn*.4)+gust*(1.4+wn*1.4)+wn*.5;
     for(let q=0;q<hh;q++){const k=q/hh;const o=Math.round(sway*k*k);rect(sx+o,146-q,1,1,q>hh-3?'#f6d27a':h<.5?'#c8923a':'#a8742e');}
     const tip=Math.round(sway)+1;if(h>.3){rect(sx+tip,146-hh,2,1,'#e8b860');rect(sx+tip+1,146-hh+1,1,2,'#d8a048');}}
 }
@@ -2775,7 +2782,7 @@ function drawFish(cx){for(const f of fishes){if(f.got)continue;const x=f.x-cx;if
   if((Math.floor(gt*3+f.ph))%5===0){const k=(gt*3+f.ph)%1;rect(x+3,y-8,1,1,'#ffffff');if(k<.5){rect(x+2,y-8,3,1,'#ffffff');rect(x+3,y-9,1,3,'#ffffff');}}}}
 function decor2(c,r,X,Y){
   const h1=hash(c*3+r),hd=(v=>v-Math.floor(v))(Math.sin(c*12.9898+r*78.233)*43758.5453);
-  if(h1>.5){const gx=X+Math.floor(hash(c*17)*10);const wn=windNow();for(let i=0;i<3;i++){const hh=5+((c+i)%3)*2,bd=Math.round((wn*1.4+Math.sin(gt*2.4-(X+cam)*.05+i)*.7)*hh/7);rect(gx+i*2,Y-Math.ceil(hh/2),1,Math.ceil(hh/2),'#4f9a3f');rect(gx+i*2+bd,Y-hh,1,Math.floor(hh/2),i===1?'#7ccc58':'#5aa848');}}
+  if(h1>.5){const gx=X+Math.floor(hash(c*17)*10);const wn=windNow();for(let i=0;i<3;i++){const hh=5+((c+i)%3)*2,bd=Math.round((wn*.9+Math.sin(gt*2.4-(X+cam)*.05+i)*.45)*hh/7);rect(gx+i*2,Y-Math.ceil(hh/2),1,Math.ceil(hh/2),'#4f9a3f');rect(gx+i*2+bd,Y-hh,1,Math.floor(hh/2),i===1?'#7ccc58':'#5aa848');}}
   if(hd>.86){const fx=X+5+Math.floor(hash(c*43)*5);const sw=Math.round(windNow()*1.6+Math.sin(gt*1.5+c)*.7);rect(fx,Y-8,1,8,'#3f7f35');rect(fx+Math.round(sw/2),Y-14,1,6,'#3f7f35');rect(fx-1+sw,Y-20,3,6,'#6a4226');rect(fx+sw,Y-20,1,5,'#8d5a30');rect(fx+sw,Y-22,1,2,'#3f7f35');}
   else if(hd<.1){const rx=X+3+Math.floor(hash(c*47)*7);rect(rx,Y-3,5,3,'#8a8494');rect(rx+1,Y-4,3,1,'#a8a2b0');rect(rx+1,Y-3,2,1,'#c4bfcc');rect(rx,Y-1,5,1,'#5c5866');}
   else if(hd>.74){const fx=X+8;rect(fx,Y-3,1,3,'#3f7f35');rect(fx-1,Y-5,3,2,'#f4b6cc');rect(fx,Y-6,1,1,'#ffe0ea');rect(fx-2,Y-4,1,1,'#e886aa');rect(fx+2,Y-4,1,1,'#e886aa');}
