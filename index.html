@@ -1519,17 +1519,17 @@ const REEDS3=layer(g=>{const r=mulberry(77);const P=(x,y,w,h,c)=>{g.fillStyle=c;
 
 /* Màn 2 life: swaying rice, grazing buffalo, hopping grasshoppers */
 // water buffalo, side view facing right (silhouette against the sunset, rim-lit along the back)
-const BUFF_ROWS=["..................####..............", ".........##....#########............", ".......##################...........", ".....#####################..........", "....######################..........", "...########################.........", "...########################.........", "...######################.#.........", "....########################......#.", "....########################.......#", "....#########################......#", "..#..########################.....##", ".#...####################.####....##", ".#..#######.###################.####", "##.####.###.......#################.", "##.###..##........###...#########...", "#..##...##........###..#########....", "...##...##........##......#####.....", "...##....#.........#.......####.....", "...##....##.......##.......####.....", "...##....##.......##.......####.....", "...##....###......###.......###....."];
-// traced from the user's grazing-buffalo reference; head can lift (look up) and legs alternate when walking
-function buffS(lift,step){return shapeSprite(38,30,'#1e1220',m=>{
+const BUFF_ROWS=["........####......", "...##########.....", "..###########.....", ".#############....", ".#############...#", ".##############..#", "#.################", "###.##...########.", ".##.#....#..####..", ".##.#....#...###..", ".##.##...#....##.."];
+// traced from the user's grazing-buffalo reference (small, distant); head can lift and legs alternate when walking
+function buffS(lift,step){return shapeSprite(20,16,'#1e1220',m=>{
+  const hl=(i,j)=>i>=13?Math.round(lift*Math.min(1,(i-12)/3)*(j>=4?1:.4)):0;
   BUFF_ROWS.forEach((row,j)=>{for(let i=0;i<row.length;i++)if(row[i]==='#'){
-    let x=i+1,y=j+6;if(i>=26)y-=Math.round(lift*Math.min(1,(i-25)/5)*(j>=7?1:.4));
-    if(step&&j>=16){if(i>=17&&i<=21)x+=step;else if(i>=3&&i<=12)x-=step;}
+    let x=i+1,y=j+3-hl(i,j);
+    if(step&&j>=8){if(i>=8&&i<=10)x+=step;else if(i>=1&&i<=6)x-=step;}
     m.px(x,y,'#221420');}});
   m.recolor((x,y)=>!m.get(x,y-1),'#4e2c32');
-  // the pale inner line of the swept-back horn, as in the reference
-  for(const [i,j] of [[27,8],[26,9],[26,10],[26,11],[27,12],[28,13],[29,14]])m.px(i+1,j+6-Math.round(lift*Math.min(1,(i-25)/5)),'#5e3a3e');});}
-const BUFF={up:buffS(5,0),up2:buffS(5,1),down:buffS(0,0)};
+  for(const [i,j] of [[13,4],[13,5],[14,6]])m.px(i+1,j+3-hl(i,j),'#5e3a3e');});}
+const BUFF={up:buffS(3,0),up2:buffS(3,1),down:buffS(0,0)};
 const BUFFS=[{x:180,y:132,sp:2.2,ph:0},{x:520,y:126,sp:-1.6,ph:2},{x:900,y:138,sp:1.8,ph:4.5}];
 function drawBuffalo(cx){const off=cx*.3;
   for(const b of BUFFS){const walk=Math.sin(gt*.13+b.ph)>.2;const bx=b.x+(walk?0:0)+Math.sin(gt*.05+b.ph)*40;
