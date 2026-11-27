@@ -2455,19 +2455,13 @@ function updDogBoss(dt){
 // a furious, slanted red eye under a scowling white-fur brow (lit only by its own glow)
 function drawAngryEye(ex,y,d,sc,k,fl){const P=(pts,c)=>{ctx.fillStyle=c;ctx.beginPath();pts.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.fill();};
   ctx.save();ctx.translate(R(ex),R(y));ctx.scale(d*sc,sc); // inner corner (toward the nose) is at -x
-  if(sc>.45){ctx.globalAlpha=.55*k;
-    ctx.fillStyle='#4a3c48';ctx.beginPath();ctx.ellipse(0,0,12,8,0,0,Math.PI*2);ctx.fill();
-    ctx.globalAlpha=.7*k;for(const [x0,y0,x1,y1] of [[-11,4,-6,6],[-10,-1,-12,-4],[7,4,11,6],[9,1,13,0],[-4,5,2,7],[3,-9,9,-10]]){ctx.strokeStyle='#b4a8b8';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();}
-    ctx.globalAlpha=.9*k;P([[-10,-4],[-2,-7.5],[9,-10],[11,-7.5],[3,-5.5],[-7,-1.5]],'#d8d0dc');P([[-7,-1.5],[3,-5.5],[11,-7.5],[10,-6],[3,-4],[-6,-.5]],'#6a5a6a');
-    for(let i=0;i<4;i++)P([[-6+i*4,-3-i],[-4+i*4,-8-i*.8],[-3+i*4,-3.6-i]],'#ece6f0');
-    ctx.globalAlpha=1;}
-  P([[-7.5,.5],[-3,-2.5],[5,-4.5],[8.5,-3],[6.5,1.5],[0,3.2],[-5,2.2]],'#1a0204');
-  P([[-6,.6],[-2.5,-1.6],[4.6,-3.4],[7,-2.6],[5.4,1],[0,2.4],[-4.4,1.6]],'#a00c0a');
-  ctx.fillStyle='#ff3a24';ctx.beginPath();ctx.ellipse(1,-.6,3.6,2.3,-.18,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#ff9a6a';ctx.beginPath();ctx.ellipse(1.6,-.2,1.6,1.2,0,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#140202';ctx.beginPath();ctx.ellipse(1.2,-.6,.8,2.1,0,0,Math.PI*2);ctx.fill();
-  ctx.strokeStyle='#000';ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(-7.5,.5);ctx.lineTo(-3,-2.5);ctx.lineTo(5,-4.5);ctx.lineTo(8.5,-3);ctx.stroke();
-  ctx.restore();if(sc>.3)rect(R(ex+d*sc*2),R(y-sc*2.5),1,1,'#fff0e0');}
+  P([[-8,1.5],[-3,-1.2],[5,-4.2],[9,-4.6],[7,.8],[1,2.6],[-5,2.6]],'#1a0204');
+  P([[-6.6,1.4],[-2.6,-.4],[4.6,-3],[7.6,-3.4],[5.8,.4],[1,1.8],[-4.4,1.9]],'#8a0806');
+  ctx.fillStyle='#ff2a14';ctx.beginPath();ctx.ellipse(1.4,-.4,3.4,1.7,-.3,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#ffb040';ctx.beginPath();ctx.ellipse(1.6,-.3,1.5,.9,-.3,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#0a0000';ctx.beginPath();ctx.ellipse(1.5,-.4,.45,1.9,0,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#000';ctx.lineWidth=1.8;ctx.beginPath();ctx.moveTo(-8.5,1.8);ctx.lineTo(-3,-1.2);ctx.lineTo(5,-4.2);ctx.lineTo(9.5,-4.8);ctx.stroke();
+  ctx.restore();}
 function drawDogEyes(b,cx){const k=b.eyeK,x=ARENA_X+160-cx,y=104-k*3,gap=6+k*22,sz=1+k*5;
   const fl=.85+.15*Math.sin(gt*9);const blink=b.t>2.9&&b.t<3.05;
   glow(x,y,30+k*60,'rgb(255,30,20)',.25*k*fl);
