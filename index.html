@@ -1586,7 +1586,7 @@ function resetLevelN(){
   beetles.forEach(c=>enemies.push({type:'beetle',x:c*T+8,y:groundY(c),vx:-18,vy:0,hw:6,h:8,dir:-1,alive:true,dead:0,onGround:true}));
   const fly=LV===6?[[30,3],[58,2],[150,3],[175,2],[200,3],[216,2]]:LV===5?[[34,2],[58,1],[94,2],[132,3],[150,1],[182,2],[212,3]]:LV===3?[[50,5],[84,3],[105,5],[130,2],[152,4],[200,5],[212,4]]:[[42,4],[62,4],[96,3],[118,5],[146,2],[171,4],[207,3],[216,4]];
   fly.forEach(([c,r])=>enemies.push({type:'bee',x0:c*T+8,y0:r*T+12,x:c*T+8,y:r*T+12,hw:5,h:8,t:hash(c)*6,dir:-1,alive:true,dead:0,vy:0}));
-  flags=(LV===6?[22,52,95,113,146,168,196]:LV===5?[46,81,118,162,200]:LV===3?[38,88,126,167,206]:[34,70,110,150,212]).map(c=>({x:c*T+8,y:groundY(c),on:false}));
+  flags=(LV===6?[22,52,93,116,146,168,196]:LV===5?[46,81,118,162,200]:LV===3?[38,88,126,167,206]:[34,70,110,150,212]).map(c=>({x:c*T+8,y:groundY(c),on:false}));
   fires4=LV===4?[124,129,138,141,147,154,159,166,175,181,193,202,211,219].map((c,i)=>({x:c*T+8,ph:i*1.37,c})):[];
   if(LV===4)for(const [dx,ph] of [[105,0],[215,Math.PI]])fires4.push({x:ARENA_X+dx,ph,c:Math.floor((ARENA_X+dx)/T),arena:true});scareWob=0;if(LV===5)reset5();
   stats={fish:0,total:0,stomps:0};
@@ -2195,7 +2195,7 @@ function buildDump6(ground,plat){
   ridge(215,[8,8]);                                    // no floating planks ever: a low heap bridges the last pit
 }
 /* ---- Cụ Rùa Lưng Lốp Xe: an old turtle squeezed into a truck tyre ferries the cat across the oily lake; crows dive at the cat on the way ---- */
-const LAKE6=[98,112],WATER6_Y=161,TURT_V=30;let turtle6=null,divers6=[];
+const LAKE6=[94,115],WATER6_Y=161,TURT_V=30;let turtle6=null,divers6=[];
 function lakeAt6(x){return LV===6&&x>=LAKE6[0]*T&&x<(LAKE6[1]+1)*T;}
 function newTurtle6(){return {x:LAKE6[0]*T+24,st:'wait',t:0,dir:1,on:false,onT:0,offT:0,sink:0,blink:2,cd:1,pad:0,vx:0};}
 function turtleTop6(t){return 143+Math.round(t.sink)+((t.st==='go'||t.st==='leave')?Math.round(Math.sin(gt*2.2)*.6):0);}
@@ -3257,35 +3257,83 @@ function saveGame(){try{const done=new Set(completedLevels());done.add(LV);local
 let bedS=null;
 function bedSpot(){const key=LV+':'+LW;if(bedS&&bedS.key===key)return bedS;const kind={1:'roots',4:'roots',6:'box',5:'box',3:'sweater',2:'sweater'}[LV]||'box';
   let c=Math.floor((ARENA_X+(LV===6?205:LV===2?236:248))/T);for(let k=0;k<12&&groundY(c)>H;k++)c--;
-  const gy=groundY(c),x=c*T+8;bedS={key,kind,x,gy,y:gy-(kind==='sweater'?3:kind==='box'?2:1)};return bedS;}
+  const gy=groundY(c),x=c*T+8;bedS={key,kind,x,gy,y:gy-(kind==='sweater'?3:kind==='box'?4:1)};return bedS;}
+// finely drawn sleeping spots, painted once into canvases: [back layer, front layer] drawn around the sleeping cat
+const BEDART={};
+function bedArt(kind){const key=kind+(kind==='roots'?LV:'');if(BEDART[key])return BEDART[key];
+  const mk=(w,h)=>{const [c,g]=mkCanvas(w,h);const P=(x,y,ww,hh,col)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),ww,hh);};return [c,g,P];};
+  let out;
+  if(kind==='box'){const W0=46,H0=31;const [bc,bg,B]=mk(W0,H0),[fc,fg,Fp]=mk(W0,H0);const rnd=mulberry(77);
+    // ground shadow
+    B(6,29,38,2,'rgba(0,0,0,.28)');B(36,27,8,2,'rgba(0,0,0,.18)');
+    // top face (seen a little from above), corrugation streaks, tape, a fragile sticker
+    for(let y=2;y<=8;y++){const x0=4+(8-y),x1=33+(8-y);for(let x=x0;x<=x1;x++){let c=(x+y*2)%5===0?'#b8905a':'#c9a26b';if(y===2)c='#dcb67e';B(x,y,1,1,c);}}
+    for(let y=2;y<=8;y++){const x=17+(8-y);B(x,y,5,1,y%2?'#e2d29a':'#d6c48a');}B(22+2,4,3,1,'#c0ae76');B(25,3,2,1,'#f0e2b0'); // tape, peeling corner
+    B(28,4,3,3,'#e8e0d0');B(29,4,1,2,'#c8282a');B(28,6,3,1,'#c8282a'); // tiny wine-glass "fragile" sticker
+    // right side face in perspective, darker, with "this way up" arrows and a shipping label + barcode
+    for(let x=34;x<=40;x++){const k=x-33,y0=8-k,y1=29-k;for(let y=y0;y<=y1;y++){let c=y===y0?'#b48a52':'#9a7444';if((y+x)%6===0)c='#8e6a3c';B(x,y,1,1,c);}}
+    B(35,10,1,3,'#3a2a1a');B(34,11,3,1,'#3a2a1a');B(37,9,1,3,'#3a2a1a');B(36,10,3,1,'#3a2a1a');
+    B(35,16,4,6,'#ece6d6');B(35,16,4,1,'#ffffff');for(let i=0;i<4;i++)B(35+i,18,1,(i%2)?2:3,'#1a1a1a');B(35,21,3,1,'#9a9488');
+    B(39,24,1,3,'#7a5a30'); // a seam
+    // opening: dark inside, inner walls catching a little light, old newspaper + a rag on the floor
+    for(let y=10;y<=27;y++){const t=(y-10)/17;B(6,y,26,1,t<.25?'#24160a':t<.5?'#2e1c0c':t<.8?'#3a2410':'#462c14');}
+    for(let y=10;y<=27;y++){B(26+Math.round((27-y)*.0),y,0,0,'#000');}
+    for(let y=11;y<=27;y++){const w=Math.max(1,Math.round((y-10)*.25));B(32-w,y,w,1,'#5a3c1e');}B(6,10,26,2,'#1a1008');
+    B(6,26,26,2,'#5e4020');B(6,26,26,1,'#6e4c26');
+    B(8,24,15,3,'#d8d0bc');B(8,24,15,1,'#ece4d0');for(let i=0;i<5;i++)B(9+i*3,25,2,1,'#6a6a6a');B(9,26,6,1,'#8a8a8a');B(16,26,5,1,'#a8a090');B(22,24,1,3,'#b8b0a0');
+    B(23,25,7,2,'#6e6e80');B(24,24,4,1,'#8a8a9e');B(26,26,3,1,'#54546a');
+    // ---- front layer: cut edges showing the corrugated core, sagging top flap, front lip, a tear, a water stain, a ground flap
+    for(let y=8;y<=29;y++){Fp(4,y,2,1,(y%2)?'#d8b078':'#a87e48');Fp(32,y,2,1,(y%2)?'#c09a62':'#94703e');}Fp(3,8,1,22,'#5a3e1e');Fp(34,9,1,20,'#6a4c26');
+    for(let x=4;x<=33;x++){Fp(x,8,1,2,(x%2)?'#e0bc84':'#b08850');}Fp(4,7,30,1,'#e8c890');
+    for(let k=0;k<5;k++){const x0=7+k,x1=19-Math.floor(k/2);for(let x=x0;x<=x1;x++)Fp(x,10+k,1,1,k===4?'#7a5a30':(x+k)%4===0?'#a07a44':'#b8905a');}Fp(19,11,1,2,'#d0a870');Fp(12,14,3,1,'#5a3e1e');
+    for(let x=4;x<=33;x++){Fp(x,27,1,1,(x%2)?'#d0aa72':'#b08850');Fp(x,28,1,2,'#9a7444');}Fp(4,29,30,1,'#6a4c26');
+    Fp(4,15,2,1,'#f0d8a8');Fp(5,16,1,2,'#6a4c26'); // a small tear on the left edge
+    Fp(6,22,1,4,'#8a6a3a');Fp(5,24,2,3,'#7e5e32'); // water stain where it once got wet (now dry)
+    for(let x=-2;x<4;x++){Fp(x+2,28,1,1,'#b48c56');Fp(x+2,29,1,1,'#8a6a3a');}Fp(0,28,1,2,'#6a4c26');
+    Fp(13,7,1,1,'#7a7a7a');Fp(26,7,1,1,'#7a7a7a'); // staples
+    out={back:{c:bc,ox:19,h:H0},front:{c:fc,ox:19,h:H0}};}
+  else{const W0=84,H0=66,char=LV===4;const [bc,bg,B]=mk(W0,H0),[fc,fg,Fp]=mk(W0,H0);const rnd=mulberry(91+LV);const G0=H0-1,cx0=42;
+    B(4,G0-1,76,2,'rgba(0,0,0,.25)');
+    // roots flaring out, each with its own light and dark side and moss on top
+    const roots=[[-1,0,34,11],[-1,4,24,7],[1,0,36,12],[1,6,22,6]];
+    for(const [s,o,len,h0] of roots){for(let k=0;k<len;k++){const x=cx0+s*(18+o+k),h=Math.max(1,Math.round(h0*(1-k/len)**1.3+Math.sin(k*.6+o)*.6));
+      for(let y=0;y<h;y++){let c=y===h-1?'#7a5a3e':y>h-3?'#5e422e':'#4a3424';if(s>0&&y<h-2)c='#3e2c1e';B(x,G0-y,1,1,c);}
+      if(k%2===0&&h>2)B(x,G0-h+1,1,1,(k%4===0)?'#5a7a32':'#6a8a3a');}}
+    // trunk: bark ridges that wander, lit from the left
+    const top=10;for(let x=20;x<=63;x++){const u=(x-20)/43,jag=Math.round((rnd()*6+(Math.abs(x-cx0)>16?5:0)+(x>50?3:0)));
+      for(let y=top+jag;y<=G0;y++){const ridge=Math.floor((x+Math.sin(y*.13+x*.4)*1.6)/4);const r=((x+Math.round(Math.sin(y*.13+ridge)*1.6))%4+4)%4;
+        let base=u<.25?['#6e4e36','#5a3e2a','#4a3222','#2e1e14']:u<.7?['#5a3e2a','#4a3424','#3e2a1c','#24160e']:['#4a3424','#3e2a1c','#33221a','#1e120c'];
+        if(char&&u<.4)base=['#3a2c24','#2a1e18','#20160f','#120c08'];let c=base[r===0?3:r===1?0:r===2?1:2];if(y%9===0&&r===2)c=base[0];B(x,y,1,1,c);}
+      // broken top: pale splintered wood and the cut rings
+      const ty=top+jag;B(x,ty,1,1,'#c8a878');if(rnd()<.35)B(x,ty-1-Math.floor(rnd()*3),1,1+Math.floor(rnd()*2),'#b8986a');if(x%5===0)B(x,ty+1,1,1,'#a08058');}
+    for(let i=0;i<3;i++)B(30+i*9,top+5+i,6,1,'#8a6a48');
+    // a knot with rings, bracket fungi on the shady side, ivy climbing up the left
+    for(const [kx,ky] of [[52,26],[30,44]]){B(kx-2,ky-1,5,3,'#2a1a10');B(kx-1,ky,3,1,'#6a4a32');B(kx,ky,1,1,'#1a100a');B(kx-3,ky,1,1,'#3e2a1c');B(kx+3,ky,1,1,'#3e2a1c');}
+    for(const [fx,fy,fw] of [[61,30,6],[62,36,5],[60,41,4]]){B(fx,fy,fw,2,'#e2d2a8');B(fx,fy,fw,1,'#a8865a');B(fx+1,fy+2,fw-2,1,'#c8b88e');B(fx+fw-1,fy+1,1,1,'#8a6a42');}
+    let vx=22,vy=G0-6;for(let k=0;k<30;k++){vy-=1.2;vx+=Math.sin(k*.5)*.8;B(vx,vy,1,1,'#2e4a1e');if(k%3===0){B(vx-1,vy,2,2,'#4a7a2e');B(vx-1,vy,1,1,'#6aa040');}}
+    for(let y=G0-14;y<=G0;y++)for(let x=20;x<=26;x++)if(rnd()<.35)B(x,y,1,1,rnd()<.5?'#4a6a2a':'#5a7a32'); // moss at the foot
+    // new life on top: a slim shoot with leaves (it survived)
+    B(33,top-1,1,4,'#4a3424');B(34,top-3,1,3,'#4a3424');B(35,top-5,1,2,'#4a3424');for(const [lx,ly] of [[31,top-2],[35,top-6],[36,top-4],[32,top-4],[47,top+2],[48,top+1]]){B(lx,ly,2,1,'#5a8a3a');B(lx,ly-1,1,1,'#8ac050');}B(47,top+3,1,3,'#4a3424');
+    // the hollow: deep and dark at the back, worn lighter rim, a bed of dry leaves and moss
+    for(let x=-12;x<=12;x++){const t=G0-23+Math.round((x/12)**2*10);for(let y=t;y<=G0;y++){const d=Math.min(y-t,12-Math.abs(x));B(cx0+x,y,1,1,d<1?'#3a2616':d<2?'#24160c':d<5?'#140c06':'#0c0604');}}
+    for(let x=-12;x<=12;x++){const t=G0-23+Math.round((x/12)**2*10);B(cx0+x,t-1,1,1,x<0?'#7a5a3e':'#5a3e2a');}
+    for(let i=0;i<34;i++){const x=cx0-11+Math.floor(rnd()*22),y=G0-Math.floor(rnd()*3);B(x,y,2,1,['#8a6a3a','#a07a3a','#6a4a2a','#b88a4a','#5a6a2a'][Math.floor(rnd()*5)]);}
+    // ---- front layer: a root arching across the mouth of the hollow, pebbles, a few leaves
+    for(let x=44;x<=64;x++){const y=G0-3-Math.round(Math.sin((x-44)/20*Math.PI)*4);Fp(x,y,1,4,'#4a3424');Fp(x,y,1,1,'#7a5a3e');Fp(x,y+1,1,1,'#5e422e');if(x%4===0)Fp(x,y,1,1,'#5a7a32');}
+    for(let x=28;x<=38;x++){const y=G0-1-Math.round(Math.sin((x-28)/10*Math.PI)*2);Fp(x,y,1,2,'#5e422e');Fp(x,y,1,1,'#7a5a3e');}
+    for(const [px,pc] of [[24,'#8a8a8a'],[66,'#7a7a70'],[70,'#9a9a90']]){Fp(px,G0-1,3,2,pc);Fp(px,G0-1,2,1,'#b8b8b0');}
+    for(const [lx,lc] of [[40,'#b88a4a'],[56,'#a07a3a'],[18,'#8a6a3a']])Fp(lx,G0,3,1,lc);
+    out={back:{c:bc,ox:cx0,h:H0},front:{c:fc,ox:cx0,h:H0}};}
+  BEDART[key]=out;return out;}
 function drawBed(cx,front){if(state==='title')return;const b=bedSpot(),X=R(b.x-cx),G=b.gy;if(X<-50||X>W+50)return;
-  if(b.kind==='box'){ // a dry cardboard box lying open toward us
-    if(!front){rect(X-17,G-22,34,22,'#3a2810');rect(X-16,G-21,32,21,'#6a4824');rect(X-13,G-18,26,17,'#4a3018');rect(X-13,G-18,26,3,'#34200e');rect(X-13,G-18,2,17,'#5a3c1e');rect(X+11,G-18,2,17,'#3e2812');
-      rect(X-13,G-3,26,2,'#5e4020');rect(X-11,G-4,16,2,'#7a7a8a');rect(X-10,G-5,7,1,'#9a9aaa');rect(X-2,G-4,1,2,'#5a5a6a');rect(X+6,G-3,4,1,'#c8b890'); // an old rag + a scrap of newspaper
-      for(let i=0;i<4;i++)rect(X+7+i,G-3,1,1,i%2?'#3a3a3a':'#e0d8c0');return;}
-    rect(X-16,G-21,3,21,'#b8905a');rect(X-16,G-21,1,21,'#d8b078');rect(X-14,G-21,1,21,'#8a6a3a');rect(X+13,G-21,3,21,'#a8804a');rect(X+15,G-21,1,21,'#7a5a30');
-    rect(X-16,G-22,32,3,'#c8a06a');rect(X-16,G-22,32,1,'#e0c08a');rect(X-16,G-19,32,1,'#8a6a3a');rect(X-3,G-22,7,3,'#d8c890');rect(X-3,G-20,7,1,'#b0a070');
-    for(let k=0;k<5;k++){rect(X-12+k,G-18+k,11,1,k===4?'#7a5a30':'#b08850');}rect(X-12,G-18,1,1,'#d8b078'); // a flap sagging in from the top
-    rect(X-16,G-2,32,2,'#9a7444');rect(X-16,G-2,32,1,'#c09862');
-    rect(X+14,G-16,1,3,'#3a2a1a');rect(X+13,G-15,1,1,'#3a2a1a');rect(X+15,G-15,1,1,'#3a2a1a');rect(X+14,G-11,1,3,'#3a2a1a');rect(X+13,G-10,1,1,'#3a2a1a');rect(X+15,G-10,1,1,'#3a2a1a'); // "this way up" arrows
-    rect(X-15,G-9,2,3,'#9a7848');rect(X-15,G-6,1,1,'#8a6a3a');return;}
+  if(b.kind==='box'||b.kind==='roots'){const A=bedArt(b.kind)[front?'front':'back'];ctx.drawImage(A.c,X-A.ox,G-A.h+(b.kind==='box'?0:1));
+    if(b.kind==='roots'&&!front){const sw=Math.round(Math.sin(gt*1.5)*.6);rect(X-7+sw,G-A.h+5,2,1,'#7aaa4a');rect(X-6+sw,G-A.h+4,1,1,'#9ac860');}return;}
   if(b.kind==='sweater'){ // a discarded old wool sweater, maroon knit with a mustard band, a hole and a loose thread
     if(!front){for(let x=-20;x<=20;x++){const h=Math.round(3+1.6*Math.sin(x*.33+1)+(Math.abs(x)<9?2:0)+(Math.abs(x)<4?1:0));for(let y=0;y<h;y++){const yy=G-1-y;let c=((x+y)&1)?'#9a343a':'#7a262c';if(y===h-1)c='#b04a4e';if(y===2||y===3&&Math.abs(x)<12)c=((x+y)&1)?'#d0a848':'#a8822e';rect(X+x,yy,1,1,c);}}
       for(let x=-28;x<=-19;x++){const yy=G-2+Math.round(Math.sin(x*.5)*.5);rect(X+x,yy,1,2,((x)&1)?'#8a2e34':'#6e2228');}for(let k=0;k<3;k++)rect(X-29,G-3+k,1,1,'#5a1a20');rect(X-28,G-3,1,3,'#5a1a20');
       rect(X+6,G-4,2,1,'#2a0e10');rect(X-12,G-3,1,1,'#2a0e10');rect(X+19,G-1,1,1,'#d0a848');rect(X+21,G-2,1,1,'#d0a848');rect(X+22,G-1,2,1,'#d0a848');rect(X+24,G-2,1,1,'#d0a848');return;}
     for(let x=7;x<=21;x++){const yy=G-5+Math.round(Math.abs(x-14)*.35);rect(X+x,yy,1,2,((x)&1)?'#9a343a':'#7a262c');rect(X+x,yy,1,1,'#b04a4e');}for(let k=0;k<2;k++)rect(X+21,G-3+k,1,1,'#5a1a20');return;}
-  // roots: an old broken trunk that survived, with a dry hollow among its roots and a few new leaves
-  const char=LV===4;
-  if(!front){const top=G-46;for(let x=-22;x<=22;x++){const jag=Math.round(hashD(x+5)*6+(Math.abs(x)>14?4:0));for(let y=top+jag;y<G;y++){let c=char&&x<-8?'#2a1e18':'#4a3426';const r=(x+60)%4;if(r===0)c=char&&x<-8?'#1a120e':'#36261a';else if(r===1&&x<-10)c=char?'#3a2a20':'#6a4a34';rect(X+x,y,1,1,c);}
-      rect(X+x,top+jag,1,1,'#8a6a48');}
-    for(let s=-1;s<=1;s+=2)for(let k=0;k<12;k++){const x=X+s*(22+k),h=Math.max(1,Math.round(10-k*.85));rect(x,G-h,1,h,'#4a3426');rect(x,G-h,1,1,'#6a4a34');if(k%3===0)rect(x,G-h,1,1,'#4a6a2a');}
-    for(let x=-12;x<=12;x++){const t=G-19+Math.round((x/12)**2*9);rect(X+x,t,1,G-t,x>-11&&x<11?'#140c08':'#2a1a10');rect(X+x,t,1,1,'#2a1a10');}
-    for(let i=0;i<16;i++){const h=hashD(i*7+3);rect(X-10+Math.floor(h*20),G-1-Math.floor(hashD(i)*2),2,1,['#8a6a3a','#a07a3a','#6a4a2a','#b88a4a'][i%4]);} // dry leaves bedding
-    for(const [lx,ly,c] of [[-6,-48,'#5a8a3a'],[-5,-49,'#7aaa4a'],[-7,-50,'#5a8a3a'],[3,-47,'#5a8a3a'],[4,-48,'#7aaa4a'],[10,-44,'#6a9a40'],[-14,-42,'#5a8a3a']]){const sw=Math.round(Math.sin(gt*1.5+lx)*.5);rect(X+lx+sw,G+ly+46-46,2,1,c);}
-    rect(X-6,G-47,1,2,'#4a3426');rect(X+3,G-46,1,2,'#4a3426');
-    for(const [mx,my] of [[-18,-6],[-16,-7],[17,-5],[19,-4],[-20,-3]])rect(X+mx,G+my,2,1,'#4a6a2a');return;}
-  for(let x=4;x<=22;x++){const y=G-3-Math.round(Math.sin((x-4)/18*Math.PI)*3);rect(X+x,y,1,3,'#5a3e2c');rect(X+x,y,1,1,'#7a5a3e');}rect(X+10,G-5,2,1,'#4a6a2a');
-  for(let i=0;i<5;i++)rect(X-14+i*7,G-1,2,1,['#a07a3a','#8a6a3a'][i%2]);}
+}
 function updOutro(dt){
   if(p.y>H+20){p.x=ARENA_X+120;p.y=GROUND_Y;p.vy=0;}
   const o=outro;o.t+=dt;const CXm=ARENA_X+150;let P=poseStand(gt);
