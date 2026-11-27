@@ -648,7 +648,15 @@ const FARTREE=[makeTree(70,100,13,40,LEAF_FAR),makeTree(60,90,17,36,LEAF_FAR)];
 function tintCv(src,col){const [c,g]=mkCanvas(src.width,src.height);g.drawImage(src,0,0);g.globalCompositeOperation='multiply';g.fillStyle=col;g.fillRect(0,0,c.width,c.height);g.globalCompositeOperation='destination-in';g.drawImage(src,0,0);return c;}
 const BIGTREE_T=BIGTREE.map(t=>tintCv(t,'#ffe0c8')),FARTREE_T=FARTREE.map(t=>tintCv(t,'#ffe0c8'));
 // wind: background trees sway — slices drawn with an offset that grows toward the crown, base stays rooted
-function swayK(seed){return Math.sin(gt*1.25+seed)*.6+Math.sin(gt*.55+seed*1.7)*.4;}
+// wind: a steady breeze with gusts rolling through every so often (0 = calm, 1 = strong gust)
+function windNow(){const g=Math.max(0,Math.sin(gt*.42)*Math.sin(gt*.13+1.3));return .3+.7*Math.min(1,g*1.6);}
+function swayK(seed){const w=windNow();return (Math.sin(gt*1.25+seed)*.6+Math.sin(gt*.55+seed*1.7)*.4)*(.55+w*.8)+w*.55+Math.sin(gt*6.3+seed*3)*.12*w;}
+// a fringe of grass blades along the top of the ground, each bending with the wind; gusts roll across as a wave
+const GRASS_PAL={1:['#2f7a36','#4fa040','#7cc858'],3:['#6a7a34','#94a648','#c4c870'],4:['#1c2e26','#2a4232','#3e5a40']};
+function grassFringe(X,Y,c,wx){const P=GRASS_PAL[LV];if(!P)return;const w=windNow();
+  for(let i=0;i<8;i++){const hs=hashD(c*31+i*7),h=2+Math.floor(hs*5);if(hs<.12)continue;const bx=X+i*2+(hs>.5?1:0);
+    const wave=Math.sin(gt*2.4-(wx+i*2)*.045)*.5+.5,bend=Math.round((w*1.3+wave*w*1.4+Math.sin(gt*5+i+c)*.35)*(h/5));
+    rect(bx,Y-Math.ceil(h/2),1,Math.ceil(h/2),P[0]);rect(bx+Math.round(bend/2),Y-h+1,1,Math.floor(h/2),P[1]);if(h>4)rect(bx+bend,Y-h,1,1,P[2]);}}
 function imgTop(img){if(img._top!==undefined)return img._top;let t=0;try{const d=img.getContext('2d').getImageData(0,0,img.width,img.height).data;
   outer:for(let y=0;y<img.height;y++)for(let x=0;x<img.width;x++)if(d[(y*img.width+x)*4+3]>0){t=y;break outer;}}catch(e){}return img._top=t;}
 function swayImg(img,x,y,seed,amp=3){const h=img.height,t0=imgTop(img),k=swayK(seed)*amp,span=h-t0;
@@ -661,8 +669,25 @@ function wrapDraw(img,off,y){const o=((Math.floor(off)%LWID)+LWID)%LWID;ctx.draw
 
 function drawBirds(cx){for(let i=0;i<4;i++){const sp=8+hash(i*7)*6;const x=((hash(i*3)*W*2-gt*sp-cx*.06)%(W+60)+W+60)%(W+60)-30;const y=30+hash(i*11)*40+Math.sin(gt*.7+i)*3;
   const f=Math.floor(gt*6+i)%2;const c='#4a2f4a';rect(x,y,1,1,c);rect(x-1,y-1+f,1,1,c);rect(x+1,y-1+f,1,1,c);rect(x-2,y-1+f*0,1,1,c);rect(x+2,y-1,1,1,c);}}
+function drawWindStuff(cx){const w=windNow();
+  // leaves torn off by the gusts stream across the screen
+  const LC=LV===3?[['#e0a43a','#b8742a'],['#c8642a','#8a3a1a'],['#d8c050','#a08a30']]:LV===4?[['#5a4a3a','#3a2a20'],['#e07a2a','#a04a1a'],['#3a3a30','#22201a']]:[['#7cc048','#4f9a3f'],['#a8d850','#6aa83a'],['#e0a43a','#b8742a']];
+  const n=Math.round(4+w*22);for(let i=0;i<n;i++){const s0=hashD(i*17+3),sp=40+s0*50+w*70,per=(W+60)/sp,k=((gt+s0*per*3)%per)/per;
+    const x=((k*(W+60))-30-(cx*.2)%40),y=20+hashD(i*5+1)*110+Math.sin(gt*3+i*1.7)*6+k*14;const f=Math.floor(gt*10+i)%3;const [a,b]=LC[i%3];
+    if(f===0){rect(x,y,2,1,a);rect(x+1,y+1,1,1,b);}else if(f===1){rect(x,y,1,2,a);rect(x+1,y,1,1,b);}else{rect(x,y,2,1,b);rect(x,y-1,1,1,a);}}
+  if(LV===1){
+    // pollen and dandelion seeds lifting on the breeze, catching the sun
+    for(let i=0;i<24;i++){const s0=hashD(i*9+2),k=((gt*(.05+s0*.04)+s0)%1);const x=((i*41-cx*.6+gt*(8+w*26))%(W+20)+W+20)%(W+20)-10,y=140-k*120+Math.sin(gt*1.3+i)*5;
+      alpha(.55*(1-k)+.2,()=>{rect(x,y,1,1,'#fffbe0');if(s0>.7){rect(x-1,y-1,1,1,'#fffbe0');rect(x+1,y-1,1,1,'#fffbe0');}});}
+    // butterflies dancing over the bushes
+    for(let i=0;i<4;i++){const ph=gt*.5+i*2.1,bx=((i*97+Math.sin(ph)*30+Math.sin(ph*2.3)*10-cx*.9)%(W+40)+W+40)%(W+40)-20,by=104+Math.sin(ph*1.7+i)*12+Math.sin(gt*7+i)*1.5;
+      const C=[['#ffd84a','#c89a20'],['#ff8fb0','#c85a7a'],['#ffffff','#c8c8d8'],['#8ac8ff','#4a8ac8']][i],f=Math.floor(gt*14+i*3)%2;
+      rect(bx,by,1,3,'#3a2a20');if(f){rect(bx-2,by,2,2,C[0]);rect(bx+1,by,2,2,C[0]);rect(bx-2,by+2,2,1,C[1]);rect(bx+1,by+2,2,1,C[1]);}else{rect(bx-1,by,1,2,C[0]);rect(bx+1,by,1,2,C[0]);}}
+  }
+}
 function drawAmbient(cx){
   if(LV===2){drawAmbient2(cx);return;}if(LV===5){drawAmbient5(cx);return;}
+  drawWindStuff(cx);
   // drifting leaves
   for(let i=0;i<10;i++){const s0=hash(i*13+1);const per0=7+s0*5;const k=((gt+s0*per0)%per0)/per0;
     const x=((i*53-cx*.85)%(W+40)+W+40)%(W+40)-20+Math.sin(k*12+i)*8;const y=-6+k*(H-20);
@@ -677,6 +702,7 @@ function drawBack(cx){
   drawSkyFor(cx);
   if(!MOUNT_DAY)MOUNT_DAY=hueCv(MOUNT,'#7f9cc8',.55);
   wrapDraw(MOUNT_DAY,cx*.1,0);
+  if(LV===1){ctx.save();ctx.globalCompositeOperation='lighter';for(let i=0;i<4;i++){const a=.035+.025*Math.sin(gt*.4+i*1.9);ctx.globalAlpha=a;ctx.fillStyle='#fff6d0';ctx.beginPath();const x0=262-i*6;ctx.moveTo(x0,26);ctx.lineTo(x0+6,26);ctx.lineTo(120-i*70+Math.sin(gt*.2+i)*8,150);ctx.lineTo(80-i*70+Math.sin(gt*.2+i)*8,150);ctx.closePath();ctx.fill();}ctx.restore();}
   wrapDraw(HILLS,cx*.17,0);
   drawBirds(cx);
   // far trees
@@ -684,8 +710,8 @@ function drawBack(cx){
   const bigT=(set)=>{const off=cx*.7,k0=Math.floor(off/300)-1;for(let k=k0;k<k0+4;k++){const t=set[(k%2+2)%2];ctx.drawImage(t,R(k*300+hash(k*3)*50-off),146-t.height);}};
   // (far tree row dropped: the ref keeps the middle open, pines + bushes only)
   wrapSway(PINES,cx*.3,0,0);
-  wrapDraw(BUSHES_BK,cx*.38,0);
-  wrapDraw(BUSHES,cx*.45,0);
+  wrapSway(BUSHES_BK,cx*.38,0,3,1);
+  wrapSway(BUSHES,cx*.45,0,7,1.3);
   // big trees close behind the path
   {const off=cx*.7,k0=Math.floor(off/300)-1;for(let k=k0;k<k0+4;k++){const t=BIGTREE[(k%2+2)%2];const sx=R(k*300+hash(k*3)*50-off);
     if(hashD(k*17+5)<decayAt(sx+t.width/2+cx)*1.1){ctx.drawImage(STUMP.r,sx+t.width/2-15,146-23);continue;}swayImg(t,sx,146-t.height,k*2.3);}}
@@ -2851,7 +2877,7 @@ function drawTiles(cx){
     if(t==='G'&&above===' '&&LV===2){const X=c*T-R(cx),Y=r*T-by;if(wl<2)decor2(c,r,X,Y);else if(hashD(c*3+r)>.6){const gx=X+4;rect(gx,Y-5,1,5,'#6a6a3a');rect(gx+2,Y-4,1,4,'#7a7444');rect(gx+1,Y-7,1,2,'#5a4a2a');}}
     else if(t==='G'&&above===' '&&wl>=2){const X=c*T-R(cx),Y=r*T;if(hashD(c*11+r)>.5){const gx=X+Math.floor(hashD(c*17)*12);rect(gx,Y-2,1,2,'#a8884a');rect(gx+1,Y-3,1,3,'#c4a45a');rect(gx+3,Y-2,1,2,'#8a6a3a');}}
     else if(t==='G'&&above===' '&&LV!==5){
-      const X=c*T-R(cx),Y=r*T;
+      const X=c*T-R(cx),Y=r*T;grassFringe(X,Y,c,c*T);
       if(hash(c*3+r)>.55){const fx=X+2+Math.floor(hash(c*5)*11);const col=['#ffffff','#ffd84a','#ff8fb0','#c6a0ff'][Math.floor(hash(c*13)*4)];rect(fx,Y-2,1,2,'#3f7f35');rect(fx-1,Y-3,3,1,col);rect(fx,Y-4,1,1,col);rect(fx,Y-3,1,1,'#ffe9a0');}
       if(hash(c*11+r)>.45){const gx=X+Math.floor(hash(c*17)*12);const sw=Math.sin(gt*2+c)>.6?1:0;rect(gx,Y-2,1,2,'#5db449');rect(gx+1+sw,Y-4,1,4-sw,'#79cc58');rect(gx+3,Y-3,1,3,'#4f9a3f');}
       const hd=(v=>v-Math.floor(v))(Math.sin(c*12.9898+r*78.233)*43758.5453);
