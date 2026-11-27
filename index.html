@@ -3864,8 +3864,12 @@ function buildFore(){const w=Math.ceil((LW-W)*FK+W+48);const res=paintFore({LV,w
 function drawFore(cx){
   const key=LV+':'+LW;if(foreKey!==key){foreKey=key;buildFore();}
   const fx=Math.max(0,R(cx*FK)),y0=H-FH;
-  ctx.drawImage(foreCv,fx,0,W,FH,0,y0,W,FH);
-  for(const L of foreLive){const sx=L.x-fx;if(sx<-12||sx>W+12)continue;
+  // keep pits and water gaps clear: fade the strip out over any column with no ground, so jumps can be judged
+  const pitAt=sx=>{const c=Math.floor((cx+sx)/T);return c>=0&&c<COLS&&groundY(c)>H;};
+  const SW=2,n=Math.ceil(W/SW),pit=[];for(let i=0;i<n;i++)pit.push(pitAt(i*SW+1));
+  const fade=[];for(let i=0;i<n;i++){let d=99;if(pit[i])d=0;else for(let k=1;k<=6&&d===99;k++)if(pit[i-k]||pit[i+k])d=k;fade.push(d>=6?1:d/6);}
+  for(let i=0;i<n;){const a=fade[i];let j=i+1;while(j<n&&fade[j]===a)j++;if(a>0){const x0=i*SW,ww=(j-i)*SW;if(a<1)ctx.globalAlpha=a;ctx.drawImage(foreCv,fx+x0,0,ww,FH,x0,y0,ww,FH);ctx.globalAlpha=1;}i=j;}
+  for(const L of foreLive){const sx=L.x-fx;if(sx<-12||sx>W+12)continue;if(fade[Math.max(0,Math.min(n-1,Math.floor(sx/SW)))]<1)continue;
     if(L.k==='ember'){const a=.55+.45*Math.sin(gt*2.2+L.ph);rect(sx,y0+L.y,1,1,a>.75?'#ffd060':'#ff7a20');if(a>.8)rect(sx,y0+L.y-1,1,1,'#ff9a30');}
     else if(L.k==='smoke'){const t=(gt*.35+L.ph)%1;alpha(.22*(1-t),()=>{rect(sx+Math.sin(t*6+L.ph)*2,y0+L.y-t*14,2,2,'#8a8478');});}
     else if(L.k==='glow'){alpha(.25+.15*Math.sin(gt*1.5+L.ph),()=>rect(sx-1,y0+L.y-1,3,3,'#ff9a7a'));}
