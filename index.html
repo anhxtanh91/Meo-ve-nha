@@ -2008,7 +2008,7 @@ function drawCity5Light(cx){
   for(let i=0;i<7;i++){const x=((i*83-cx*.7+gt*(5+i%3*3))%(W+160)+W+160)%(W+160)-80,y=128+(i%4)*12;alpha(.22,()=>ctx.drawImage(HAZE5,R(x-70),R(y-14),140,28));}
   if(state==='arrive')for(const w of walkers5){const x=w.x-cx;if(x<-30||x>W+30)continue;const px=R(x+(w.dir>0?1:-1)*3.7),py=R(w.y-44*1.1+11);glow(px,py,7,'rgb(150,200,255)',.45);}
   for(const bn of bins5)if(bn.eyes>0){const x=bn.x-cx;glow(x-3,GROUND_Y-21,6,'rgb(110,255,100)',.75);glow(x+3,GROUND_Y-21,6,'rgb(110,255,100)',.75);}
-  if(boss&&boss.kind==='stray'&&!boss.hidden){const b=boss,sc=1.25;glow(b.x-cx+b.dir*7*sc,b.y-11*sc,5,'rgb(200,255,80)',.35);}
+  if(boss&&boss.kind==='stray'&&!boss.hidden){const b=boss,sc=1.25;glow(b.x-cx+b.dir*7*sc,b.y-10*sc,3,'rgb(200,255,80)',.22);}
 }
 function reset5(){arr5=null;rats5=[];
   walkers5=[{x:236,y:GROUND_Y+1,dir:-1,sp:24,ph:0,v:0,lead:1},{x:-30,y:GROUND_Y+1,dir:1,sp:20,ph:1,v:1},{x:150,y:GROUND_Y+1,dir:1,sp:22,ph:2,v:0},{x:250,y:GROUND_Y+1,dir:-1,sp:26,ph:3,v:1}];throws5=[];bags5=[];throwT5=3;fadeIn5=0;
@@ -2154,6 +2154,16 @@ function drawStrayBoss(cx){const b=boss;
   if(s==='clawprep'){if(Math.floor(gt*10)%2){rect(x-1,b.y-30,2,5,'#ff4030');rect(x-1,b.y-24,2,2,'#ff4030');}for(let i=0;i<3;i++)rect(x+b.dir*(12+i),b.y-3-i*2,b.dir*2,1,Math.floor(gt*12+i)%2?'#ffffff':'#ff8070');}
   if(s==='claw'){const q=(b.t%.16)/.16;for(let i=0;i<3;i++){const ax=x+b.dir*(8+q*10),ay=b.y-12+i*4-q*3;rect(ax,ay,b.dir*7,1,'#f4f4f4');rect(ax+b.dir*2,ay+1,b.dir*5,1,'#b0b0b0');}}
   if(s==='spitprep'&&Math.floor(gt*8)%2)rect(x+b.dir*12,b.y-12,2,2,'#8a8070');
+  // glowing toxic eyes (streak while dashing), flies buzzing round the mangy fur, red claw glints, spittle before a hairball
+  {const img=b.dir>0?fr.r:fr.l;if(!img._eyes){const d=img.getContext('2d').getImageData(0,0,img.width,img.height).data;img._eyes=[];for(let i=0;i<d.length;i+=4)if(d[i]===200&&d[i+1]===240&&d[i+2]===64)img._eyes.push([(i/4)%img.width,Math.floor(i/4/img.width)]);}
+    const X0=R(x-12*sc),Y0=R(b.y-h),kx=w/fr.w,ky=h/fr.h,pl=.5+.5*Math.sin(gt*7),dash=s==='tobin'||s==='flee'||s==='claw';
+    if(eye==='open'&&img._eyes.length){let ex=0,ey=0;for(const [a,c] of img._eyes){ex+=a;ey+=c;}ex=X0+(ex/img._eyes.length+.5)*kx;ey=Y0+(ey/img._eyes.length+.5)*ky;
+      b.etr=b.etr||[];b.etr.push([ex-x+b.x,ey]);if(b.etr.length>9)b.etr.shift();
+      if(dash)for(let i=1;i<b.etr.length;i++){const [ax,ay]=b.etr[i-1],[bx2,by2]=b.etr[i];alpha(i/b.etr.length*.6,()=>{ctx.strokeStyle='#c8f040';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(ax-b.x+x,ay);ctx.lineTo(bx2-b.x+x,by2);ctx.stroke();});}
+      glow(ex,ey,2.5+pl,'rgb(200,255,60)',.12+pl*.1);for(const [a,c] of img._eyes)rect(X0+R(a*kx),Y0+R(c*ky),1,1,pl>.6?'#f4ffb0':'#c8f040');}
+    for(let i=0;i<3;i++){const t=gt*(2.2+i*.7)+i*2,fx2=R(x+Math.sin(t*1.7)*(10+i*3)+Math.sin(t*5.3)*2),fy2=R(b.y-h-3+Math.cos(t*2.3)*4+Math.sin(t*6.1));rect(fx2,fy2,1,1,'#6a6458');if(Math.floor(gt*30+i)%2)rect(fx2+(i%2?1:-1),fy2-1,1,1,'rgba(220,220,230,.7)');}
+    if(s==='claw'||s==='clawprep')for(let i=0;i<3;i++)glow(x+b.dir*(14+i*2),b.y-4-i*3,4,'rgb(255,60,40)',.4);
+    if(s==='spitprep'&&Math.random()<.4)parts.push({x:b.x+b.dir*12+(Math.random()*2-1),y:b.y-11,vx:b.dir*Math.random()*6,vy:4,life:.5,max:.5,c:'#c8c0a8',g:300});}
 }
 // small city pests: cockroaches on the roofs, pigeons in the air (both face left like the other enemy sprites)
 function roachS(f){return shapeSprite(15,7,'#120a06',m=>{const o=f?1:-1;for(const [x,d] of [[5,o],[8,-o],[11,o]]){m.cap(x,5,x-1+d,6.6,.6,'#2a1a10');}
