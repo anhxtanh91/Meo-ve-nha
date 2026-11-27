@@ -59,7 +59,7 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rend
 .tmenu .mi{font-size:max(16px,3.6cqw)}
 .tmenu .note{font-size:.7em;opacity:.8}
 .mi .note{font-size:.62em;opacity:.8}
-#llist.cuts{display:grid;grid-template-columns:1fr 1fr;gap:.4cqw 1.2cqw;min-width:min(94%,640px)}#llist.cuts .mi{font-size:max(13px,3cqw);flex-direction:column;gap:0;line-height:1.05}#llist.cuts .mi .note{font-size:.8em}#llist.cuts .mi[data-a=back]{grid-column:1/-1;flex-direction:row}
+#llist.cuts{display:grid;grid-template-columns:1fr 1fr;gap:.4cqw 1.2cqw;min-width:min(94%,640px)}#llist.cuts .mi{font-size:max(13px,3cqw);flex-direction:column;gap:0;line-height:1.05}#llist.cuts .mi .note{font-size:.8em}#llist.cuts .mi.open{color:#fff6dc;text-shadow:0 0 .4em rgba(255,214,120,.45)}#llist.cuts .mi.open .note{opacity:1}#llist.cuts .mi.dim,#llist.cuts .mi.locked{opacity:.32}#llist.cuts .mi.locked:hover:not(.sel){background:none;color:var(--ink)}#llist.cuts .mi.sel,#llist.cuts .mi:not(.locked):hover{opacity:1;color:#1b1622;text-shadow:none}#llist.cuts .mi[data-a=back]{grid-column:1/-1;flex-direction:row}
 #llist .empty{font-size:max(14px,3.2cqw);color:var(--muted);margin:0}
 #llist.lv{display:grid;grid-template-columns:1fr 1fr;gap:.4cqw 1.2cqw;min-width:min(94%,640px)}#llist.lv .mi{font-size:max(13px,3.2cqw);line-height:1.1}#llist.lv .mi .lab{min-width:0}#llist.lv .empty,#llist.lv .mi[data-a=back]{grid-column:1/-1}#llist.lv .empty{font-size:max(12px,2.6cqw)}
 .mi .lab{min-width:5.2em;text-align:left}
@@ -3159,17 +3159,17 @@ let cutView=false;
 const reached=(d,id)=>{const i=ORDER.indexOf(id);return i<=0||d.includes(ORDER[i-1])||d.includes(id);};
 const CUTS=[{a:'cut1',name:'Mở đầu',note:'Chuyến xe buýt',ok:()=>true},
   {a:'boss1',name:'Màn 1',note:'Bầy ong và Ong Chúa',ok:d=>reached(d,1)},
+  {a:'dream1',name:'Flashback 1',note:'Bức tranh khu rừng',ok:d=>d.includes(1)},
   {a:'boss6',name:'Màn 2',note:'Chuột Chúa bãi rác',ok:d=>reached(d,6)},
   {a:'boss3',name:'Màn 3',note:'Quạ và chuột',ok:d=>reached(d,3)},
+  {a:'dream3',name:'Flashback 2',note:'Cánh đồng lúa chín',ok:d=>d.includes(3)},
   {a:'boss4',name:'Màn 4',note:'Chó hoang giữa rừng cháy',ok:d=>reached(d,4)},
   {a:'out4',name:'Màn 4',note:'Mưa dập lửa',ok:d=>d.includes(4)},
   {a:'boss2',name:'Màn 5',note:'Ếch con hoá Ếch Chúa',ok:d=>reached(d,2)},
   {a:'out2',name:'Màn 5',note:'Hồ sen sạch lại',ok:d=>d.includes(2)},
+  {a:'dream2',name:'Flashback 3',note:'Câu cá bên hồ',ok:d=>d.includes(2)},
   {a:'cut5',name:'Màn 6',note:'Con hẻm phố đêm',ok:d=>reached(d,5)},
   {a:'boss5',name:'Màn 6',note:'Mèo hoang',ok:d=>reached(d,5)},
-  {a:'dream1',name:'Màn 1',note:'Giấc mơ bức tranh',ok:d=>d.includes(1)},
-  {a:'dream3',name:'Màn 3',note:'Giấc mơ cánh đồng lúa',ok:d=>d.includes(3)},
-  {a:'dream2',name:'Màn 5',note:'Giấc mơ câu cá',ok:d=>d.includes(2)},
   {a:'cutEnd',name:'Kết thúc',note:'Về đến nhà',ok:d=>d.includes(5)}];
 let cvT=0,cvEnd=0;
 // replay a boss's entrance, or the scene after a boss, straight in the arena
@@ -3178,7 +3178,8 @@ function replayArena(id,out){LV=id;seenIntro={};lastCheck=56;resetLevel();cutVie
   if(out){cutView='out';winLevel();}else cutView='boss';show('skip',true);}
 function updCutView(dt){if(cutView!=='boss')return;cvT+=dt;if(boss&&boss.state!=='intro'&&!boss.intro){cvEnd+=dt;if(cvEnd>.6){endCutView();return;}}if(cvT>25)endCutView();}
 function buildCuts(){const d=completedLevels();let h='';
-  for(const C of CUTS)h+=C.ok(d)||cheat?`<button class="mi" type="button" data-a="${C.a}">${C.name} <span class="note">${C.note}</span></button>`:`<div class="mi locked" data-a="none">🔒 ${C.name} <span class="note">chưa mở khoá</span></div>`;
+  // unlocked scenes are bright; locked ones stay faded (with cheats on they can still be played)
+  for(const C of CUTS){const ok=C.ok(d);h+=ok||cheat?`<button class="mi${ok?' open':' dim'}" type="button" data-a="${C.a}">${C.name} <span class="note">${C.note}</span></button>`:`<div class="mi locked" data-a="none">🔒 ${C.name} <span class="note">chưa mở khoá</span></div>`;}
   h+='<button class="mi" type="button" data-a="back">Quay lại</button>';$('llist').innerHTML=h;}
 // every cutscene ends by dimming to black instead of cutting off
 const SF={a:0,dir:0,cb:null,spd:1};
@@ -3239,6 +3240,7 @@ function tryCheat(){const v=$('cheatIn').value.trim();
   if(v==='1905'){cheat=!cheat;$('cheatMsg').textContent=cheat?'Đã bật bất tử: mèo không mất máu':'Đã tắt bất tử';$('godTag').hidden=!cheat;SFX.win&&SFX.win();}
   else{$('cheatMsg').textContent='Sai mã';tone(200,120,.15,'square',.05);}
   $('cheatIn').value='';$('cheatBox').hidden=true;menuMark();}
+for(const id of ['mlist','slist','llist'])$(id).addEventListener('mouseover',e=>{const it=e.target.closest('.mi');if(it&&it.classList.contains('locked'))return;const k=MI().indexOf(it);if(k>=0&&k!==menuSel){menuSel=k;menuMark();}});
 for(const id of ['mlist','slist','llist'])$(id).addEventListener('click',e=>{const it=e.target.closest('.mi');if(!it)return;const d=e.target.dataset&&e.target.dataset.d;
   menuSel=MI().indexOf(it);menuMark();if(d){adjVol(it.dataset.a,+d);return;}if(it.dataset.a==='mus'||it.dataset.a==='sfx'||it.dataset.a==='none')return;menuDo(it.dataset.a);});
 $('cheatOk').onclick=tryCheat;
