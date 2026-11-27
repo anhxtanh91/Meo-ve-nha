@@ -2285,8 +2285,12 @@ function drawNight(cx){const fv=fireAt(cx+W/2);
   ctx.save();ctx.globalCompositeOperation='multiply';ctx.drawImage(LCV,0,0);ctx.restore();
   drawEyes(cx);
   // things that glow on top of the dark
+  const dk=boss&&boss.kind==='dog'&&boss.state==='intro'?boss.dk||0:0;
+  if(dk>0){alpha(dk*.93,()=>rect(0,0,W,H,'#050304'));
+    for(let i=0;i<34;i++){const k=((gt*(.12+hashD(i*3)*.1)+hashD(i*5))%1),x=hashD(i*7)*W+Math.sin(gt*1.3+i)*6,y=GROUND_Y+4-k*120,fl=.5+.5*Math.sin(gt*(6+i%5)+i);
+      alpha(dk*(1-k)*(.4+.6*fl),()=>{rect(x,y,1,1,k<.4?'#ffd060':'#ff6a20');if(fl>.85)glow(x,y,3,'rgb(255,120,40)',.5);});}}
   if(boss&&boss.kind==='dog'&&boss.state==='intro'&&boss.eyeK>0)drawDogEyes(boss,cx);
-  if(boss&&boss.kind==='dog'&&boss.state!=='flee'&&boss.state!=='gone'&&!(boss.state==='intro'&&!boss.jumped)){const b=boss,ex=b.x-cx+(b.dir>0?13:-13)*b.sc,ey=b.y-(b.state==='intro'?20:22)*b.sc;if(b.state!=='daze')alpha(.8,()=>glow(ex,ey,6,'rgb(255,200,60)',.35));}
+  if(boss&&boss.kind==='dog'&&boss.state!=='flee'&&boss.state!=='gone'&&!(boss.state==='intro'&&!boss.jumped)){const b=boss,ex=b.x-cx+(b.dir>0?16:-16)*b.sc*DSC,ey=b.y-22*b.sc*DSC;if(b.state!=='daze')alpha(.8,()=>glow(ex,ey,6,'rgb(255,200,60)',.35));}
   if(fv>0)for(let i=0;i<26;i++){const k=((gt*.25+hashD(i*5))%1),x=((hashD(i*7)*W*1.4-cx*.6+Math.sin(gt+i)*10)%(W+20)+W+20)%(W+20)-10,y=H-k*H;alpha(fv*(1-k),()=>rect(x,y,1,1,k<.5?'#ffd060':'#ff7a30'));}
   if(rainK>0)drawRain4(cx);
 }
@@ -2404,7 +2408,8 @@ function drawCrowBoss(cx){const b=boss;
 }
 
 /* ---------- Chó hoang: stomping does nothing; lure it through the flaring fires ---------- */
-function newDogBoss(){return {kind:'dog',x:ARENA_X+232,y:116,state:'intro',t:0,dir:-1,hits:0,flash:0,hw:12,h:18,spd:1,vx:0,vy:0,sc:.42,cnt:0,shake:0,sx:0,sy:0,burnCD:0};}
+const DSC=1.3,DEYE_X=()=>ARENA_X+170,DEYE_Y=GROUND_Y-24,DLEAP=.78; // dog drawn 30% bigger; where its eyes glow in the dark
+function newDogBoss(){return {kind:'dog',x:ARENA_X+232,y:116,state:'intro',t:0,dir:-1,hits:0,flash:0,hw:15,h:23,spd:1,vx:0,vy:0,sc:.42,cnt:0,shake:0,sx:0,sy:0,burnCD:0};}
 const arenaFires=()=>fires4.filter(f=>f.arena);
 let seenIntro={}; // after the first try, boss intros are shortened
 function updDogBoss(dt){
@@ -2417,18 +2422,17 @@ function updDogBoss(dt){
   function dogBurnCheck(){for(const f of arenaFires())if(b.burnCD<=0&&Math.abs(b.x-f.x)<11&&fireH(f)>=10){b.hits++;b.burnCD=1.5;b.flash=.6;SFX.whimper();SFX.bossHit();puff(b.x,b.y-14,14,'#3a3030',50,50,.9,-30);puff(b.x,b.y-10,10,'#ffb040',70,60,.5);bossBar();
       const dir=b.vx?Math.sign(b.vx):b.dir;if(b.hits>=3){bossSet('flee');}else{b.spd*=1.15;bossSet('burnt');b.vx=-dir*150;b.vy=-230;}return;}}
   switch(b.state){
-    case 'intro':{b.dir=-1;if(!b.seen){b.seen=1;if(seenIntro[4])b.t=4.6;seenIntro[4]=1;}const t=b.t,MX=ARENA_X+150,CAT=ARENA_X+70;
+    case 'intro':{b.dir=-1;if(!b.seen){b.seen=1;if(seenIntro[4])b.t=3.6;seenIntro[4]=1;}const t=b.t,MX=ARENA_X+150,CAT=ARENA_X+70;
       // the cat walks in and freezes, staring into the dark
       if(!b.dodged){p.ctrl=false;keys.L=keys.R=false;if(p.x<CAT-2&&t<2.2){p.vx=70;p.face=1;}else if(p.onGround){p.vx=0;p.face=1;}}
       if(t>.9&&!b.g1){b.g1=1;SFX.growl();}
       if(t>2.4&&!b.g2){b.g2=1;SFX.growl();shakeT=.25;shakeA=1;}
-      // red eyes swell in the background, then snap shut and vanish
-      b.eyeK=t<1?0:t<3.6?ease(clamp((t-1)/2.6,0,1)):t<4?1-clamp((t-3.6)/.25,0,1):0;
-      // sudden leap out of the background towards the screen
-      if(t>4.6){if(!b.jumped){b.jumped=1;b.x=ARENA_X+168;b.y=118;b.sx=b.x;b.sy=b.y;SFX.bark();SFX.roar();}
-        const k=clamp((t-4.6)/.7,0,1);b.x=lerp(b.sx,MX,k);b.y=lerp(b.sy,GROUND_Y,k)-Math.sin(k*Math.PI)*58;b.sc=lerp(.42,1,k)+Math.sin(k*Math.PI)*.35;
+      // pitch dark, only embers: a pair of red eyes glows and slowly grows, then the dog bursts out from right behind them
+      if(t<4.4)$('bossBar').hidden=true;b.eyeK=t<1?0:t<4.4?ease(clamp((t-1)/3.4,0,1)):0;b.dk=t<4.4?Math.min(1,t/.6):Math.max(0,1-(t-4.4)/.8);
+      if(t>4.4){if(!b.jumped){b.jumped=1;const s0=DLEAP*DSC;b.x=DEYE_X()+16*s0;b.y=DEYE_Y+22*s0;b.sx=b.x;b.sy=b.y;SFX.bark();SFX.roar();shakeT=.3;shakeA=2;}
+        const k=clamp((t-4.4)/.7,0,1);b.x=lerp(b.sx,MX,k);b.y=lerp(b.sy,GROUND_Y,k)-Math.sin(k*Math.PI)*48;b.sc=lerp(DLEAP,1,k)+Math.sin(k*Math.PI)*.25;
         if(k>.28&&!b.dodged){b.dodged=1;p.vy=JV*1.05;p.vx=-120;p.jumping=false;p.onGround=false;p.face=1;SFX.jump();puff(p.x,p.y,6,'#6a5a4a',40,10,.3);}
-        if(k>=1){b.sc=1;b.y=GROUND_Y;shakeT=.45;shakeA=3;puff(b.x,GROUND_Y,18,'#5a4a40',90,40,.5);b.dir=p.x<b.x?-1:1;p.ctrl=true;bossSet('growl');}}
+        if(k>=1){b.sc=1;b.y=GROUND_Y;bossBar();shakeT=.45;shakeA=3;puff(b.x,GROUND_Y,18,'#5a4a40',90,40,.5);b.dir=p.x<b.x?-1:1;p.ctrl=true;bossSet('growl');}}
       break;}
     case 'growl':{face();b.shake=.15;if(b.t>.8/b.spd){const r=Math.random();if(fireBetween()?r<.72:r<.4){bossSet('prep');SFX.growl();}else bossSet('crouch');}break;}
     case 'crouch':{face();if(b.t>.35/b.spd){bossSet('leap');SFX.bark();const tx=clamp(p.x,L,Rx);b.vx=clamp((tx-b.x)/.72,-270,270)*Math.min(1.25,b.spd);b.vy=-355;}break;}
@@ -2455,30 +2459,28 @@ function updDogBoss(dt){
 // a furious, slanted red eye under a scowling white-fur brow (lit only by its own glow)
 function drawAngryEye(ex,y,d,sc,k,fl){const P=(pts,c)=>{ctx.fillStyle=c;ctx.beginPath();pts.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.fill();};
   ctx.save();ctx.translate(R(ex),R(y));ctx.scale(d*sc,sc); // inner corner (toward the nose) is at -x
-  P([[-8,1.5],[-3,-1.2],[5,-4.2],[9,-4.6],[7,.8],[1,2.6],[-5,2.6]],'#1a0204');
-  P([[-6.6,1.4],[-2.6,-.4],[4.6,-3],[7.6,-3.4],[5.8,.4],[1,1.8],[-4.4,1.9]],'#8a0806');
+  if(sc>=.5)P([[-8,1.5],[-3,-1.2],[5,-4.2],[9,-4.6],[7,.8],[1,2.6],[-5,2.6]],'#1a0204');
+  P([[-6.6,1.4],[-2.6,-.4],[4.6,-3],[7.6,-3.4],[5.8,.4],[1,1.8],[-4.4,1.9]],sc>=.5?'#8a0806':'#e0200e');
   ctx.fillStyle='#ff2a14';ctx.beginPath();ctx.ellipse(1.4,-.4,3.4,1.7,-.3,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='#ffb040';ctx.beginPath();ctx.ellipse(1.6,-.3,1.5,.9,-.3,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='#0a0000';ctx.beginPath();ctx.ellipse(1.5,-.4,.45,1.9,0,0,Math.PI*2);ctx.fill();
-  ctx.strokeStyle='#000';ctx.lineWidth=1.8;ctx.beginPath();ctx.moveTo(-8.5,1.8);ctx.lineTo(-3,-1.2);ctx.lineTo(5,-4.2);ctx.lineTo(9.5,-4.8);ctx.stroke();
+  ctx.strokeStyle=sc>=.5?'#000':'#1a0000';ctx.lineWidth=sc>=.5?1.8:.9/sc;ctx.beginPath();ctx.moveTo(-8.5,1.8);ctx.lineTo(-3,-1.2);ctx.lineTo(5,-4.2);ctx.lineTo(9.5,-4.8);ctx.stroke();
   ctx.restore();}
-function drawDogEyes(b,cx){const k=b.eyeK,x=ARENA_X+160-cx,y=104-k*3,gap=6+k*22,sz=1+k*5;
-  const fl=.85+.15*Math.sin(gt*9);const blink=b.t>2.9&&b.t<3.05;
-  glow(x,y,30+k*60,'rgb(255,30,20)',.25*k*fl);
-  for(const d of [-1,1]){const ex=x+d*gap/2;glow(ex,y,6+sz*3,'rgb(255,60,30)',.7*fl);
-    if(blink){rect(ex-sz,y,sz*2,1,'#ff5a3a');continue;}
-    drawAngryEye(ex,y,d,sz/6,k,fl);}
-  // leaves of the bush it is hiding in, swaying in front of the eyes
-  // no overlay: the eyes sit low, in the band of bushes behind the arena
+function drawDogEyes(b,cx){const k=b.eyeK,x=DEYE_X()-cx,y=DEYE_Y,gap=2+k*8,sc=.06+k*.28;
+  const fl=.8+.2*Math.sin(gt*9)*Math.sin(gt*3.1);const blink=(b.t>2.6&&b.t<2.72)||(b.t>3.7&&b.t<3.8);
+  glow(x,y,8+k*30,'rgb(255,30,20)',(.08+.14*k)*fl);
+  for(const d of [-1,1]){const ex=x+d*gap/2;glow(ex,y-1,2+k*5,'rgb(255,60,30)',.35*fl);
+    if(blink){rect(R(ex-9*sc),R(y),Math.max(1,R(18*sc)),1,'#ff3a24');continue;}
+    drawAngryEye(ex,y,d,sc,k,fl);}
 }
 function drawDogBoss(cx){const b=boss;if(b.state2==='gone')return;if(b.flash>0&&Math.floor(b.flash*20)%2)return;
   let k='stand';const s=b.state;
   if(s==='intro')k='leap';
   else if(s==='leap'||s==='bonk')k='leap';else if(s==='crouch'||s==='prep'||s==='land')k='crouch';else if(s==='charge'||s==='flee')k=Math.floor(gt*14)%2?'runA':'runB';
   else if(s==='daze'||s==='hurt'||s==='burnt'||s==='shake')k='daze';else if(s==='skid')k='crouch';else if(s==='growl')k='growl';
-  const fr=DOG[k],sc=b.sc,w=fr.w*sc,h=fr.h*sc;const sx=b.shake>0?Math.round(Math.sin(gt*80)):0;
+  const fr=DOG[k],sc=b.sc*DSC,w=fr.w*sc,h=fr.h*sc;const sx=b.shake>0?Math.round(Math.sin(gt*80)):0;
   if(s==='intro'&&!b.jumped)return; // only the red eyes show (drawn over the dark in drawNight)
-  if(sc>=.99)alpha(.25,()=>rect(b.x-cx-14,GROUND_Y-2,28,2,'#000'));
+  if(sc>=.99*DSC)alpha(.25,()=>rect(b.x-cx-18,GROUND_Y-2,36,2,'#000'));
   const img=b.dir>0?fr.l:fr.r;ctx.drawImage(img,R(b.x-cx-w/2+sx),R(b.y-h+1),R(w),R(h));
   if(s==='daze'){for(let i=0;i<3;i++){const a=gt*5+i*2.1;blit(STAR,b.x-cx+(b.dir>0?10:-10)+Math.cos(a)*8,b.y-28+Math.sin(a)*2,1);}}
 }
