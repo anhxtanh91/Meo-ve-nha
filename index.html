@@ -2787,6 +2787,7 @@ function winLevel(){waves=[];clearK=0;sprout=null;setState('outro');p.ctrl=false
 let drops=[]; // pigeon droppings
 const edgeAhead=(e,d)=>{const ahead=Math.floor((e.x+d*(e.hw+1))/T),below=Math.floor((e.y+1)/T);const t=tileAt(ahead,below);return !SOLID.has(t)&&t!=='p';};
 function walkStep(e,v,dt){e.vy=Math.min(e.vy+G*dt,FALLMAX);moveX(e,v*dt);if(e.hitWall){e.dir*=-1;e.hit=1;}moveY(e,e.vy*dt);if(e.onGround&&edgeAhead(e,e.dir)){e.dir*=-1;e.hit=1;}}
+const SNAKE_SC=.5; // snakes are drawn at half size
 function updWalker(e,dt){e.t=(e.t||0)+dt;e.st=e.st||'idle';e.st_t=(e.st_t||0)+dt;const go=s=>{e.st=s;e.st_t=0;e.hit=0;};
   const dx=p.x-e.x,adx=Math.abs(dx),near=Math.abs(p.y-e.y)<24;
   if(LV===3){ // RAT: sniffs about, then tenses and bolts straight at the cat, then pants
@@ -2795,14 +2796,14 @@ function updWalker(e,dt){e.t=(e.t||0)+dt;e.st=e.st||'idle';e.st_t=(e.st_t||0)+dt
     else if(e.st==='dash'){walkStep(e,165*e.dir,dt);if(e.st_t>.75||e.hit)go('rest');}
     else{walkStep(e,0,dt);if(e.st_t>1.1)go('idle');}
   }else if(LV===4){ // SNAKE: lies coiled in the grass; when the cat comes close it rears up and strikes forward
-    e.hx=e.hx===undefined?e.x:e.hx;
-    if(e.st==='idle'){walkStep(e,7*e.dir,dt);if(Math.abs(e.x-e.hx)>20){e.dir=e.x>e.hx?-1:1;}if(adx<52&&near&&!(e.cd>0)){e.dir=Math.sign(dx)||1;go('rear');}}
+    if(!e.small){e.small=1;e.hw=4;e.h=5;}e.hx=e.hx===undefined?e.x:e.hx;
+    if(e.st==='idle'){walkStep(e,7*e.dir,dt);if(Math.abs(e.x-e.hx)>20){e.dir=e.x>e.hx?-1:1;}if(adx<34&&near&&!(e.cd>0)){e.dir=Math.sign(dx)||1;go('rear');}}
     else if(e.st==='rear'){walkStep(e,0,dt);if(e.st_t>.38){go('strike');e.sx=e.x;tone(700,200,.08,'sawtooth',.03);}}
-    else if(e.st==='strike'){const k=Math.min(1,e.st_t/.14);e.lunge=26*k;moveX(e,(e.sx+e.dir*e.lunge)-e.x);if(e.st_t>.3)go('back');}
-    else if(e.st==='back'){const k=Math.min(1,e.st_t/.45);moveX(e,(e.sx+e.dir*26*(1-k))-e.x);e.lunge=26*(1-k);if(k>=1){e.lunge=0;e.cd=1.1;go('idle');}}
+    else if(e.st==='strike'){const k=Math.min(1,e.st_t/.14);e.lunge=13*k;moveX(e,(e.sx+e.dir*e.lunge)-e.x);if(e.st_t>.3)go('back');}
+    else if(e.st==='back'){const k=Math.min(1,e.st_t/.45);moveX(e,(e.sx+e.dir*13*(1-k))-e.x);e.lunge=13*(1-k);if(k>=1){e.lunge=0;e.cd=1.1;go('idle');}}
     e.cd=Math.max(0,(e.cd||0)-dt);
-  }else{ // ROACH: skitters in fits and starts, and when the cat is close it leaps at it
-    if(e.st==='idle'){const burst=Math.sin(e.t*5+e.x*.1)>-.2;walkStep(e,(burst?44:0)*e.dir,dt);if(Math.random()<dt*.7)e.dir*=-1;if(adx<60&&adx>10&&near&&e.onGround&&!(e.cd>0)){e.dir=Math.sign(dx)||1;go('leap');e.vy=-210;e.lx=clamp(adx/0.62,60,130)*e.dir;tone(1200,800,.05,'square',.02);}}
+  }else{ if(!e.small){e.small=1;e.hw=3;e.h=4;} // ROACH (half size): skitters in fits and starts, and when the cat is close it leaps at it
+    if(e.st==='idle'){const burst=Math.sin(e.t*5+e.x*.1)>-.2;walkStep(e,(burst?44:0)*e.dir,dt);if(Math.random()<dt*.7)e.dir*=-1;if(adx<48&&adx>8&&near&&e.onGround&&!(e.cd>0)){e.dir=Math.sign(dx)||1;go('leap');e.vy=-210;e.lx=clamp(adx/0.62,60,130)*e.dir;tone(1200,800,.05,'square',.02);}}
     else if(e.st==='leap'){e.vy=Math.min(e.vy+G*dt,FALLMAX);moveX(e,e.lx*dt);moveY(e,e.vy*dt);if(e.onGround&&e.st_t>.1){e.cd=1.2;go('idle');}}
     e.cd=Math.max(0,(e.cd||0)-dt);
   }}
@@ -2927,18 +2928,18 @@ function drawBus(x,yb,door,moving,dist){
   for(const wx of [x+30,x+106]){disc(wx,yb-8,10,O);rect(wx-10,yb-8,21,3,'#1a1418');disc(wx,yb-7,7,'#1e1e24');disc(wx,yb-7,4,'#e8e6dc');disc(wx,yb-7,2,'#8a8a90');
     const sp=[[0,-3],[3,0],[0,3],[-3,0]][rot];rect(wx+sp[0],yb-7+sp[1],1,1,'#5a5a60');}
 }
-function drawBeetle(e,cx){const SK=LV===5?ROACH:LV===3?RAT:LV===4?SNAKE:BEETLE;if(!e.alive){if(e.dead>0)blit(SK.flat,e.x-cx,e.y,-e.dir);return;}
+function drawBeetle(e,cx){const SK=LV===5?ROACH:LV===3?RAT:LV===4?SNAKE:BEETLE;if(!e.alive){if(e.dead>0){if(LV===4||LV===5){ctx.save();ctx.translate(R(e.x-cx),R(e.y));ctx.scale(.5,.5);ctx.translate(-R(e.x-cx),-R(e.y));blit(SK.flat,e.x-cx,e.y,-e.dir);ctx.restore();}else blit(SK.flat,e.x-cx,e.y,-e.dir);}return;}
   if(LV===3){const st=e.st,fr=st==='dash'?RAT_RUN[Math.floor(gt*20)%5]:st==='tense'?RAT_RUN[0]:st==='rest'?RAT_RUN[2]:RAT_RUN[Math.abs(e.vx||0)>1?Math.floor(gt*10)%5:0];
     const sh=st==='tense'?Math.round(Math.sin(gt*60)):0;blit(fr,e.x-cx+sh,e.y+1,-e.dir);
     if(st==='tense')bubble(e.x-cx,e.y-12,GLY.ex);if(st==='dash'&&Math.random()<.5)puff(e.x-e.dir*6,e.y,1,'#a89878',20,6,.25);
     if(st==='rest'){const k=Math.floor(gt*6)%2;rect(e.x-cx+e.dir*8,e.y-4+k,1,1,'#ffffff');}return;}
-  if(LV===5){const air=e.st==='leap';ctx.save();if(air){ctx.translate(R(e.x-cx),R(e.y-3));ctx.rotate(e.dir*(-.5+e.st_t*2.2));ctx.translate(-R(e.x-cx),-R(e.y-3));}
+  if(LV===5){const air=e.st==='leap';ctx.save();ctx.translate(R(e.x-cx),R(e.y+1));ctx.scale(.5,.5);if(air)ctx.rotate(e.dir*(-.5+e.st_t*2.2));ctx.translate(-R(e.x-cx),-R(e.y+1));
     blit(Math.floor(gt*(Math.abs(e.vx||0)>1||air?18:4))%2?ROACH.a:ROACH.b,e.x-cx,e.y+1,-e.dir);ctx.restore();
-    if(air){const fl=Math.floor(gt*30)%2;alpha(.6,()=>{rect(e.x-cx-4,e.y-8-fl,3,2,'#c8b89a');rect(e.x-cx+1,e.y-8-fl,3,2,'#c8b89a');});}return;}
-  if(LV===4){const st=e.st||'idle',up=st==='rear'?Math.min(1,e.st_t/.3):st==='strike'||st==='back'?1:0;
-    if(up>0&&e.lunge>0){const bx=e.x-cx-e.dir*e.lunge;for(let i=0;i<=e.lunge;i+=2){const xx=bx+e.dir*i,yy=e.y-3-up*4*Math.sin(i/Math.max(1,e.lunge)*Math.PI*.5);rect(R(xx),R(yy),2,3,'#5cae3e');rect(R(xx),R(yy),2,1,'#8cd860');}}
-    ctx.save();ctx.translate(R(e.x-cx),R(e.y+1));ctx.scale(1,1+up*.35);ctx.translate(-R(e.x-cx),-R(e.y+1));blit(Math.floor(gt*5)%2?SNAKE.a:SNAKE.b,e.x-cx,e.y+1,-e.dir);ctx.restore();
-    if(st==='rear'||st==='strike'){const hx=e.x-cx+e.dir*11,hy=e.y-6-up*3;rect(R(hx),R(hy),1,1,'#ff3a24');if(Math.floor(gt*14)%2)rect(R(hx+e.dir*2),R(hy+2),e.dir*3,1,'#e8466a');}return;}
+    if(air){const fl=Math.floor(gt*30)%2;alpha(.6,()=>{rect(e.x-cx-2,e.y-4-fl,2,1,'#c8b89a');rect(e.x-cx+1,e.y-4-fl,2,1,'#c8b89a');});}return;}
+  if(LV===4){const st=e.st||'idle',up=st==='rear'?Math.min(1,e.st_t/.3):st==='strike'||st==='back'?1:0,S=SNAKE_SC;
+    if(up>0&&e.lunge>0){const bx=e.x-cx-e.dir*e.lunge;for(let i=0;i<=e.lunge;i+=1){const xx=bx+e.dir*i,yy=e.y-1-up*2*Math.sin(i/Math.max(1,e.lunge)*Math.PI*.5);rect(R(xx),R(yy),1,2,'#5cae3e');rect(R(xx),R(yy),1,1,'#8cd860');}}
+    ctx.save();ctx.translate(R(e.x-cx),R(e.y+1));ctx.scale(S,S*(1+up*.35));ctx.translate(-R(e.x-cx),-R(e.y+1));blit(Math.floor(gt*5)%2?SNAKE.a:SNAKE.b,e.x-cx,e.y+1,-e.dir);ctx.restore();
+    if(st==='rear'||st==='strike'){const hx=e.x-cx+e.dir*6,hy=e.y-3-up*2;rect(R(hx),R(hy),1,1,'#ff3a24');if(Math.floor(gt*14)%2)rect(R(hx+e.dir),R(hy+1),e.dir*2,1,'#e8466a');}return;}
   blit(Math.floor(gt*8)%2?SK.a:SK.b,e.x-cx,e.y+1,-e.dir);}
 function drawBee(e,cx){if(!e.alive&&e.y>H+20)return;const SK=LV===5?PIGEON:LV===3?CROW_S:LV===4?BAT:BEE;
   if(LV===4&&e.alive&&(e.st==='idle'||e.st==='wake'&&e.st_t<.2)){ // hanging upside down, wings folded, asleep
