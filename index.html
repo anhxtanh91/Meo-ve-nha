@@ -1678,18 +1678,26 @@ function updCrowBoss(dt){
   const L=POLE_L()+14,Rx=POLE_R()-14;
   if(state==='play')crowSpring();
   switch(b.state){
-    case 'intro':{const t=b.t,CAT=ARENA_X+70,RX=ARENA_X+128,D=3.3;
-      // cutscene: a rat scurries out, the cat stalks it for a while, pounces — and the crow snatches the rat first, vanishes into the sky, then lands on the wire
-      if(!b.rat){b.rat={x:ARENA_X+W+12,on:1,sq:0};b.x=ARENA_X+W+40;b.y=-40;if(seenIntro[3]){b.rat.on=0;b.pounce=b.dv=1;b.t=4.6+D;p.stalk=0;}seenIntro[3]=1;}
+    case 'intro':{const t=b.t,CAT=ARENA_X+70,STOP=ARENA_X+178,D=2.9;
+      // cutscene: a rat runs in, stops, looks around and sniffs; the cat stalks it, freezing whenever the rat looks its way.
+      // the rat decides it is safe and runs on — the cat leaps — and the crow snatches the rat first, vanishes into the sky, then lands on the wire
+      if(!b.rat){b.rat={x:ARENA_X+W+12,on:1,sq:0,ph:'run1',face:1};b.x=ARENA_X+W+40;b.y=-40;if(seenIntro[3]){b.rat.on=0;b.pounce=b.dv=1;b.t=4.6+D;p.stalk=0;}seenIntro[3]=1;}
       const r=b.rat;
+      if(r.on===1){
+        if(r.ph==='run1'&&t>.4){r.x-=95*dt;r.face=1;if(Math.random()<.2)puff(r.x+6,GROUND_Y,1,'#c8a860',20,8,.3);if(r.x<=STOP){r.x=STOP;r.ph='stop';r.st=t;}}
+        else if(r.ph==='stop'){const u=t-r.st;
+          r.face=u<.5?1:u<1.1?-1:u<1.6?1:u<2.1?-1:1;                         // head turning: look ahead, behind, ahead, behind
+          if(!r.s1&&u>.7){r.s1=1;for(let k=0;k<3;k++)tone(2600,3000,.025,'square',.012,k*.09);}   // sniff sniff
+          if(!r.s2&&u>1.8){r.s2=1;for(let k=0;k<3;k++)tone(2600,3000,.025,'square',.012,k*.09);}
+          if(u>2.6){r.ph='run2';tone(1900,2300,.05,'square',.02);}}
+        else if(r.ph==='run2'){r.x-=80*dt;r.face=1;if(Math.random()<.2)puff(r.x+6,GROUND_Y,1,'#c8a860',20,8,.3);}
+        if(!r.sq&&t>.6){r.sq=1;tone(1900,2300,.06,'square',.03);setTimeout(()=>tone(2100,2500,.05,'square',.025),120);}}
       if(t<2+D){p.ctrl=false;keys.L=keys.R=false;p.face=1;
         if(t<1.4){if(p.x<CAT-2)p.vx=70;else if(p.onGround)p.vx=0;}
-        else{p.stalk=1;p.wiggle=t>4.4;                                         // crouch low and creep closer in slow steps
-          p.vx=0;p.creep=t<4.2&&Math.sin((t-1.4)*3.2)>.1&&p.x<RX-34;if(p.creep){p.x+=15*dt;p.ph=(p.ph||0)+dt*7;}}}
-      if(t>.4&&r.on===1){if(r.x>RX){r.x-=95*dt;if(Math.random()<.2)puff(r.x+6,GROUND_Y,1,'#c8a860',20,8,.3);}else r.x=RX;
-        if(!r.sq&&t>.6){r.sq=1;tone(1900,2300,.06,'square',.03);setTimeout(()=>tone(2100,2500,.05,'square',.025),120);}
-        if(t>2.6&&!r.sq2){r.sq2=1;tone(2000,2400,.05,'square',.02);}}
-      if(t>2+D&&!b.pounce){b.pounce=1;p.stalk=0;p.creep=0;p.wiggle=0;p.vy=JV*.8;p.vx=clamp((RX-p.x)/.52,40,112);p.jumping=false;p.onGround=false;SFX.jump();}
+        else{p.stalk=1;p.vx=0;const looking=r.ph==='stop'&&r.face<0;                 // freeze while the rat looks back
+          p.creep=!looking&&r.ph!=='run2'&&p.x<ARENA_X+100;if(p.creep){p.x+=14*dt;p.ph=(p.ph||0)+dt*7;}
+          p.wiggle=r.ph==='run2';}}
+      if(t>2+D&&!b.pounce){b.pounce=1;p.stalk=0;p.creep=0;p.wiggle=0;p.vy=JV*.8;p.vx=clamp((r.x-80*.4-p.x)/.52,40,112);p.jumping=false;p.onGround=false;SFX.jump();}
       // dive from the upper right and grab the rat
       if(t>1.95+D&&t<=2.35+D){if(!b.dv){b.dv=1;b.sx=ARENA_X+W+30;b.sy=-30;SFX.caw();}const k=clamp((t-1.95-D)/.4,0,1);b.dir=-1;b.x=lerp(b.sx,r.x+2,k*k);b.y=lerp(b.sy,GROUND_Y-8,k*k);}
       if(t>2.35+D&&r.on===1){r.on=2;tone(2400,1400,.12,'square',.04);puff(r.x,GROUND_Y-4,8,'#2c2838',50,30,.4);b.sx=b.x;b.sy=b.y;}
@@ -1750,8 +1758,8 @@ function drawCrowBoss(cx){const b=boss;
     alpha(.35,()=>rect(x-1,y-20,3,7,'#e8e0c8'));
     ctx.drawImage(ROCK_M,x-7,y-12);}
   for(const f of b.flock){const s=Math.floor(gt*10+f.ph)%2?CROW_S.a:CROW_S.b;blit(s,f.x-cx,f.y+4,f.vx<0?1:-1);}
-  if(b.rat&&b.rat.on===1){const r=b.rat,still=b.t>.4&&r.x<=ARENA_X+128.5;
-    const fr=!still?RAT_RUN[Math.floor(gt*13)%5]:(Math.floor(gt*1.2)%3===2?RAT_IDLE[2+Math.floor(gt*4)%2]:RAT_IDLE[Math.floor(gt*3)%2]);blit(fr,r.x-cx,GROUND_Y+1,1);}
+  if(b.rat&&b.rat.on===1){const r=b.rat,still=r.ph==='stop';
+    const fr=!still?RAT_RUN[Math.floor(gt*13)%5]:(((gt-(r.st||0))%1.3)>.95?RAT_IDLE[2+Math.floor(gt*4)%2]:RAT_IDLE[Math.floor(gt*6)%2]);blit(fr,r.x-cx,GROUND_Y+1,r.face||1);}
   if(b.rat&&b.rat.on===2)blit(RAT_RUN[Math.floor(gt*20)%5],b.rat.x-cx+Math.sin(gt*20),b.rat.y,1);
   if(b.flash>0&&Math.floor(b.flash*20)%2)return;
   const sitting=b.state==='perch'||b.state==='call';const fr=sitting?CROWN_SIT:CROWN_FLY[[0,1,2,1][Math.floor(gt*(b.state==='hit'||b.state==='dead'?14:10))%4]];
@@ -2095,6 +2103,9 @@ function updSaving(dt){
 function winLevel(){waves=[];clearK=0;sprout=null;setState('outro');p.ctrl=false;p.vx=0;outro={ph:'wait',t:0};$('bossBar').hidden=true;SFX.win();for(let i=0;i<4;i++)puff(p.x+(Math.random()*60-30),90,8,['#f2c43a','#ee8fa8','#8cc3e3','#ffffff'][i],70,80,1);}
 
 function updEnemies(dt){
+  // regular enemies never enter the boss arena: they turn back at its edge
+  const AX=ARENA_X-14;for(const e of enemies){if(!e.alive||e.type==='minion')continue;
+    if(e.x>AX){e.x=AX;if(e.type==='beetle')e.dir=-1;}if(e.x0!==undefined&&e.x0>AX-32)e.x0=AX-32;}
   for(const e of enemies){
     if(!e.alive){e.dead-=dt;if(e.type!=='beetle'&&e.type!=='frog'){e.vy+=G*dt;e.y+=e.vy*dt;}continue;}
     if(Math.abs(e.x-(cam+W/2))>W)continue;
