@@ -2330,6 +2330,13 @@ function drawMach6(cx){const C='#8c909a',off=cx*.05;
       const sw=Math.sin(gt*.25+m.x)*.12,L=34,Lb=10;const jx=X+Math.cos(sw)*L,jy=y-46+Math.sin(sw)*L;
       for(let t=0;t<=1;t+=.05){rect(R(X+(jx-X)*t),R(y-46+(jy-y+46)*t),1,2,C);rect(R(X-(Lb)*t),R(y-46-sw*Lb*t),1,2,C);}rect(X-Lb-2,y-46,4,4,C);rect(X-1,y-50,3,4,C);
       const drop=18+Math.sin(gt*.4+m.x)*10;rect(R(jx-3),R(jy),1,R(drop),C);rect(R(jx-5),R(jy+drop),5,3,C);}}}
+const PERCH6=(()=>{const P={a:'#0e0c12',c:'#26243a',d:'#45466a',q:'#4a4640',e:'#d8d0b8',f:'#3a3430'};const mk=r=>strSprite(r,P);
+  const legs=["........f.f.....",".......ff.ff...."],tail=["aaa..aaaaaaa....","aa.....aaaa....."];
+  return {idle:mk(["..........aaa...",".........aaaaa..",".........aaeaqq.","........aaaaaqqq","...aaaaaaaaaa...","..aaacccccaaa...",".aaacdddccaaa...","aaaaacccccaaa...",...tail,...legs]),
+    blink:mk(["..........aaa...",".........aaaaa..",".........aaaaqq.","........aaaaaqqq","...aaaaaaaaaa...","..aaacccccaaa...",".aaacdddccaaa...","aaaaacccccaaa...",...tail,...legs]),
+    preen:mk(["................","................","...........aa...","....aaaaaaaaaa..","...aaaaccaaeaa..","..aaacccqqaaaa..",".aaacddddcaaa...","aaaaacccccaaa...",...tail,...legs]),
+    preen2:mk(["................","................","..........aaa...","....aaaaaaaaaa..","...aaaacqqaeaa..","..aaaccqqcaaaa..",".aaacddddcaaa...","aaaaacccccaaa...",...tail,...legs]),
+    shake:mk(["..........aaa...",".........aaaaa..",".........aaeaqq.","..a.a.a.aaaaaqqq",".aaaaaaaaaaaa...","aaaacccccaaaa...","aaacdddccaaaaa..","aaaaacccccaaaa..","aaaa.aaaaaaaa...","aa.....aaaa.....",...legs])};})();
 // the only fence in the level: a rusty iron fence at the entrance with a hand-painted "BÃI RÁC" board wired to it
 const GATE6_X=88,GATE6_W=120;
 function drawGate6(cx){const X=R(GATE6_X-cx);if(X<-GATE6_W-10||X>W+10)return;const top=96,Y=144;
@@ -2352,11 +2359,9 @@ function drawGate6(cx){const X=R(GATE6_X-cx);if(X<-GATE6_W-10||X>W+10)return;con
     x+=g[0].length*2+2;});
   rect(bx+36,by+14,1,3,col);
   // a few crows perched on the top rail, preening, now and then shaking out their feathers
-  for(const [ox,ph] of [[14,0],[33,2.1],[96,4.3]]){const cxw=X+ox,cy=101,t=(gt*.6+ph)%6,pre=t<2.2,sh=t>4.6&&t<5.1,f=ox===96?-1:1;
-    const B='#141218',Bh='#2e2a3a';rect(cxw-3,cy-5,7,4,B);rect(cxw-2,cy-6,5,1,B);rect(cxw-3,cy-5,6,1,Bh);rect(cxw+(f>0?-5:4),cy-4,2,2,B);rect(cxw-1,cy-1,1,2,'#3a3226');rect(cxw+1,cy-1,1,2,'#3a3226');
-    if(sh){rect(cxw-4,cy-7,9,1,B);rect(cxw-4,cy-4,1,3,B);rect(cxw+4,cy-4,1,3,B);}
-    if(pre){const k=Math.floor(gt*6+ph)%2;rect(cxw+f*(k?-1:0),cy-7,3,3,B);rect(cxw+f*(k?-2:-1),cy-5,2,1,'#5a5248');}
-    else{const hx=cxw+f*3;rect(hx-1,cy-9,3,3,B);rect(hx+f*2,cy-8,2,1,'#5a5248');rect(hx+(f>0?1:-1),cy-9,1,1,'#e8e0c8');}}}
+  for(const [ox,ph,f] of [[14,0,1],[35,2.1,1],[98,4.3,-1]]){const t=(gt*.55+ph)%7;let fr=PERCH6.idle;
+    if(t>1.2&&t<3.4)fr=Math.floor(t*4)%2?PERCH6.preen:PERCH6.preen2;else if(t>5.2&&t<5.6)fr=PERCH6.shake;else if(t>4&&t<4.15)fr=PERCH6.blink;
+    blit(fr,X+ox,102,(t>3.6&&t<5)?-f:f);}}
 function drawBack6(cx){initBack6();
   ctx.drawImage(SKY6,0,0);
   // a pale sun behind the haze
