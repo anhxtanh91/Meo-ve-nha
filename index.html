@@ -2825,7 +2825,6 @@ function addKill(n){if(!lvS||cutView)return;lvS.kills[n]=(lvS.kills[n]||0)+1;}
 function fmtT(s){if(!(s>=0))return '—';const m=Math.floor(s/60),x=s-m*60;return `${m}:${x<10?'0':''}${x.toFixed(1)}`;}
 let lastRec={};
 function finishLevelStats(){if(!lvS)return;
-  lvS.kills['★ '+BOSSN[LV]]=(lvS.kills['★ '+BOSSN[LV]]||0)+1;
   const run=lsGet(RUN_KEY);run.levels=run.levels||{};run.levels[LV]={t:lvS.t,kills:lvS.kills,hurts:lvS.hurts,deaths:lvS.deaths};lsSet(RUN_KEY,run);
   const rec=lsGet(REC_KEY);rec.lv=rec.lv||{};const old=rec.lv[LV];
   if(!old||lvS.t<old.t){rec.lv[LV]={t:lvS.t,at:Date.now()};lsSet(REC_KEY,rec);lastRec[LV]=true;
@@ -2838,8 +2837,8 @@ function showStats(first){
   let h='<tr><th>Màn</th><th>Thời gian</th><th>Hạ</th><th>Bị thương</th><th>Chết</th></tr>',T=0,K=0,Hu=0,D=0,all=true;const kills={};
   for(const M of LEVELS){const r=L[M.id];
     if(!r){all=false;h+=`<tr class="na"><td>${M.n}. ${M.name}</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>`;continue;}
-    const k=Object.values(r.kills).reduce((a,b)=>a+b,0);T+=r.t;K+=k;Hu+=r.hurts;D+=r.deaths;
-    for(const [n,c] of Object.entries(r.kills))kills[n]=(kills[n]||0)+c;
+    const rk=Object.fromEntries(Object.entries(r.kills).filter(([n])=>n[0]!=='★'));const k=Object.values(rk).reduce((a,b)=>a+b,0);T+=r.t;K+=k;Hu+=r.hurts;D+=r.deaths;
+    for(const [n,c] of Object.entries(rk))kills[n]=(kills[n]||0)+c;
     const isRec=rec.lv[M.id]&&Math.abs(rec.lv[M.id].t-r.t)<1e-6;
     h+=`<tr><td>${M.n}. ${M.name}</td><td>${fmtT(r.t)}${isRec?'<span class="rec">★</span>':''}</td><td>${k}</td><td>${r.hurts}</td><td>${r.deaths}</td></tr>`;}
   let gRec='',gNew='';const tt=$('recToast');if(tt)tt.remove();
@@ -2851,7 +2850,7 @@ function showStats(first){
     h+=`<tr class="tot"><td>Tổng</td><td>${fmtT(T)}${T===g.t?'<span class="rec">★</span>':''}</td><td>${K}</td><td>${Hu}</td><td>${D}${D===g.d?'<span class="rec">★</span>':''}</td></tr>`;}
   else{h+=`<tr class="tot"><td>Tổng</td><td>${fmtT(T)}</td><td>${K}</td><td>${Hu}</td><td>${D}</td></tr>`;gRec='Chơi hết 5 màn từ “Chơi mới” để lập kỷ lục cả game.';}
   $('stTable').innerHTML=h;
-  const ks=Object.entries(kills).sort((a,b)=>(a[0][0]==='★')-(b[0][0]==='★')||b[1]-a[1]);
+  const ks=Object.entries(kills).sort((a,b)=>b[1]-a[1]);
   $('stKills').innerHTML='<span class="h">Quái đã hạ:</span>'+(ks.length?ks.map(([n,c])=>`<span class="${n[0]==='★'?'boss':''}">${n.replace('★ ','')} <b>×${c}</b></span>`).join(''):'<span>—</span>');
   $('stBest').innerHTML=gNew||(gRec+' · ★ = kỷ lục');$('stBest').classList.toggle('new',!!gNew);
   show('ovL2',false);show('ovStats',true);$('btnStatsOk').focus({preventScroll:true});}
