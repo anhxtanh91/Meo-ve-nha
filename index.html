@@ -1587,11 +1587,11 @@ function buildMapN(){
 let fires4=[];
 function resetLevelN(){
   buildMapN();hoppers=[];pads=[];waves=[];enemies=[];drops=[];fishes=[];parts=[];fireK=LV===4&&!ign4Done?0:1;rainK=0;chase4=null;anim4=[];ign4=null;
-  const beetles=LV===6?[14,30,38,60,70,86,122,130,152,162,176,186,205,224]:LV===5?[45,48,80,84,115,121,160,165,198,202]:LV===3?[18,32,49,58,78,94,100,106,120,134,151,165,173,187,200,214]:[12,28,46,57,66,84,104,114,135,148,166,180,194,210];
+  const beetles=LV===6?[14,30,38,60,70,122,130,152,162,176,186,205,224]:LV===5?[45,48,80,84,115,121,160,165,198,202]:LV===3?[18,32,49,58,78,94,100,106,120,134,151,165,173,187,200,214]:[12,28,46,57,66,84,104,114,135,148,166,180,194,210];
   beetles.forEach(c=>enemies.push({type:'beetle',x:c*T+8,y:groundY(c),vx:-18,vy:0,hw:6,h:8,dir:-1,alive:true,dead:0,onGround:true}));
   const fly=LV===6?[[30,3],[58,2],[150,3],[175,2],[200,3],[216,2]]:LV===5?[[34,2],[58,1],[94,2],[132,3],[150,1],[182,2],[212,3]]:LV===3?[[50,5],[84,3],[105,5],[130,2],[152,4],[200,5],[212,4]]:[[42,4],[62,4],[96,3],[118,5],[146,2],[171,4],[207,3],[216,4]];
   fly.forEach(([c,r])=>enemies.push({type:'bee',x0:c*T+8,y0:r*T+12,x:c*T+8,y:r*T+12,hw:5,h:8,t:hash(c)*6,dir:-1,alive:true,dead:0,vy:0}));
-  flags=(LV===6?[22,52,93,116,146,168,196]:LV===5?[46,81,118,162,200]:LV===3?[38,88,126,167,206]:[34,70,110,150,212]).map(c=>({x:c*T+8,y:groundY(c),on:false}));
+  flags=(LV===6?[22,52,76,116,146,168,196]:LV===5?[46,81,118,162,200]:LV===3?[38,88,126,167,206]:[34,70,110,150,212]).map(c=>({x:c*T+8,y:groundY(c),on:false}));
   fires4=LV===4?[124,129,138,141,147,154,159,166,175,181,193,202,211,219].map((c,i)=>({x:c*T+8,ph:i*1.37,c})):[];
   if(LV===4)for(const [dx,ph] of [[105,0],[215,Math.PI]])fires4.push({x:ARENA_X+dx,ph,c:Math.floor((ARENA_X+dx)/T),arena:true});scareWob=0;if(LV===5)reset5();
   stats={fish:0,total:0,stomps:0};
@@ -2211,7 +2211,6 @@ function buildDump6(ground,plat){
   ridge(25,[8,7,6,5,6,7,6,7,8]);
   pit(44,49);ridge(44,[8,7,8],{bot:10});              // over a pit: linger and you drop in
   ridge(55,[8,7,7,6,6,5,5,6,7,8],{chain:true});         // a loose ridge: step on it and the whole thing slides
-  ridge(81,[8,7,6,6,7,8]);
   pit(LAKE6[0],LAKE6[1]);                              // the oily lake: Cụ Rùa ferries the cat across
   // past the iron fence: the scrapyard, taller and looser
   ridge(117,[8,7,6,5,4,5,6,7,8]);
@@ -2222,7 +2221,7 @@ function buildDump6(ground,plat){
   ridge(215,[8,8]);                                    // no floating planks ever: a low heap bridges the last pit
 }
 /* ---- Cụ Rùa Lưng Lốp Xe: an old turtle squeezed into a truck tyre ferries the cat across the oily lake; crows dive at the cat on the way ---- */
-const LAKE6=[94,115],WATER6_Y=161,TURT_V=30;let turtle6=null,divers6=[];
+const LAKE6=[78,115],WATER6_Y=161,TURT_V=40;let turtle6=null,divers6=[];
 function lakeAt6(x){return LV===6&&x>=LAKE6[0]*T&&x<(LAKE6[1]+1)*T;}
 function newTurtle6(){return {x:LAKE6[0]*T+24,st:'wait',t:0,dir:1,on:false,onT:0,offT:0,sink:0,blink:2,cd:1,pad:0,vx:0};}
 function turtleTop6(t){return 143+Math.round(t.sink)+((t.st==='go'||t.st==='leave')?Math.round(Math.sin(gt*2.2)*.6):0);}
