@@ -1845,7 +1845,8 @@ function resetLevelN(){
   fly.forEach(([c,r])=>enemies.push({type:'bee',x0:c*T+8,y0:r*T+12,x:c*T+8,y:r*T+12,hw:5,h:8,t:hash(c)*6,dir:-1,alive:true,dead:0,vy:0}));
   flags=(LV===6?[22,52,76,116,146,168,196]:LV===5?[46,81,118,162,200]:LV===3?[38,88,126,167,206]:[34,70,110,150,212]).map(c=>({x:c*T+8,y:groundY(c),on:false}));
   fires4=LV===4?[124,129,138,141,147,154,159,166,175,181,193,202,211,219].map((c,i)=>({x:c*T+8,ph:i*1.37,c})):[];
-  // (user: no campfires in the middle of the dog arena any more; in phase 3 the dog burns itself on the closing fire walls instead)scareWob=0;if(LV===5)reset5();
+  // (user: no campfires in the middle of the dog arena any more; in phase 3 the dog burns itself on the closing fire walls instead)
+  scareWob=0;if(LV===5)reset5();
   stats={fish:0,total:0,stomps:0};
   p=LV===5?newPlayer(START5[0],START5[1]):newPlayer(56,144);
   bus={x:-400,door:0,vx:0,leaving:false,gone:true,dist:0};
