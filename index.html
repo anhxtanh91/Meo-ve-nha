@@ -4727,8 +4727,8 @@ function drawInterior(t){
   // hanging handles from the overhead bars, swinging with the bus
   rect(0,34,W,2,'#8a919a');rect(0,34,W,1,'#c3c9cf');
   for(const sx of [30,54,78,100,220,244,268,292]){if(CROWD.some(P=>P.hold&&Math.abs(P.x+(P.k==='s'?P.f*2:6)-sx)<9))continue; // a passenger's own strap hangs here
-    const a=c.sway*(1+.15*Math.sin(sx));for(let k=0;k<9;k++)rect(sx+a*k,36+k,1,1,'#5a666c');const ex=R(sx+a*9);
-    rect(ex-3,45,7,1,'#9aa1a8');rect(ex-3,45,1,6,'#9aa1a8');rect(ex+3,45,1,6,'#9aa1a8');rect(ex-2,51,5,2,'#9aa1a8');}
+    const a=c.sway*(1+.15*Math.sin(sx))*.4,L=26;for(let k=0;k<L;k++)rect(R(sx+a*k),36+k,1,1,'#5a666c');const ex=R(sx+a*L),ry=36+L; // long straps, same length as the ones the passengers hold
+    rect(ex-3,ry,7,1,'#9aa1a8');rect(ex-3,ry,1,6,'#9aa1a8');rect(ex+3,ry,1,6,'#9aa1a8');rect(ex-2,ry+6,5,2,'#9aa1a8');}
   // the long straps the standing passengers hold, hanging down to their raised hands
   for(const P of CROWD){if(!P.hold)continue;const [hx,hy]=holdPos(P,c,t),tx=R(hx-c.sway*3);
     const n=hy-6-36;for(let k=0;k<n;k++)rect(R(lerp(tx,hx,k/n)),36+k,1,1,'#5a666c');rect(hx-3,hy-6,7,1,'#9aa1a8');rect(hx-3,hy-6,1,6,'#9aa1a8');rect(hx+3,hy-6,1,6,'#9aa1a8');rect(hx-2,hy,5,2,'#9aa1a8');}
