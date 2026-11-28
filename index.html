@@ -5537,7 +5537,7 @@ function drawWorld(){
   drawAmbient(cx);
   drawFish(cx);
   for(const e of enemies){if(Math.abs(e.x-cx-W/2)>W/2+80)continue;e.type==='beetle'?drawBeetle(e,cx):e.type==='frog'?drawFrogE(e,cx):drawBee(e,cx);}
-  if(LV!==4)drawBed(cx,0);drawDrops(cx);drawBoss(cx);if(LV===4)drawRescue4(cx);
+  if(LV!==4)drawBed(cx,0);drawDrops(cx);drawBoss(cx);if(LV===6)drawRatHint6(cx);if(LV===4)drawRescue4(cx);
   if(state!=='title'&&!(LV===2&&p.y<=WATER_Y+1))drawPlayer(cx);
   drawBed(cx,1);
   if(LV===6){drawLakeFront6(cx);drawDivers6(cx);}
