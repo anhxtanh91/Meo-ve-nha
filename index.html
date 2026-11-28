@@ -4609,8 +4609,8 @@ function roundWin(x,y,w,h,frame){rect(x-3,y-3,w+6,h+6,frame);rect(x-3,y-3,2,2,'#
 // seated ones sit on the benches. Everyone stares at a flickering phone that lights their face.
 const CROWD=[
   {x:20,k:'sit',sd:11},{x:46,k:'sit',sd:12},{x:96,k:'sit',sd:13},{x:226,k:'sit',sd:14},{x:302,k:'sit',sd:15},
-  {x:72,k:'f',hd:74,hold:1,sd:1},{x:88,k:'s',f:1,hd:70,hold:1,sd:2},{x:110,k:'s',f:-1,hd:76,hold:0,sd:3},
-  {x:208,k:'s',f:1,hd:72,hold:1,sd:5},{x:240,k:'f',hd:69,hold:1,sd:6},{x:284,k:'s',f:-1,hd:73,hold:1,sd:9},{x:296,k:'f',hd:77,hold:0,sd:10}];
+  {x:72,k:'f',hd:74,hold:1,hs:78,sd:1},{x:88,k:'s',f:1,hd:70,hold:1,hs:100,sd:2},{x:110,k:'s',f:-1,hd:76,hold:0,sd:3},
+  {x:208,k:'s',f:1,hd:72,hold:1,hs:220,sd:5},{x:240,k:'f',hd:69,hold:1,hs:244,sd:6},{x:284,k:'s',f:-1,hd:73,hold:1,hs:268,sd:9},{x:296,k:'f',hd:77,hold:0,sd:10}];
 const [crowdCv,crowdG]=mkCanvas(W,H);
 function crowdBody(P,c,t){
   const sw=P.k==='sit'?0:Math.round(Math.sin(t*1.7+P.sd)*.6+c.sway*2),x=P.x+sw,K='#000';
@@ -4620,18 +4620,18 @@ function crowdBody(P,c,t){
     line(x-8,hd+14,x-9,hd+24,3);line(x-9,hd+24,x-2,hd+25,3);line(x+8,hd+14,x+9,hd+24,3);line(x+9,hd+24,x+3,hd+25,3);rect(x-2,hd+21,5,6,K);
     P.ph=[x-1,hd+22,3,4];P.fc=[x-3,hd+4,7,6];return;}
   const hd=P.hd,hip=hd+40,f=P.k==='s'?P.f:0;
-  // strap hanging from the overhead bar right above the raised hand
-  const hx=x+(f?f*3:5)+R(c.sway*3),hy=hd-8;
-  if(P.hold){ctx.fillStyle='#000';line(hx-R(c.sway*3),36,hx,hy-6,1);rect(hx-3,hy-6,7,1,K);rect(hx-3,hy-6,1,6,K);rect(hx+3,hy-6,1,6,K);rect(hx-2,hy,5,1,K);}
+  // the raised hand grips the bottom bar of the bus's own hanging handle (which swings with the bus): shoulder -> bent elbow -> fist round the bar
+  const hs=P.hs||x,ha=c.sway*(1+.15*Math.sin(hs)),hx=R(hs+ha*9),hy=51;
+  const arm=(sx,sy)=>{const o=hx>=sx?2:-2,ex=R(lerp(sx,hx,.4)+o),ey=R(lerp(sy,hy,.55));line(sx,sy,ex,ey,3);line(ex,ey,hx,hy+2,2);rect(hx-1,hy-1,3,4,K);rect(hx+(hx>=sx?-2:2),hy,1,2,K);};
   if(!f){
     rect(x-4,hd,9,10,K);rect(x-5,hd+1,11,4,K);rect(x-2,hd+10,5,2,K);rect(x-8,hd+12,16,29,K);rect(x-7,hip,6,150-hip,K);rect(x+1,hip,6,150-hip,K);rect(x-8,147,7,3,K);rect(x+1,147,7,3,K);
-    if(P.hold){line(x+6,hd+13,x+7,hd+2,3);line(x+7,hd+2,hx,hy,3);rect(hx-1,hy-2,3,3,K);}else{line(x+7,hd+13,x+9,hd+34,3);}
+    if(P.hold)arm(x+6,hd+13);else{line(x+7,hd+13,x+9,hd+34,3);}
     line(x-7,hd+13,x-9,hd+24,3);line(x-9,hd+24,x-3,hd+21,3);rect(x-3,hd+16,5,7,K);
     P.ph=[x-2,hd+17,3,5];P.fc=[x-3,hd+4,7,6];
   }else{
     rect(x-4,hd,9,10,K);rect(x+f*5,hd+5,1,2,K);rect(x-f*5,hd+1,2,5,K);rect(x-2,hd+10,5,2,K);rect(x-5,hd+12,10,29,K);
     rect(x-4+f*2,hip,4,150-hip,K);rect(x-2-f*3,hip,4,150-hip,K);rect(x-4+f*2+(f>0?0:-3),147,7,3,K);rect(x-2-f*3+(f>0?0:-3),147,7,3,K);
-    if(P.hold){line(x-f,hd+13,x+f*2,hd+1,3);line(x+f*2,hd+1,hx,hy,3);rect(hx-1,hy-2,3,3,K);}else{line(x-f*2,hd+13,x-f*3,hd+34,3);}
+    if(P.hold)arm(x+f*2,hd+13);else{line(x-f*2,hd+13,x-f*3,hd+34,3);}
     line(x+f,hd+14,x+f*3,hd+24,3);line(x+f*3,hd+24,x+f*7,hd+18,3);rect(x+f*7-(f>0?0:2),hd+12,3,7,K);
     P.ph=[x+f*7+(f>0?-1:2)-(f>0?0:2),hd+13,1,5];P.fc=[f>0?x+1:x-4,hd+3,4,7];}
 }
