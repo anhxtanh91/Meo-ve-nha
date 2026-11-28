@@ -4144,10 +4144,14 @@ const touch=$('touch');
 if(matchMedia('(pointer:coarse)').matches)touch.classList.add('show');
 touch.querySelectorAll('button').forEach(b=>{
   const k=b.dataset.k;
-  const on=e=>{e.preventDefault();ensureAudio();if(k==='J'&&!keys.J)jumpPressed=.13;keys[k]=true;b.classList.add('on');};
-  const off=e=>{e.preventDefault();keys[k]=false;b.classList.remove('on');};
-  b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointercancel',off);b.addEventListener('pointerleave',off);
+  const on=e=>{e.preventDefault();ensureAudio();if(k==='J'&&!keys.J)jumpPressed=.13;keys[k]=true;b.classList.add('on');b._pid=e.pointerId;};
+  const off=e=>{if(e.cancelable)e.preventDefault();keys[k]=false;b.classList.remove('on');b._pid=null;};
+  b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointercancel',off);b.addEventListener('pointerleave',off);b.addEventListener('lostpointercapture',off);
+  // a finger lifted over something else (game-over screen, menu) must still release the key, or the cat keeps running by itself (user bug)
+  for(const ev of ['pointerup','pointercancel'])addEventListener(ev,e=>{if(b._pid===e.pointerId){keys[k]=false;b.classList.remove('on');b._pid=null;}},true);
 });
+function releaseKeys(){keys.L=keys.R=keys.J=false;jumpPressed=0;touch.querySelectorAll('button').forEach(b=>{b.classList.remove('on');b._pid=null;});}
+addEventListener('blur',releaseKeys);document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseKeys();});
 cv.addEventListener('pointerdown',()=>{ensureAudio();});
 
 /* ================= state transitions ================= */
@@ -4340,7 +4344,7 @@ $('btnAgain').onclick=()=>{ensureAudio();lastCheck=140;startPlay(true);};
 $('btnReplay').onclick=()=>{startCut();};
 $('btnL2Again').onclick=()=>{startLevel(LV);};
 $('btnL2Home').onclick=()=>{LV=1;lastCheck=140;resetLevel();setState('title');};
-$('btnRetry').onclick=()=>{ensureAudio();startPlay(true);if(p)p.inv=RESPAWN_INV;}; // after a game over the cat comes back blinking and can't be hurt for a moment
+$('btnRetry').onclick=()=>{ensureAudio();releaseKeys();startPlay(true);if(p)p.inv=RESPAWN_INV;}; // after a game over the cat comes back blinking and can't be hurt for a moment
 
 function updateHud(){
   if(!p)return;
@@ -4376,11 +4380,11 @@ function overlap(a,b){return Math.abs(a.x-b.x)<a.hw+b.hw&&a.y>b.y-b.h&&b.y>a.y-a
 const ACC=950,AIR=720,DEC=1200,MAXV=112,G=980,JV=-318,FALLMAX=430;
 let cheat=false;
 const RESPAWN_INV=3; // seconds the cat can't be hurt after it comes back (user)
-function respawnAtCheckpoint(){const lives=p.lives;resetLevel();p.lives=lives;p.inv=RESPAWN_INV;p.ctrl=true;if(bus)bus.gone=true;updateHud();}
+function respawnAtCheckpoint(){releaseKeys();const lives=p.lives;resetLevel();p.lives=lives;p.inv=RESPAWN_INV;p.ctrl=true;if(bus)bus.gone=true;updateHud();}
 function hurt(fromX,pit){
   if(cheat){p.inv=.8;if(pit&&!boss){respawnAtCheckpoint();return;}if(pit){p.x=p.spawnX;p.y=groundY(Math.floor(p.spawnX/T))-1;p.vx=0;p.vy=0;cam=clamp(p.x-W*.42,0,LW-W);}else{p.vx=(p.x<fromX?-1:1)*130;p.vy=-190;}return;}
   p.lives--;SFX.hurt();updateHud();if(lvS&&!cutView)lvS.hurts++;
-  if(p.lives<=0){if(lvS&&!cutView)lvS.deaths++;setState('over');return;}
+  if(p.lives<=0){if(lvS&&!cutView)lvS.deaths++;releaseKeys();setState('over');return;}
   p.inv=1.5;
   if(pit&&!boss){respawnAtCheckpoint();return;}
   if(pit){p.inv=RESPAWN_INV;p.x=p.spawnX;p.y=groundY(Math.floor(p.spawnX/T))-1;p.vx=0;p.vy=0;cam=clamp(p.x-W*.42,0,LW-W);}
