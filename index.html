@@ -1705,7 +1705,7 @@ let jumpPressed=0;
 let p,enemies,fishes,parts,flags,bus,cut,stats;
 
 function newPlayer(x,y){return {x,y,vx:0,vy:0,hw:5,h:10,face:1,onGround:true,coyote:0,inv:0,lives:3,spawnX:x,jumping:false,ph:0,blinkT:2,landT:0,ctrl:false,prevY:y,pose:poseStand(0),idleT:0};}
-function resetLevel(){pic1(false);clearK=0;sprout=null;giant4F=null;
+function resetLevel(){pic1(false);bossWarn=null;clearK=0;sprout=null;giant4F=null;
   setGeom();if(LV===2){resetLevel2();return;}if(LV>2){resetLevelN();return;}
   buildMap();pads=[];waves=[];
   enemies=[];fishes=[];parts=[];
@@ -3976,7 +3976,7 @@ function drawCrowBoss(cx){const b=boss;
 const DSC=1.25*2/3,DEYE_X=()=>ARENA_X+170,DEYE_Y=GROUND_Y-24,DLEAP=.78; // dog at 2/3 of its old size (user); where its eyes glow in the dark
 function newDogBoss(){return {ph1:true,phase:1,dodges:0,kind:'dog',x:ARENA_X+232,y:116,state:'intro',t:0,dir:-1,hits:0,flash:0,hw:10,h:15,spd:1,vx:0,vy:0,sc:.42,cnt:0,shake:0,sx:0,sy:0,burnCD:0};}
 const arenaFires=()=>fires4.filter(f=>f.arena);
-let seenIntro={}; // after the first try, boss intros are shortened
+let seenIntro={};var bossWarn=null; // after the first try, boss intros are shortened
 function startRescue4(b){b.vx=b.vy=0;b.y=GROUND_Y;b.cs=p.x>=b.x?1:-1;{const X0=ARENA_X+170,sd=b.x>=X0?1:-1;b.x=X0+sd*52;b.cs=-sd;b.br={g:1,sd,k:0,x:X0,y:GROUND_Y-106,a:0,off:0};}b.fwOv=1;
   p.ctrl=false;keys.L=keys.R=keys.J=false;$('bossBar').hidden=true;SFX.whimper();bossSet('r_fall');if(!cutView)show('skip',false);}
 // the giant tree on top of the dog, and the black fade as they leap out
@@ -4207,6 +4207,15 @@ let cvT=0,cvEnd=0;
 function replayArena(id,out){LV=id;seenIntro={};lastCheck=56;resetLevel();cutView=false;startPlay(false);show('banner',false);bannerT=0;
   p.x=ARENA_X+(out?40:62);p.y=GROUND_Y;p.vx=p.vy=0;p.onGround=true;p.face=1;p.ctrl=false;keys.L=keys.R=keys.J=false;cam=ARENA_X;cvT=0;cvEnd=0;
   if(out){cutView='out';winLevel();}else cutView='boss';show('skip',true);}
+// boss warning: the cat stops, the screen pulses red twice with an alarm, then the boss comes
+const WARN_T=2;
+function updBossWarn(dt){const w=bossWarn;w.t+=dt;p.ctrl=false;keys.L=keys.R=keys.J=false;if(p.onGround)p.vx=0;p.idleT=0;
+  const k=Math.floor(w.t/.5);if(k!==w.b&&w.t<WARN_T){w.b=k;tone(k%2?620:880,k%2?440:620,.34,'square',.05);if(k%2===0)shakeT=Math.max(shakeT,.2),shakeA=Math.max(shakeA,1);}
+  if(w.t>=WARN_T){bossWarn=null;p.ctrl=true;startBoss();}}
+function drawBossWarn(){const t=bossWarn.t,ph=(t%.5)/.5,a=Math.sin(ph*Math.PI)*Math.min(1,(WARN_T-t)*4);
+  alpha(.38*a,()=>rect(0,0,W,H,'#e01818'));
+  alpha(.75*a,()=>{rect(0,0,W,4,'#ff3030');rect(0,H-4,W,4,'#ff3030');rect(0,0,4,H,'#ff3030');rect(W-4,0,4,H,'#ff3030');});
+  if(Math.floor(t*4)%2===0||a>.5)alpha(Math.max(.55,a),()=>{rect(0,58,W,22,'rgba(20,0,0,.55)');rect(0,58,W,1,'#ff4040');rect(0,79,W,1,'#ff4040');ctx.save();ctx.scale(2,2);vnTextC('CẢNH BÁO',W/4,31,'#ffe0d0');ctx.restore();for(const sx of [W/2-62,W/2+50]){for(let i=0;i<9;i++)rect(sx+6-i*.6,62+i*1.6,1.2*i+1,1.6,'#ffcc30');rect(sx+5.5,65,1.4,6,'#3a0a0a');rect(sx+5.5,73,1.4,1.4,'#3a0a0a');}});}
 function updCutView(dt){if(cutView!=='boss')return;cvT+=dt;if(boss&&boss.state!=='intro'&&boss.state!=='wake'&&!boss.intro){cvEnd+=dt;if(cvEnd>.6){endCutView();return;}}if(cvT>25)endCutView();}
 // thumbnail cards: scenes the player has already reached are in colour, the rest grey (cheat still lets them play)
 function thumbCard(a,ok,img,title,note){const can=ok||cheat;return `<${can?'button type="button"':'div'} class="mi tc${ok?'':' gray'}${can?'':' locked'}" data-a="${can?a:'none'}"><img alt="" src="${img||''}"><span class="cap"><b>${ok?'':'🔒 '}${title}</b>${note}</span></${can?'button':'div'}>`;}
@@ -4426,7 +4435,7 @@ function updPlayer(dt){
   if(LV===6&&lakeAt6(p.x)&&p.y>WATER6_Y+3&&!p.splashed){p.splashed=true;SFX.splash();puff(p.x,WATER6_Y,12,'#a8b494',60,80,.6,300);}
   if(p.y>(LV===2?WATER_Y+20:LV===6&&lakeAt6(p.x)?WATER6_Y+16:H+30)){p.splashed=false;hurt(p.x,true);return;}
   for(const f of flags){if(!f.on&&p.x>f.x-4){f.on=true;p.spawnX=f.x;lastCheck=f.x;if(p.lives<3){p.lives=3;updateHud();for(let i=0;i<6;i++)parts.push({x:p.x+(Math.random()*16-8),y:p.y-14,vx:(Math.random()*2-1)*20,vy:-40-Math.random()*30,life:.9,max:.9,c:'#e5484d',g:20});}SFX.flag();puff(f.x+5,f.y-24,10,'#f2c43a',50,40,.6);}}
-  if(!boss&&p.x>ARENA_X+60&&state==='play')startBoss();
+  if(!boss&&!bossWarn&&p.x>ARENA_X+60&&state==='play'){if(seenIntro[LV+'w'])startBoss();else{seenIntro[LV+'w']=1;bossWarn={t:0,b:-1};}} // user: a 2s red flashing warning before every boss appears
   if(boss&&p.x<LTREE_X+14){p.x=LTREE_X+14;p.vx=Math.max(0,p.vx);}
   if(p.x>TREE_X-14){p.x=TREE_X-14;p.vx=Math.min(0,p.vx);}
 }
@@ -6273,7 +6282,7 @@ function update(dt){
   else if(state==='arrive'){updArrive(dt);updBus(dt);updParts(dt);}
   else if(state==='play'){
     if(!p.ctrl&&LV===1&&bus.gone&&!boss)p.ctrl=true; // the cat waits until the bus has driven off screen
-    updCutView(dt);if(state!=='play')return;if(lvS&&!cutView)lvS.t+=dt;updPlayer(dt);if(state==='play'){updEnemies(dt);updHeaps6(dt);updFish();updBoss(dt);sawSound1(dt);updFires4();updIgn4(dt);updChase4(dt);updHoppers(dt);updCity5(dt);if(LV===2){updPads(dt);updWaves(dt);updJumpers(dt);}}updBus(dt);updParts(dt);
+    updCutView(dt);if(state!=='play')return;if(lvS&&!cutView)lvS.t+=dt;if(bossWarn)updBossWarn(dt);updPlayer(dt);if(state==='play'){updEnemies(dt);updHeaps6(dt);updFish();updBoss(dt);sawSound1(dt);updFires4();updIgn4(dt);updChase4(dt);updHoppers(dt);updCity5(dt);if(LV===2){updPads(dt);updWaves(dt);updJumpers(dt);}}updBus(dt);updParts(dt);
     const target=boss?ARENA_X:ign4?FIRE_X-176:p.x-W*.42;cam+=(target-cam)*Math.min(1,dt*(boss?4:7));cam=clamp(cam,LV===5?CAMMIN5:0,LW-W);
     if(bannerT>0){bannerT-=dt;if(bannerT<=0)show('banner',false);}
   }
@@ -6326,6 +6335,7 @@ function render(){
   }
   drawWorld();
   drawPost();
+  if(bossWarn)drawBossWarn();
   if(state==='outro'||(state==='arrive'&&wakeS))drawDream();
   if(state==='arrive'&&!wakeS){rect(0,0,W,10,'#000');rect(0,H-10,W,10,'#000');if(st<.7&&LV!==1)alpha(1-st/.7,()=>rect(0,0,W,H,'#000'));if(LV===5&&arr5&&arr5.fade>0)alpha(arr5.fade,()=>rect(0,0,W,H,'#000'));}
   if(LV===5&&fadeIn5>0&&state==='play')alpha(clamp(fadeIn5,0,1),()=>rect(0,0,W,H,'#000'));
