@@ -2566,11 +2566,17 @@ function drawFence6(cx){const X=R(FENCE6_X-cx);if(X<-140||X>W+140)return;
   rect(X-24,56,4,88,'#2a1a16');rect(X+20,56,4,88,'#2a1a16');rect(X-23,56,1,88,'#6a4a3a');rect(X+21,56,1,88,'#6a4a3a');
   // the gate leaf hangs open towards us
   for(let i=0;i<5;i++){const gx=X+24+i*3;rect(gx,66+i,1,76-i,'#4a3028');}rect(X+24,70,14,2,'#5a3a2c');rect(X+24,104,14,2,'#5a3a2c');
-  // sign: rusty plate with a skull-and-crossbones warning
-  rect(X-16,46,32,14,'#2a1a14');rect(X-15,47,30,12,'#c8a040');rect(X-15,47,30,1,'#e8c860');rect(X-15,58,30,1,'#8a6a20');
-  rect(X-3,49,6,5,'#2a1a14');rect(X-2,50,1,1,'#c8a040');rect(X+1,50,1,1,'#c8a040');rect(X-2,54,4,1,'#2a1a14');
-  for(let i=0;i<5;i++){rect(X-8+i,50+i,1,1,'#2a1a14');rect(X+7-i,50+i,1,1,'#2a1a14');}
-  rect(X-15,47,3,3,'#8a4a2a');rect(X+12,56,3,2,'#8a4a2a');rect(X-1,42,2,4,'#3a2a20');}
+  // sign: a rusty yellow plate on two chains, "BÃI RÁC" / "CẤM VÀO" flanked by skulls, rivets, rust streaks and a bullet dent
+  {const sw=Math.round(Math.sin(gt*1.3)*.6);if(!SIGNART.gate){const [c,g]=mkCanvas(48,24);const P=(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(x,y,w,h);};const rnd=mulberry(66);
+    P(0,0,48,24,'#2a1a14');P(1,1,46,22,'#c8a040');P(1,1,46,1,'#ecd070');P(1,22,46,1,'#7a5a1a');P(1,1,1,22,'#e0c060');
+    for(let i=0;i<40;i++){const x=1+Math.floor(rnd()*46),y=1+Math.floor(rnd()*22);P(x,y,1+Math.floor(rnd()*2),1,rnd()<.5?'#a8802a':'#b89030');}
+    vnTextC('BÃI RÁC',24,5,'#2a1a10',g);P(6,12,36,1,'#2a1a10');vnTextC('CẤM VÀO',24,16,'#a8201a',g);
+    for(const sx of [4,41]){P(sx,4,3,3,'#2a1a10');P(sx,7,3,1,'#2a1a10');P(sx,5,1,1,'#c8a040');P(sx+2,5,1,1,'#c8a040');P(sx-1,9,1,1,'#2a1a10');P(sx+3,9,1,1,'#2a1a10');P(sx,8,1,1,'#2a1a10');P(sx+2,8,1,1,'#2a1a10');}
+    for(const [rx,ry] of [[2,2],[45,2],[2,21],[45,21]]){P(rx,ry,1,1,'#6a6a70');P(rx,ry+1,1,4,'#8a4a2a');}
+    for(const rx of [12,30,38])P(rx,13+Math.floor(rnd()*3),1,8,'rgba(138,74,42,.7)');P(33,6,3,3,'#8a6a20');P(34,7,1,1,'#2a1a10');P(0,18,4,6,'#8a4a2a');P(44,0,4,3,'#8a4a2a');
+    SIGNART.gate={c};}
+    for(const hx of [-14,13]){for(let y=40;y<47;y+=2)rect(X+hx+(y%4?sw:0),y,1,1,'#6a6a70');}rect(X-24,39,48,2,'#2a1a16');
+    ctx.drawImage(SIGNART.gate.c,X-24+sw,46);}}
 function drawAmbient6(cx){
   // flies buzzing over heaps, plastic bags drifting on the wind
   for(const h of heaps6){const x=(h.c0+h.c1+1)*T/2-cx;if(x<-20||x>W+20||h.st==='gone')continue;for(let i=0;i<3;i++){const a=gt*(5+i)+h.c0*1.7+i*2;rect(x+Math.cos(a)*7+Math.sin(a*2.3)*3,h.cur*T-6+Math.sin(a*1.3)*4,1,1,'#1a1a1a');}}
@@ -3871,7 +3877,12 @@ function drawShelter(x){
   // bench
   rect(x+5,126,38,3,'#9a6a3e');rect(x+5,126,38,1,'#c48a52');rect(x+5,129,38,1,'#5e3a20');rect(x+8,130,2,14,'#4b4f56');rect(x+38,130,2,14,'#4b4f56');
   // sign pole
-  rect(x+56,94,2,50,'#7b828c');rect(x+57,94,1,50,'#a9b0b8');disc(x+57,91,7,'#1f4f8a');disc(x+57,91,6,'#2f6fb3');rect(x+53,88,9,5,'#ffffff');rect(x+54,89,3,2,'#2f6fb3');rect(x+58,89,3,2,'#2f6fb3');rect(x+54,93,2,1,'#fff');rect(x+59,93,2,1,'#fff');
+  rect(x+56,94,2,50,'#7b828c');rect(x+57,94,1,50,'#c9d0d8');for(let y=120;y<144;y+=6){rect(x+56,y,2,3,'#f2f2f2');rect(x+56,y+3,2,3,'#c8302a');}rect(x+55,142,4,2,'#4b4f56');
+  rect(x+48,82,19,19,'#14305a');rect(x+49,83,17,17,'#2f6fb3');rect(x+49,83,17,1,'#5a94d8');rect(x+49,99,17,1,'#1f4f8a');rect(x+50,84,15,15,'#ffffff');rect(x+51,85,13,13,'#2f6fb3');
+  // white bus pictogram: body, windscreen, windows, wheels
+  rect(x+52,87,11,8,'#ffffff');rect(x+53,88,3,3,'#2f6fb3');rect(x+57,88,2,3,'#2f6fb3');rect(x+60,88,2,3,'#2f6fb3');rect(x+52,93,11,1,'#d8e4f0');rect(x+53,95,2,2,'#ffffff');rect(x+60,95,2,2,'#ffffff');rect(x+62,92,1,1,'#ffd040');
+  rect(x+48,101,19,6,'#f2c43a');rect(x+48,101,19,1,'#ffe08a');rect(x+48,106,19,1,'#a8801a');rect(x+50,103,15,1,'#3a2a10');rect(x+50,105,9,1,'#6a5a30');
+  for(const [bx,by] of [[49,83],[64,83],[49,98],[64,98]])rect(x+bx,by,1,1,'#9aa0a8');
   // bin
   rect(x+64,134,7,10,'#3f7a52');rect(x+64,134,7,1,'#5fa070');rect(x+63,133,9,1,'#2f5f40');
 }
@@ -3887,15 +3898,15 @@ const VNF={A:["010","101","111","101","101"],B:["110","101","110","101","110"],C
   'Ư':["1011","1010","1010","1010","1110"],'Ơ':["0101","1010","1010","1010","0100"],'-':["000","000","111","000","000"],'!':["1","1","1","0","1"],'.':["0","0","0","0","1"],':':["0","1","0","1","0"],
   '0':["111","101","101","101","111"],'1':["01","11","01","01","01"],'2':["111","001","111","100","111"],'3':["111","001","011","001","111"],'5':["111","100","111","001","111"],'6':["111","100","111","101","111"],'8':["111","101","111","101","111"],'9':["111","101","111","001","111"]};
 const VNDEC={'Á':'A/','À':'A\\','Ả':'A?','Ã':'A~','Ạ':'A.','Ấ':'A^/','Ầ':'A^\\','Ậ':'A^.','Â':'A^','Ô':'O^','Ố':'O^/','Ồ':'O^\\','Ổ':'O^?','Ỏ':'O?','Ó':'O/','Ò':'O\\','Ọ':'O.',
-  'Ỉ':'I?','Í':'I/','Ì':'I\\','Ị':'I.','Ừ':'Ư\\','Ứ':'Ư/','Ự':'Ư.','Ữ':'Ư~','Ử':'Ư?','Ờ':'Ơ\\','Ớ':'Ơ/','Ỡ':'Ơ~','Ở':'Ơ?','Ợ':'Ơ.','É':'E/','È':'E\\','Ê':'E^','Ế':'E^/','Ệ':'E^.','Ú':'U/','Ù':'U\\','Ủ':'U?','Ụ':'U.','Ý':'Y/','Ỳ':'Y\\','Đ':'Đ'};
-VNF['Đ']=["110","101","111","101","110"];
+  'Ỉ':'I?','Í':'I/','Ì':'I\\','Ị':'I.','Ừ':'Ư\\','Ứ':'Ư/','Ự':'Ư.','Ữ':'Ư~','Ử':'Ư?','Ờ':'Ơ\\','Ớ':'Ơ/','Ỡ':'Ơ~','Ở':'Ơ?','Ợ':'Ơ.','É':'E/','È':'E\\','Ê':'E^','Ễ':'E^~','Ể':'E^?','Ã':'A~','Ế':'E^/','Ệ':'E^.','Ú':'U/','Ù':'U\\','Ủ':'U?','Ụ':'U.','Ý':'Y/','Ỳ':'Y\\','Đ':'Đ'};
+VNF['Đ']=["0110","0101","1101","0101","0110"];
 // draws text with its top-left letter row at y (marks go up to 3px above, dot below 1px under); returns the width
 function vnText(str,x,y,col,draw=true,g=null){let cx0=x;const P=(px,py)=>{if(!draw)return;if(g){g.fillStyle=col;g.fillRect(px,py,1,1);}else rect(px,py,1,1,col);};
   for(const ch of str){if(ch===' '){cx0+=3;continue;}const d=VNDEC[ch]||ch,base=d[0],marks=d.slice(1),gl=VNF[base]||VNF['-'];
     for(let j=0;j<5;j++)for(let i=0;i<gl[j].length;i++)if(gl[j][i]==='1')P(cx0+i,y+j);
     const circ=marks.includes('^'),ox=circ?3:1;if(circ){P(cx0,y-1);P(cx0+1,y-2);P(cx0+2,y-1);}
     if(marks.includes('/')){P(cx0+ox,y-2);P(cx0+ox+1,y-3);}if(marks.includes('\\')){P(cx0+ox-1,y-3);P(cx0+ox,y-2);}
-    if(marks.includes('?')){P(cx0+ox-1,y-3);P(cx0+ox,y-3);P(cx0+ox,y-2);}if(marks.includes('~')){P(cx0,y-2);P(cx0+1,y-3);P(cx0+2,y-2);P(cx0+3,y-3);}
+    if(marks.includes('?')){P(cx0+ox-1,y-3);P(cx0+ox,y-3);P(cx0+ox,y-2);}if(marks.includes('~')){const u=circ?2:0;P(cx0,y-2-u);P(cx0+1,y-3-u);P(cx0+2,y-2-u);P(cx0+3,y-3-u);}
     if(marks.includes('.'))P(cx0+1,y+6);cx0+=gl[0].length+1;}
   return cx0-x-1;}
 function vnTextC(str,cxm,y,col,g){const w=vnText(str,0,0,col,false);vnText(str,Math.round(cxm-w/2),y,col,true,g);return w;}
@@ -3932,6 +3943,24 @@ function storyArt(k){if(STORYART[k])return STORYART[k];const mk=(w,h)=>{const [c
     P(39,22,7,6,'rgba(200,30,30,.75)');P(40,23,5,4,'#f2eee2');P(41,24,3,2,'rgba(200,30,30,.8)'); // red stamp
     P(29,4,2,2,'#6a6a70');P(29,4,1,1,'#b0b0b8'); // drawing pin
     STORYART[k]={c,ox:30,h:52};return STORYART[k];}
+  if(k==='nofire'){ // forest-ranger board on two posts: red "CẤM ĐỐT LỬA", a crossed-out flame, "DỄ CHÁY RỪNG", a little roof against the rain
+    const [c,g,P]=mk(72,66);const rnd=mulberry(404);
+    for(const lx of [14,54]){P(lx,30,4,36,'#3a2412');P(lx+1,30,2,36,'#6a4424');P(lx+1,30,1,36,'#8a5a32');P(lx,62,4,4,'#2a1a0c');}
+    P(2,0,68,4,'#5a2a1a');P(1,3,70,2,'#3a1a10');for(let x=3;x<69;x+=4)P(x,0,1,4,'#7a3a22'); // little roof
+    P(3,5,66,38,'#2a1a0c');P(4,6,64,36,'#f2ecd8');P(4,6,64,1,'#ffffff');
+    P(4,6,64,11,'#c8201a');P(4,6,64,1,'#e8503a');P(4,16,64,1,'#8a1410');
+    vnTextC('CẤM ĐỐT LỬA',36,9,'#fff6c0',g);
+    // crossed-out flame in a red ring
+    const fx=17,fy=29;for(let a=0;a<64;a++){const t=a/64*Math.PI*2;for(const r of [8,9])P(fx+Math.cos(t)*r,fy+Math.sin(t)*r,1,1,'#c8201a');}
+    for(const [x,y,w,h,col] of [[15,26,5,8,'#f07a1a'],[16,23,3,4,'#f07a1a'],[17,21,1,3,'#f07a1a'],[13,29,2,4,'#f07a1a'],[20,28,2,5,'#f07a1a'],[16,28,3,5,'#ffd040'],[17,31,1,2,'#fff4b0']])P(x,y,w,h,col);
+    P(11,34,13,2,'#6a4a2a');P(12,33,3,1,'#6a4a2a');P(19,33,3,1,'#6a4a2a'); // the logs
+    for(let i=-6;i<=6;i++){P(fx+i,fy+i,2,2,'#c8201a');}
+    vnTextC('DỄ CHÁY',47,24,'#1a1a1a',g);vnTextC('RỪNG',47,33,'#c8201a',g);
+    P(4,40,64,2,'#2e6a3a');P(4,40,64,1,'#4a9a5a'); // the ranger green strip
+    for(const [nx,ny] of [[6,8],[65,8],[6,38],[65,38]]){P(nx,ny,1,1,'#7a7a80');}
+    for(let i=0;i<14;i++)P(4+rnd()*63,17+rnd()*22,1,1,'rgba(120,100,70,.35)');P(66,17,2,8,'#d8d0bc');
+    for(const px of [12,20,50,60])P(px,63-Math.floor(rnd()*3),1,3,'#3a5a2a'); // dry grass at the feet
+    STORYART[k]={c,ox:36,h:66};return STORYART[k];}
   if(k==='hazard'){ // rusty steel sign at the poisoned pool: hazard triangle, "CẤM VÀO", "KHU VỰC CHẤT THẢI NGUY HẠI"
     const [c,g,P]=mk(64,72);
     P(30,38,4,34,'#5a5e66');P(30,38,1,34,'#9aa0a8');P(33,38,1,34,'#3a3e46');for(let y=44;y<70;y+=6)P(31,y,2,1,'#8a4a2a');
@@ -3943,16 +3972,40 @@ function storyArt(k){if(STORYART[k])return STORYART[k];const mk=(w,h)=>{const [c
     for(const [bx,by] of [[4,4],[58,4],[4,37],[58,37]]){P(bx,by,2,2,'#7a7a80');P(bx,by+2,1,3,'#9a4a22');}
     P(56,34,5,5,'#8a3a1a');P(57,35,4,4,'#c8a080');P(2,38,12,2,'#9a7a5a');P(40,39,8,1,'#8a5a3a');P(24,13,1,5,'#b8a890');
     STORYART[k]={c,ox:32,h:72};return STORYART[k];}}
-const STORY=[{lv:1,k:'resort',c:221,tilt:0},{lv:1,k:'notice',c:233},{lv:2,k:'hazard',c:198}];
+const STORY=[{lv:1,k:'resort',c:221,tilt:0},{lv:1,k:'notice',c:233},{lv:2,k:'hazard',c:198},{lv:4,k:'nofire',c:FIRE_C-12}];
 function drawStory(cx){for(const s of STORY){if(s.lv!==LV)continue;const A=storyArt(s.k),x=s.c*T+8-cx;if(x<-70||x>W+70)continue;const gy=groundY(s.c);
   if(s.k==='notice'){ctx.drawImage(A.c,R(x-A.ox),gy-A.h+1);const f=Math.sin(gt*3.1)*.5+.5;rect(R(x-A.ox)+51,gy-A.h+1+26+Math.round(f),2,1,'#e8e2d0');} // a corner of the paper lifting in the wind
   else if(s.k==='hazard'){ctx.save();ctx.translate(R(x),gy+1);ctx.rotate(-.06);ctx.drawImage(A.c,-A.ox,-A.h);ctx.restore();}
   else ctx.drawImage(A.c,R(x-A.ox),gy-A.h+1);}}
-function drawSign(cx){const x=R(GOAL_X-cx),y=groundY(Math.floor(GOAL_X/T));rect(x-1,y-24,3,24,'#6e4423');rect(x,y-24,1,24,'#8d5a30');
-  rect(x-15,y-36,32,13,'#5a361d');rect(x-14,y-35,30,11,'#c08a50');rect(x-14,y-35,30,1,'#e6b07a');rect(x-14,y-25,30,1,'#8d5a30');
-  rect(x-10,y-31,16,3,'#3a2414');for(let i=0;i<4;i++)rect(x+6+i,y-34+i,1,9-i*2,'#3a2414');
-  // little house icon
-  rect(x-13,y-31,1,1,'#3a2414');}
+// the home signpost before every boss: two weathered posts, a two-plank board with grain, knots and nails, a painted house + "NHÀ" + arrow, moss on top
+const SIGNART={};
+function signArt(k){if(SIGNART[k])return SIGNART[k];const [c,g]=mkCanvas(48,44);const P=(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),w,h);};const rnd=mulberry(k.length*31+7);
+  const burnt=k==='burnt';const WD=burnt?['#3a2a20','#5a4030','#6e5038','#2a1a12']:['#7a4a26','#b07a44','#c8925a','#4a2c16'];
+  // posts
+  for(const px of [10,34]){P(px,14,4,30,WD[3]);P(px+1,14,2,30,WD[0]);P(px+1,14,1,30,WD[1]);for(let y=18;y<42;y+=5)P(px+2,y+(px%3),1,2,WD[3]);P(px,40,4,4,burnt?'#1a120c':'#3a2614');}
+  // board: two planks
+  P(2,2,44,22,WD[3]);
+  for(let r=0;r<2;r++){const y=3+r*10;P(3,y,42,9,r?WD[0]:WD[1]);P(3,y,42,1,WD[2]);P(3,y+8,42,1,WD[3]);
+    for(let i=0;i<6;i++){const gy=y+2+Math.floor(rnd()*6),gx=3+Math.floor(rnd()*30);P(gx,gy,4+Math.floor(rnd()*8),1,r?WD[3]:WD[0]);}
+    const kx=8+Math.floor(rnd()*30);P(kx,y+4,2,2,WD[3]);P(kx,y+4,1,1,WD[2]);}
+  P(3,12,42,1,WD[3]); // gap between the planks
+  // nails
+  for(const [nx,ny] of [[5,5],[42,5],[5,15],[42,15]]){P(nx,ny,2,2,'#5a5a60');P(nx,ny,1,1,'#b8b8c0');P(nx,ny+2,1,2,'#8a4a2a');}
+  // painted house icon
+  const PW=burnt?'#c8c0b0':'#f4ecd8',PR=burnt?'#9a3a2a':'#c84a32',PD='#2a1a10';
+  for(let i=0;i<5;i++)P(9-i,6+i,2*i+2,1,PR);P(5,10,10,1,PD);P(6,11,8,7,PW);P(9,14,2,4,PD);P(7,12,2,2,'#5aa0c8');P(12,5,2,3,PD);
+  // NHÀ
+  vnText('NHÀ',18,10,PD,true,g);vnText('NHÀ',17,9,PW,true,g);
+  // arrow
+  P(32,11,6,3,PD);P(31,10,6,3,PW);for(let i=0;i<4;i++)P(37+i,7+i,1,9-2*i,PW);for(let i=0;i<4;i++)P(38+i,8+i,1,9-2*i>0?1:1,PD);
+  // a paw print scratched into the corner
+  P(39,19,2,2,WD[3]);P(38,18,1,1,WD[3]);P(40,17,1,1,WD[3]);P(42,18,1,1,WD[3]);
+  if(burnt){for(let i=0;i<60;i++)P(rnd()*46+1,rnd()*24+1,1+Math.floor(rnd()*3),1,'rgba(10,6,4,.6)');P(2,2,44,3,'rgba(10,6,4,.5)');}
+  else{for(let x=2;x<46;x++)if(rnd()<.55)P(x,1+(rnd()<.4?0:1),1,1,rnd()<.5?'#5a9a3a':'#7ab84a');for(let i=0;i<5;i++)P(3+rnd()*40,22,1,2,'#4a8a3a');
+    for(const px of [9,15,33,39])P(px,41-Math.floor(rnd()*3),1,3,'#5aa040'),P(px+1,40,1,4,'#7ac050');}
+  return SIGNART[k]={c,ox:24,h:44};}
+function drawSign(cx){const x=R(GOAL_X-cx);if(x<-40||x>W+40)return;const y=groundY(Math.floor(GOAL_X/T)),A=signArt(LV===4?'burnt':'home');
+  alpha(.25,()=>rect(x-20,y-1,40,2,'#000'));ctx.drawImage(A.c,x-A.ox,y-A.h+1);}
 function drawBus(x,yb,door,moving,dist){
   // orange city bus with a band of teal windows and a double door
   x=R(x);const bob=moving?(Math.floor(gt*12)%2):0;const Y=yb-62-bob;const BW=142;
