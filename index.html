@@ -4609,8 +4609,8 @@ function roundWin(x,y,w,h,frame){rect(x-3,y-3,w+6,h+6,frame);rect(x-3,y-3,2,2,'#
 // seated ones sit on the benches. Everyone stares at a flickering phone that lights their face.
 const CROWD=[
   {x:20,k:'sit',sd:11},{x:46,k:'sit',sd:12},{x:96,k:'sit',sd:13},{x:226,k:'sit',sd:14},{x:302,k:'sit',sd:15},
-  {x:72,k:'f',hd:74,hold:1,hs:78,sd:1},{x:88,k:'s',f:1,hd:70,hold:1,hs:100,sd:2},{x:110,k:'s',f:-1,hd:76,hold:0,sd:3},
-  {x:208,k:'s',f:1,hd:72,hold:1,hs:220,sd:5},{x:240,k:'f',hd:69,hold:1,hs:244,sd:6},{x:284,k:'s',f:-1,hd:73,hold:1,hs:268,sd:9},{x:296,k:'f',hd:77,hold:0,sd:10}];
+  {x:72,k:'f',hd:58,hold:1,hs:78,sd:1},{x:88,k:'s',f:1,hd:56,hold:1,hs:100,sd:2},{x:110,k:'s',f:-1,hd:76,hold:0,sd:3},
+  {x:208,k:'s',f:1,hd:57,hold:1,hs:220,sd:5},{x:240,k:'f',hd:55,hold:1,hs:244,sd:6},{x:284,k:'s',f:-1,hd:58,hold:1,hs:268,sd:9},{x:296,k:'f',hd:77,hold:0,sd:10}];
 const [crowdCv,crowdG]=mkCanvas(W,H);
 function crowdBody(P,c,t){
   const sw=P.k==='sit'?0:Math.round(Math.sin(t*1.7+P.sd)*.6+c.sway*2),x=P.x+sw,K='#000';
