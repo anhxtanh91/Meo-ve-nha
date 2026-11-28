@@ -4740,8 +4740,8 @@ function drawInterior(t){
   ctx.fillStyle='rgba(30,30,44,.26)';ctx.fill('evenodd');ctx.restore();
   for(const [wx,wy,ww,wh] of WINS){alpha(.22,()=>{for(let k=0;k<34;k++)rect(wx+hash(k*5+wx)*ww,wy+hash(k*9+wx)*wh,1,1,'#e8c8a0');});}
   sunBeams(c);
-  if(!c.inDoor)drawCatAt(c.pose,t,c.catX,c.catY,c.face); // the cat sits behind the passengers
-  drawCrowd(c,t);                                                          // passengers are see-through so the cat never gets lost
+  drawCrowd(c,t);
+  if(!c.inDoor)drawCatAt(c.pose,t,c.catX,c.catY,c.face); // the cat is always in front of the passengers (user: no one overlaps it)
   c.lights.forEach((on,i)=>{if(on){const lx=i?259:61;rect(lx-34,25,68,3,'#fffbe8');glow(lx,30,50,'rgb(255,236,190)',.14);}});
   // LED sign above the doors
   rect(DOOR.x+3,38,DOOR.w-6,9,'#0e0b08');
