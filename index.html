@@ -2526,29 +2526,28 @@ function dogMask(k,o={}){const rows=Array.isArray(k)?k:DOGMASK[k],w=rows[0].leng
   });
   s._ex=x0+6.5;s._ey=ys+.5;s._my=ys+3.5;s._mx=x0+2;return s;}
 // gallop frames: the traced run body and head, with four legs swinging through the stride (frame 0 matches the reference)
-function dogRunRows(t){const R=DOGMASK.run,W=R[0].length,H0=R.length,TOP=3,H=H0+TOP,GR=H-1,g=[];
-  // frame 0 is the reference run pose pixel for pixel; the other frames turn each of the reference's four legs about its top
-  // legs: [test, pivot x, pivot y, reference angle] (+ = forward; the dog faces left)
-  const LG=[[(x,y)=>y>=19&&x<=9||y>=20&&x<=9,10,19,1.1],[(x,y)=>y>=19&&x>=10&&x<=30,19,19,1.06],[(x,y)=>y>=20&&x>=40&&x<=56,52,20,-.93],[(x,y)=>y>=20&&x>=57,58,20,-1.19]];
-  // gallop keys: angles for legs [front far, front near, hind near, hind far], then body drop (- = up) and pitch (- = rump up)
-  const K=[[1.1,1.06,-.93,-1.19,-2,0],[.8,.45,.35,.05,-1,-1],[.3,-.05,.9,.65,0,-.5],[-.45,-.65,.55,.8,0,.6],[0,.35,-.25,0,-1,1],[.7,.9,-.7,-.6,-2,.4]];
-  const sm=v=>v*v*(3-2*v),key=(tt,n)=>{tt=((tt%1)+1)%1;const f=tt*6,a=Math.floor(f)%6,b=(a+1)%6,u=sm(f-Math.floor(f));return K[a][n]+(K[b][n]-K[a][n])*u;};
-  const bob=key(t,4)+2,pitch=key(t,5);
+function dogRunRows(t){const R=DOGMASK.run,W=R[0].length,TOP=2,H=19+TOP+12,GR=H-1,g=[];
+  // body and head are the reference run pose; four slim legs (shaped like the reference's) step through six gallop keys.
+  // per key: [front far, front near, hind near, hind far] as [upper, lower] angles (+ = forward, the dog faces left), then body drop
+  // key 0 is the reference's flying stretch
+  const HIP=[13,19,50,55];
+  const K=[[[1.2,1.2],[1.03,1.03],[-.88,-.88],[-1.2,-1.2],-1],
+   [[.75,.55],[.45,.35],[.4,-1.0],[.2,-1.1],0],
+   [[.25,.2],[-.05,0],[1.0,.1],[.8,-.1],1],
+   [[-.5,-1.6],[-.6,-1.8],[.55,.3],[.7,.35],0],
+   [[.4,-.8],[.2,-.9],[-.3,-.25],[-.15,-.1],0],
+   [[1.0,.8],[.9,.7],[-.75,-.9],[-.9,-1.0],-1]];
+  const sm=v=>v*v*(3-2*v),f=(((t%1)+1)%1)*6,a=Math.floor(f)%6,b=(a+1)%6,u=sm(f-Math.floor(f)),L=(x,y)=>x+(y-x)*u;
+  const drop=Math.round(L(K[a][4],K[b][4]))+1;
   for(let y=0;y<H;y++)g.push(Array(W).fill('.'));
-  const off=x=>Math.round(TOP-1+bob+pitch*(x-33)/33),set=(x,y,c)=>{x=Math.floor(x);y=Math.floor(y);if(x>=0&&x<W&&y>=0&&y<H&&(g[y][x]==='.'||c==='@'||c==='#'))g[y][x]=c;},
-   isLeg=(x,y)=>LG.some(L=>L[0](x,y));
-  for(let y=0;y<H0;y++)for(let x=0;x<W;x++){if(R[y][x]!=='#'||isLeg(x,y))continue;const tl=x>=50&&y<11?(x-50)/15*3*Math.sin(t*Math.PI*2+1-(x-50)*.05):0;set(x,y+off(x)+Math.round(tl),'#');}
-  const SUB=[[.17,.17],[.5,.17],[.83,.17],[.17,.5],[.5,.5],[.83,.5],[.17,.83],[.5,.83],[.83,.83]];
-  const drawLeg=(n,ang,c)=>{const [test,px,py,a0]=LG[n],PY=py+off(px),d=ang-a0,cs=Math.cos(d),sn=Math.sin(d);
-    // keep the paw above the ground: shorten a leg that would dig in
-    let reach=0;for(let y=0;y<H0;y++)for(let x=0;x<W;x++)if(R[y][x]==='#'&&test(x,y)){const vx=x+.5-px,vy=y+.5-py;reach=Math.max(reach,PY+vx*sn+vy*cs);}
-    const sc=reach>GR?Math.max(.55,(GR-PY)/(reach-PY)):1;
-    for(let y=0;y<H0;y++)for(let x=0;x<W;x++){if(R[y][x]!=='#'||!test(x,y))continue;
-      for(const [ox,oy] of SUB){const vx=x+ox-px,vy=y+oy-py,rx=vx*cs-vy*sn,ry=vx*sn+vy*cs;set(px+rx*(ry>0?1:1)*(1-(1-sc)*.3),PY+ry*sc,c);}}};
-  const lag=[0,0,0,0];
-  drawLeg(0,key(t-lag[0],0),'%');drawLeg(3,key(t-lag[3],3),'%');drawLeg(1,key(t-lag[1],1),'@');drawLeg(2,key(t-lag[2],2),'@');
-  const F=(x,y)=>y>=0&&y<H&&x>=0&&x<W&&g[y][x]!=='.';
-  for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){if(g[y][x]==='#'&&F(x-1,y)+F(x+1,y)+F(x,y-1)+F(x,y+1)<=1)g[y][x]='.';}
+  const set=(x,y,c)=>{x=Math.round(x);y=Math.round(y);if(x>=0&&x<W&&y>=0&&y<H&&(g[y][x]==='.'||c==='@'&&g[y][x]==='%'))g[y][x]=c;};
+  for(let y=0;y<19;y++)for(let x=0;x<W;x++)if(R[y][x]==='#'){const tl=x>=50&&y<11?Math.round((x-50)/15*2.5*Math.sin(t*Math.PI*2+1-(x-50)*.05)):0;set(x,y+TOP+drop+tl,'#');}
+  const seg=(ax,ay,bx,by,r,c)=>{const n=Math.ceil(Math.hypot(bx-ax,by-ay)*3)+1;for(let i=0;i<=n;i++){const v=i/n,x=ax+(bx-ax)*v,y=ay+(by-ay)*v;
+    for(let ey=-2;ey<=2;ey++)for(let ex=-2;ex<=2;ex++)if(ex*ex+ey*ey<=r*r)set(x+ex,Math.min(GR,y+ey),c);}};
+  const leg=(n,c)=>{const front=n<2,hx=HIP[n],hy=16+TOP+drop,a1=L(K[a][n][0],K[b][n][0]),a2=L(K[a][n][1],K[b][n][1]),L1=front?6:6.5,L2=front?6.5:6.5;
+    const kx=hx-Math.sin(a1)*L1,ky=hy+Math.cos(a1)*L1,px=kx-Math.sin(a2)*L2,py=Math.min(GR,ky+Math.cos(a2)*L2);
+    seg(hx,hy,kx,ky,front?1.6:2,c);seg(kx,ky,px,py,1.2,c);seg(px,py,px-1.6,py,1,c);};
+  leg(0,'%');leg(3,'%');leg(1,'@');leg(2,'@');
   return g.map(r=>r.join(''));}
 const DOG={};
 {const add=(k,n,pk)=>{for(let i=0;i<n;i++)DOG[k+i]=dogRig(dogPose(pk||k,i/n));};add('run',12);add('stand',8);add('growl',8);add('daze',8);add('kick',8);add('lie',4);add('rear',8);add('sit',4);
