@@ -3180,16 +3180,6 @@ function drawArena6(cx){
 // fight hints (user: players could not tell how to beat the Rat King)
 function hintArrow(x,y){const ay=y-Math.abs(Math.sin(gt*5))*5;rect(R(x)-3,R(ay)-1,7,9,'#3a1a08');rect(R(x)-2,R(ay),5,8,'#ffe060');for(let k=0;k<5;k++){rect(R(x)-6+k,R(ay)+8+k,13-k*2,1,'#3a1a08');rect(R(x)-5+k,R(ay)+8+k,11-k*2,1,'#ffe060');}}
 function hintCap(a,b2){alpha(.92,()=>{rect(0,40,W,19,'rgba(10,4,2,.62)');vnTextC(a,W/2,43,'#ffe060');vnTextC(b2,W/2,51,'#fff0d0');});}
-// step 1: while it burrows, stand on a striped steel plate so it bursts up into the steel; jump off when the ground rumbles
-// step 2: it reels dizzy under the dented plate: jump on its head
-function drawRatHint6(cx){const b=boss;if(!b||b.kind!=='rat6'||state!=='play')return;
-  if(b.state==='tunnel'||b.state==='rumble'||b.state==='dive'){let best=0,bd=1e9;for(let i=0;i<3;i++){const d=Math.abs(ARENA_X+PLATES6[i]-p.x);if(d<bd){bd=d;best=i;}}
-    const pu=.5+.5*Math.sin(gt*7);for(let i=0;i<3;i++){const x=ARENA_X+PLATES6[i]-cx;glow(x,GROUND_Y-3,i===best?18+pu*6:10,'rgb(255,220,80)',i===best?.7:.3);}
-    const on=bd<16;if(!on)hintArrow(ARENA_X+PLATES6[best]-cx,GROUND_Y-30);
-    if(b.state==='rumble'){if(Math.floor(gt*10)%2)hintCap('ĐẤT ĐANG RUNG!','NHẢY LÊN NGAY');}
-    else hintCap('ĐỨNG TRÊN TẤM THÉP VẠCH VÀNG','CHUỘT ĐÀO LÊN SẼ ĐẬP ĐẦU VÀO THÉP');}
-  else if(b.state==='bonk'||b.state==='dizzy'){const pu=.5+.5*Math.sin(gt*8);glow(b.x-cx,b.y-b.h,14+pu*6,'rgb(255,230,100)',.55);hintArrow(b.x-cx,b.y-b.h-34);
-    hintCap('CHUỘT ĐANG CHOÁNG!','NHẢY LÊN ĐẦU NÓ');}}
 function drawRatBoss(cx){const b=boss;if(b.state==='gone')return;const x=b.x-cx;
   if(b.chunks&&b.chunks.length){for(const c of b.chunks){const a=c.t>2.2?1-(c.t-2.2)/.8:1;if(a<=0)continue;alpha(a,()=>{rect(R(c.x-cx),R(c.y-c.h),c.w,c.h,c.c);rect(R(c.x-cx),R(c.y-c.h),c.w,1,'rgba(255,255,255,.25)');});}if(b.state!=='intro')b.chunks=b.chunks.filter(c=>c.t<3);}
   if(b.state==='intro'&&!b.burst){const H6=RAT_HEAP(),sh=b.heapSh?Math.round(Math.sin(gt*55)*b.heapSh*2):0,sq=b.heapSh?Math.round(Math.abs(Math.sin(gt*20))*b.heapSh*2):0;
@@ -5547,7 +5537,7 @@ function drawWorld(){
   drawAmbient(cx);
   drawFish(cx);
   for(const e of enemies){if(Math.abs(e.x-cx-W/2)>W/2+80)continue;e.type==='beetle'?drawBeetle(e,cx):e.type==='frog'?drawFrogE(e,cx):drawBee(e,cx);}
-  if(LV!==4)drawBed(cx,0);drawDrops(cx);drawBoss(cx);if(LV===6)drawRatHint6(cx);if(LV===4)drawRescue4(cx);
+  if(LV!==4)drawBed(cx,0);drawDrops(cx);drawBoss(cx);if(LV===4)drawRescue4(cx);
   if(state!=='title'&&!(LV===2&&p.y<=WATER_Y+1))drawPlayer(cx);
   drawBed(cx,1);
   if(LV===6){drawLakeFront6(cx);drawDivers6(cx);}
