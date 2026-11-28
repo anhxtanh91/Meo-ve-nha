@@ -3122,38 +3122,36 @@ let RAT_HEAP_C=null;function RAT_HEAP(){if(RAT_HEAP_C)return RAT_HEAP_C;const w=
   g.globalAlpha=.25;g.fillStyle='#000';g.fillRect(0,h-3,w,3);
   return RAT_HEAP_C=c;}
 // ===== Rat King (user-approved redesign, 2026-11-28) =====
-// Phase 1: it squats on top of a stepped trash mountain at the right, kicking rubbish down at the cat (tyres, cans, bags) and
-// calling baby rats out of a sewer pipe. The cat climbs the ledges (bouncing on a tyre gives a big boost) and pounces on its
-// dangling tail; 3 pounces and the mountain collapses. Phase 2: on the ground it charges and slams into the trash walls (stunned:
-// jump on its back), throws lids and bottles in arcs, and burrows to burst up under the cat (the ground rumbles first). 3 hits.
-// Ending: the trash wall caves in on the baby rats, the cat digs them out, the king sees it and leads the pack away.
-const MTN6=[[180,208,24],[208,234,48],[234,320,72]]; // ledges in arena x: [x0,x1,height]
+// Phase 1 (user spec v215): it stands on top of a sloping trash heap at the right and rolls tyres down the slope; the cat dodges
+// them or bounces off one to get close, and jumps on its head; each time it hurls the cat back to the foot of the slope. 3 times and
+// the heap collapses. Phase 2: it throws boxes and bottles in arcs and burrows to burst up under the cat (the ground rumbles first);
+// bursting up under a steel plate stuns it, and the cat jumps on it. 3 hits. Ending (slow): the heap at the right caves in on the
+// baby rats, the cat pulls them out one by one, the king watches, then leads them away.
+const MTN6=[[170,252,72]]; // the slope: foot at x0, top from x1 on, height (arena coords)
 const PIPE6=14,WALL6L=26,WALL6R=296;
 function mtnK6(){const b=boss;if(!b||b.kind!=='rat6')return 1;return b.mtn==null?1:b.mtn;}
 function mtnOn6(){const b=boss;return LV===6&&b&&b.kind==='rat6'&&(b.phase||1)===1&&mtnK6()>.05;}
-function mtnSurf6(ax){const k=mtnK6();for(const [x0,x1,h] of MTN6)if(ax>=x0&&ax<x1)return GROUND_Y-h*k;return GROUND_Y;}
-function mtnCollide6(){if(!mtnOn6())return;const k=mtnK6(),ax=p.x-ARENA_X;
-  // the step faces block the cat walking in from the left
-  for(const [x0,,h] of MTN6){const top=GROUND_Y-h*k;if(p.y>top+3&&p.x+p.hw>ARENA_X+x0&&p.x<ARENA_X+x0+6){p.x=ARENA_X+x0-p.hw;if(p.vx>0)p.vx=0;}}
-  if(p.vy<0)return;for(const [x0,x1,h] of MTN6){const top=GROUND_Y-h*k;if(p.x>=ARENA_X+x0-2&&p.x<ARENA_X+x1+2&&p.prevY<=top+3&&p.y>=top-1){p.y=top;p.vy=0;p.onGround=true;}}}
+function mtnSurf6(ax){const k=mtnK6(),[x0,x1,h]=MTN6[0];if(ax<x0)return GROUND_Y;if(ax<x1)return GROUND_Y-h*k*(ax-x0)/(x1-x0);return GROUND_Y-h*k;}
+function mtnCollide6(){if(!mtnOn6()){p.onSlope=0;return;}const ax=p.x-ARENA_X;if(ax<MTN6[0][0]-2){p.onSlope=0;return;}const top=mtnSurf6(ax);
+  if(p.vy>=0&&((p.y>=top-1&&(p.prevY<=top+8||p.onSlope))||(p.onSlope&&p.y<top&&top-p.y<6))){p.y=top;p.vy=0;p.onGround=true;p.onSlope=1;}else if(p.vy<0||p.y<top-6)p.onSlope=0;}
 let MTN6C=null;function mtnArt6(){if(MTN6C)return MTN6C;const w=148,h=80,[c,g]=mkCanvas(w,h),r=mulberry(6161);const P=(x,y,ww,hh,col)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),ww,hh);};
-  const top=x=>{const ax=x+174;let hh=0;for(const [x0,x1,H] of MTN6)if(ax>=x0-2&&ax<x1)hh=H;if(ax<180)hh=Math.max(0,(ax-174)*4);return h-hh+Math.round(Math.sin(x*.9)*1.2);};
+  const top=x=>{const ax=x+174,[x0,x1,H]=MTN6[0];const hh=ax<x0?0:ax<x1?H*(ax-x0)/(x1-x0):H;return Math.round(h-hh+Math.sin(x*.9)*1.2);};
   for(let x=0;x<w;x++){const t0=Math.max(0,top(x));for(let y=t0;y<h;y++){const v=(y-t0)/(h-t0+1);P(x,y,1,1,v<.08?'#7a6a52':v<.5?'#4a3c30':'#3a2e24');}}
   const J=[['#1e1e22','#3a3a42'],['#3a5a8a','#6a8ac0'],['#8a2a22','#c84a3a'],['#2a5a2a','#4a8a4a'],['#c8a060','#e8c890'],['#d8d0bc','#f4ecd8'],['#d8b048','#f0d070'],['#6a6a72','#a8a8b0']];
   for(let i=0;i<260;i++){const x=2+r()*(w-4),t0=top(x);if(t0>h-3)continue;const y=t0+2+r()*(h-t0-3);const j=J[Math.floor(r()*J.length)],ww=2+Math.floor(r()*5),hh=1+Math.floor(r()*3);P(x,y,ww,hh,j[0]);P(x,y,ww,1,j[1]);}
-  for(const [x0,x1,H] of MTN6){const y=h-H;P(x0-174,y,x1-x0,2,'#8a7a5e');P(x0-174,y,x1-x0,1,'#a8987a');for(let x=x0-174;x<x1-174;x+=7)P(x+r()*3,y-2,3,2,J[Math.floor(r()*J.length)][1]);} // walkable crusts on each step
+  for(let x=0;x<w;x++){const y=top(x);if(y<h-1){P(x,y,1,2,'#8a7a5e');P(x,y,1,1,'#a8987a');if(r()<.12)P(x,y-2,3,2,J[Math.floor(r()*J.length)][1]);}} // a packed crust along the slope
   for(const [tx,ty] of [[20,64],[58,50],[96,36],[124,60]]){for(let a=0;a<36;a++){const q=a/36*Math.PI*2;P(tx+Math.cos(q)*6,ty+Math.sin(q)*4,1,1,a<18?'#2a2a2e':'#1a1a1c');}}
   return MTN6C=c;}
-function newRatBoss(){return {kind:'rat6',x:ARENA_X+276,y:GROUND_Y,bx:ARENA_X+276,state:'intro',t:0,dir:-1,hits:0,p1:0,phase:1,mtn:1,flash:0,hw:24,h:34,spd:1,vx:0,vy:0,shake:0,intro:true,trash:[],babies:[],proj:[],kicks:0,callT:5,seq:0,wallSh:[0,0],buried:null};}
+function newRatBoss(){return {kind:'rat6',dents:[0,0,0],x:ARENA_X+276,y:GROUND_Y,bx:ARENA_X+276,state:'intro',t:0,dir:-1,hits:0,p1:0,phase:1,mtn:1,flash:0,hw:24,h:34,spd:1,vx:0,vy:0,shake:0,intro:true,trash:[],babies:[],proj:[],kicks:0,callT:5,seq:0,wallSh:[0,0],buried:null};}
 function ratSet(s){boss.state=s;boss.t=0;}
 const TAIL6=b=>({x0:b.x-86,x1:b.x-34,y0:b.y-16,y1:b.y+6});
 function ratHurtCat(x){if(state==='play'&&p.inv<=0&&!(p.safe>0))hurt(x,false);}
 function spawnBaby6(){const b=boss;b.babies.push({x:ARENA_X+PIPE6+8,y:GROUND_Y,dir:1,t:0,ph:Math.random()*5});puff(ARENA_X+PIPE6+6,GROUND_Y-5,6,'#4a5a3a',40,30,.4);tone(1900,1400,.12,'square',.03);}
 function updRat6Extras(dt){const b=boss,L=ARENA_X;
-  for(const q of b.trash){q.t+=dt;const g=q.k==='bag'?260:900;q.vy+=g*dt;if(q.k==='bag')q.vy=Math.min(q.vy,70);q.x+=q.vx*dt;q.y+=q.vy*dt;q.rot+=q.vx*dt*.25;
+  for(const q of b.trash){q.t+=dt;const g=q.k==='bag'?260:900;q.vy+=g*dt;if(q.k==='tire'&&mtnOn6()&&q.x-L>MTN6[0][0]&&q.x-L<MTN6[0][1]&&q.y>=mtnSurf6(q.x-L)-2)q.vx-=150*dt;if(q.k==='bag')q.vy=Math.min(q.vy,70);q.x+=q.vx*dt;q.y+=q.vy*dt;q.rot+=q.vx*dt*.25;
     const fl=mtnOn6()?mtnSurf6(q.x-L):GROUND_Y;if(q.y>=fl){q.y=fl;if(q.vy>60){q.vy*=q.k==='can'?-.55:q.k==='tire'?-.42:0;if(q.k!=='bag')tone(q.k==='can'?1200:160,q.k==='can'?800:90,.05,'square',.015);}else q.vy=0;}
     if(q.x<L+WALL6L-6)q.dead=1;if(q.t>9)q.dead=1;
-    const r=q.k==='tire'?6:q.k==='bag'?5:3;
+    const r=q.k==='tire'?7:q.k==='bag'?5:3;
     if(state==='play'&&Math.abs(p.x-q.x)<p.hw+r-1&&p.y>q.y-2*r&&p.y-p.h<q.y){
       if(p.vy>40&&p.prevY<=q.y-2*r+4){p.vy=q.k==='tire'?-400:-260;p.jumping=false;p.safe=.35;SFX.stomp();puff(q.x,q.y-2*r,6,'#c8c0a8',40,20,.3);if(q.k==='tire'){q.squash=.2;tone(200,420,.15,'triangle',.05);}else q.dead=1;}
       else ratHurtCat(q.x);}
@@ -3162,7 +3160,7 @@ function updRat6Extras(dt){const b=boss,L=ARENA_X;
   for(const m of b.babies){m.t+=dt;m.ph+=dt*14;if(m.st==='e')continue;m.x+=m.dir*72*dt;if(m.x>L+(mtnOn6()?174:WALL6R-8)){m.dir=-1;}if(m.x<L+PIPE6+4&&m.dir<0&&m.t>3){m.dead=1;}
     if(state==='play'&&Math.abs(p.x-m.x)<p.hw+6&&p.y>m.y-9&&p.y-p.h<m.y){if(p.vy>40&&p.prevY<=m.y-6){m.dead=1;p.vy=-240;p.safe=.3;SFX.stomp();puff(m.x,m.y-4,8,'#8a7a6a',40,30,.4);tone(2200,1200,.1,'square',.03);}else ratHurtCat(m.x);}}
   b.babies=b.babies.filter(m=>!m.dead);
-  for(const o of b.proj){o.t+=dt;o.vy+=560*dt;o.x+=o.vx*dt;o.y+=o.vy*dt;o.rot+=dt*12;if(o.y>=GROUND_Y-1){o.dead=1;puff(o.x,GROUND_Y-2,6,o.k==='lid'?'#a8b0bc':'#6ab0d8',50,40,.4);tone(o.k==='lid'?900:2200,o.k==='lid'?500:1400,.08,'square',.025);}
+  for(const o of b.proj){o.t+=dt;o.vy+=560*dt;o.x+=o.vx*dt;o.y+=o.vy*dt;o.rot+=dt*12;if(o.y>=GROUND_Y-1){o.dead=1;puff(o.x,GROUND_Y-2,6,o.k==='box'?'#a07848':'#6ab0d8',50,40,.4);tone(o.k==='box'?300:2200,o.k==='box'?150:1400,.08,'square',.025);}
     if(state==='play'&&Math.abs(p.x-o.x)<p.hw+3&&p.y>o.y-3&&p.y-p.h<o.y+3){o.dead=1;ratHurtCat(o.x);}}
   b.proj=b.proj.filter(o=>!o.dead);
   b.wallSh[0]=Math.max(0,b.wallSh[0]-dt);b.wallSh[1]=Math.max(0,b.wallSh[1]-dt);}
@@ -3172,11 +3170,12 @@ function updRatBoss(dt){const b=boss;b.t+=dt;b.flash=Math.max(0,b.flash-dt);
   const go=s=>ratSet(s);
   if(b.state!=='intro')updRat6Extras(dt);
   switch(b.state){
-    case 'intro':{ // the cat walks in, sees a giant heap of rubbish, creeps closer; the heap shakes, bursts apart, the cat jumps back, the rat rises out of it and roars
+    case 'intro':{b.t-=dt*.3; // played at 70% speed so it is easy to follow (user)
+      // the cat walks in, sees a giant heap of rubbish, creeps closer; the heap shakes, bursts apart, the cat jumps back, the rat rises out of it and roars
       const t=b.t,HX=RAT6_HX();if(!b.seen){b.seen=1;b.x=b.bx=HX;b.y=G0+40;b.chunks=[];if(seenIntro[6]){b.t=3.6;p.x=ARENA_X+100;}seenIntro[6]=1;}
       p.ctrl=false;keys.L=keys.R=false;$('bossBar').hidden=true;const CAT=ARENA_X+70;
-      if(t<2.6){if(p.x<CAT){p.vx=60;p.face=1;}else if(p.onGround){p.vx=0;p.face=1;}}
-      else if(t<3.8){p.face=1;if(p.onGround&&p.x<ARENA_X+108){p.vx=45;}else if(p.onGround)p.vx=0;}
+      if(t<2.6){if(p.x<CAT){p.vx=44;p.face=1;}else if(p.onGround){p.vx=0;p.face=1;}}
+      else if(t<3.8){p.face=1;if(p.onGround&&p.x<ARENA_X+108){p.vx=30;}else if(p.onGround)p.vx=0;}
       else if(t<4.3){if(p.onGround)p.vx=0;p.face=1;}
       if(t>=3.7&&t<4.6){b.heapSh=clamp((t-3.7)/.9,0,1);shakeT=Math.max(shakeT,.05);shakeA=.6+b.heapSh*1.4;if(Math.random()<dt*10)tone(60+Math.random()*30,40,.12,'sawtooth',.03);
         if(Math.random()<b.heapSh*.5)parts.push({x:HX+(Math.random()*2-1)*36,y:G0-20-Math.random()*24,vx:(Math.random()*2-1)*30,vy:-30-Math.random()*50,life:.5,max:.5,c:['#5a4a38','#c8c0a8','#3a5a8a','#8a2a22'][Math.floor(Math.random()*4)],g:400});}
@@ -3194,26 +3193,27 @@ function updRatBoss(dt){const b=boss;b.t+=dt;b.flash=Math.max(0,b.flash-dt);
       for(const c of b.chunks){c.t+=dt;if(c.b<2){c.vy+=G*dt;c.x+=c.vx*dt;c.y+=c.vy*dt;if(c.y>=G0-1&&c.vy>0){c.y=G0-1;c.vy*=-.3;c.vx*=.5;c.b++;}}}
       if(t>7.5){b.intro=false;p.ctrl=true;p.wary=false;bossBar();b.sx=b.x;b.sy=b.y;go('climb');SFX.jump&&tone(600,1200,.2,'sawtooth',.04);}break;}
     // ---- phase 1: up on the mountain ----
-    case 'climb':{const k=clamp(b.t/.9,0,1),tx=ARENA_X+278,ty=G0-72;b.x=lerp(b.sx,tx,k);b.y=lerp(b.sy,ty,k)-Math.sin(k*Math.PI)*40;b.vy=k<.5?-200:200;b.dir=1;
+    case 'climb':{const k=clamp(b.t/1.4,0,1),tx=ARENA_X+286,ty=G0-72;b.x=lerp(b.sx,tx,k);b.y=lerp(b.sy,ty,k)-Math.sin(k*Math.PI)*46;b.vy=k<.5?-200:200;b.dir=-1;
       if(k>=1){b.x=tx;b.y=ty;shakeT=.25;shakeA=1.5;SFX.stomp();go('top');}break;}
-    case 'top':case 'kick':case 'call':case 'yelp':{b.dir=1;b.x=ARENA_X+278;b.y=G0-72*b.mtn;const sp=1+b.p1*.25;
-      if(b.state==='top'){b.callT-=dt;if(b.t>Math.max(.6,1.5-b.p1*.3)){if(b.callT<=0){b.callT=7-b.p1;go('call');}else{go('kick');b.kicks++;}}}
-      else if(b.state==='kick'){const n=2+(b.kicks%2)+(b.p1>=2?1:0);for(let i=0;i<n;i++){const at=.2+i*.28;if(b.t>=at&&b.t-dt<at){const r=Math.random(),k=r<.4?'tire':r<.75?'can':'bag';
-          b.trash.push({k,x:b.x-40,y:b.y-6,vx:-(70+Math.random()*60)*sp,vy:-120-Math.random()*80,t:0,rot:0});puff(b.x-36,b.y-4,4,'#5a4a38',40,30,.3);hiss(.12,.04,1500);}}
-        if(b.t>.2+n*.28+.2)go('top');}
-      else if(b.state==='call'){if(b.t<.05)tone(260,90,.9,'sawtooth',.05);if(b.t>.5&&!b.called){b.called=1;spawnBaby6();setTimeout(()=>{if(boss&&boss.kind==='rat6')spawnBaby6();},450);}if(b.t>1){b.called=0;go('top');}}
-      else if(b.state==='yelp'){shakeT=Math.max(shakeT,.05);shakeA=1;if(b.t>1){if(b.p1>=3){go('collapse');shakeT=1.2;shakeA=3;hiss(1.2,.1,600);tone(120,40,1.2,'sawtooth',.06);}else go('top');}}
-      // pouncing on the tail that dangles over the ledges
-      if(b.state!=='yelp'&&state==='play'&&!(p.safe>0)){const z=TAIL6(b);if(p.x+p.hw>z.x0&&p.x-p.hw<z.x1&&p.y>z.y0&&p.y-p.h<z.y1){
-          b.p1++;b.flash=.5;bossBar();SFX.bossHit();tone(1800,500,.4,'sawtooth',.05);puff(p.x,p.y-8,10,'#fff3a0',60,50,.5);
-          p.vy=-220;p.vx=-170;p.onGround=false;p.safe=1.1;p.inv=Math.max(p.inv,.6);go('yelp');
-          for(let i=0;i<14;i++)parts.push({x:ARENA_X+190+Math.random()*120,y:G0-20-Math.random()*50,vx:(Math.random()-.5)*80,vy:-40-Math.random()*60,life:.7,max:.7,c:['#5a4a38','#c8c0a8','#3a5a8a'][i%3],g:500});break;}}
-      if(b.state!=='yelp')hitP();break;}
-    case 'collapse':{b.mtn=Math.max(0,1-b.t/1.1);if(Math.random()<.7)puff(ARENA_X+180+Math.random()*140,G0-Math.random()*60*b.mtn,2,'#5a4a38',60,40,.5);
-      b.y=G0-72*b.mtn;b.vy=200;if(b.t>1.3){b.mtn=0;b.phase=2;b.y=G0;b.trash=[];bossBar();shakeT=.5;shakeA=2.5;SFX.stomp();go('p2roar');}break;}
+    case 'top':case 'kick':case 'yelp':case 'toss':{b.dir=-1;b.x=ARENA_X+286;b.y=G0-72*b.mtn;const sp=1+b.p1*.2;
+      if(b.state==='top'){if(b.t>Math.max(.8,1.8-b.p1*.35)){go('kick');b.kicks++;}}
+      else if(b.state==='kick'){const n=1+(b.kicks%2)+(b.p1>=2?1:0);for(let i=0;i<n;i++){const at=.3+i*.55;if(b.t>=at&&b.t-dt<at){
+          b.trash.push({k:'tire',x:b.x-26,y:b.y-1,vx:-(40+Math.random()*30)*sp,vy:-60,t:0,rot:0});puff(b.x-24,b.y-4,4,'#5a4a38',40,30,.3);tone(160,90,.15,'sawtooth',.03);}}
+        if(b.t>.3+n*.55+.2)go('top');}
+      else if(b.state==='toss'){ // it grabs the cat and flings it back down to the foot of the slope
+        const k=clamp(b.t/1,0,1),tx=ARENA_X+140;p.ctrl=false;keys.L=keys.R=keys.J=false;p.x=lerp(b.jx,tx,k);p.y=lerp(b.jy,G0,k)-Math.sin(k*Math.PI)*36;p.vx=0;p.vy=k<.5?-200:200;p.onGround=false;p.face=1;
+        if(k>=1){p.x=tx;p.y=G0;p.vy=0;p.onGround=true;p.ctrl=true;p.safe=1;p.inv=Math.max(p.inv,1);SFX.stomp();puff(p.x,G0,6,'#6a5a4a',40,20,.3);
+          if(b.p1>=3){go('collapse');shakeT=1.6;shakeA=3;hiss(1.6,.1,600);tone(120,40,1.6,'sawtooth',.06);}else go('yelp');}}
+      else if(b.state==='yelp'){if(b.t<.05){tone(220,70,.9,'sawtooth',.05);}shakeT=Math.max(shakeT,.04);shakeA=1;if(b.t>1)go('top');}
+      // the cat lands on its head
+      if((b.state==='top'||b.state==='kick'||b.state==='yelp')&&state==='play'&&p.vy>40&&p.prevY<=b.y-b.h+8&&Math.abs(p.x-b.x)<b.hw+4&&p.y>b.y-b.h-3){
+        b.p1++;b.flash=.5;bossBar();SFX.bossHit();tone(1800,500,.4,'sawtooth',.05);puff(p.x,p.y,10,'#fff3a0',60,50,.5);b.jx=p.x;b.jy=p.y;go('toss');break;}
+      if(b.state!=='toss')hitP();break;}
+    case 'collapse':{b.mtn=Math.max(0,1-b.t/2);if(Math.random()<.7)puff(ARENA_X+180+Math.random()*140,G0-Math.random()*60*b.mtn,2,'#5a4a38',60,40,.5);
+      b.y=G0-72*b.mtn;b.vy=200;if(b.t>2.3){b.mtn=0;b.phase=2;b.y=G0;b.trash=[];bossBar();shakeT=.5;shakeA=2.5;SFX.stomp();go('p2roar');}break;}
     // ---- phase 2: down on the ground, furious ----
-    case 'p2roar':{b.dir=p.x<b.x?-1:1;if(b.t<.05){tone(220,70,1.2,'sawtooth',.07);hiss(1,.05,900);}shakeT=Math.max(shakeT,.04);shakeA=1;if(b.t>1.3)go('p2pick');break;}
-    case 'p2pick':{b.y=G0;b.dir=p.x<b.x?-1:1;hitP();if(b.t>Math.max(.35,.8-b.hits*.15)){const seq=['wind','throw','wind','dive'];go(seq[b.seq++%seq.length]);}break;}
+    case 'p2roar':{b.dir=p.x<b.x?-1:1;if(b.t<.05){tone(220,70,1.2,'sawtooth',.07);hiss(1,.05,900);}shakeT=Math.max(shakeT,.04);shakeA=1;if(b.t>2)go('p2pick');break;}
+    case 'p2pick':{b.y=G0;b.dir=p.x<b.x?-1:1;hitP();if(b.t>Math.max(.35,.8-b.hits*.15)){const seq=['throw','dive','throw','throw','dive'].slice(b.hits>=2?1:0);go(seq[b.seq++%seq.length]);}break;}
     case 'wind':{b.dir=p.x<b.x?-1:1;if(b.t<.05)tone(140,260,.6,'sawtooth',.04);if(Math.random()<.5)puff(b.x-b.dir*14,G0,2,'#6a5a4a',30,20,.3);hitP();if(b.t>.75){b.vx=b.dir*(230+b.hits*25);go('charge');}break;}
     case 'charge':{b.x+=b.vx*dt;hitP();if(Math.random()<.5)puff(b.x-b.dir*16,G0,2,'#6a5a4a',40,20,.3);
       if(b.x<L||b.x>Rr){b.x=clamp(b.x,L,Rr);b.wallSh[b.x<=L?0:1]=.6;shakeT=.5;shakeA=3;SFX.stomp();tone(110,40,.5,'square',.06);hiss(.4,.08,1200);
@@ -3223,35 +3223,37 @@ function updRatBoss(dt){const b=boss;b.t+=dt;b.flash=Math.max(0,b.flash-dt);
         if(b.hits>=3){go('e_crash');tone(1800,600,.5,'sawtooth',.05);}else{b.spd*=1.1;go('recover');}break;}
       if(b.t>2.8)go('p2pick');break;}
     case 'recover':{b.y=G0;if(b.t>.6)go('p2pick');break;}
-    case 'throw':{b.dir=p.x<b.x?-1:1;hitP();for(const at of [.35,.85]){if(b.t>=at&&b.t-dt<at){const T=.95,ox=b.x+b.dir*18,oy=b.y-28;const k=Math.random()<.5?'lid':'bottle';
+    case 'throw':{b.dir=p.x<b.x?-1:1;hitP();for(const at of [.35,.85]){if(b.t>=at&&b.t-dt<at){const T=.95,ox=b.x+b.dir*18,oy=b.y-28;const k=Math.random()<.5?'box':'bottle';
           b.proj.push({k,x:ox,y:oy,vx:clamp((p.x-ox)/T,-170,170),vy:(G0-8-oy)/T-.5*560*T,t:0,rot:0});hiss(.12,.04,1700);}}
       if(b.t>1.3)go('p2pick');break;}
     case 'dive':{if(b.t<.6&&Math.random()<.6)puff(b.x,G0,2,'#5a4436',50,50,.5);b.y=G0+b.t*30;if(b.t>.6){b.bx=b.x;go('tunnel');tone(90,60,.4,'sawtooth',.03);}break;}
     case 'tunnel':{const sp=(90+30*b.hits);b.bx+=clamp(p.x-b.bx,-sp*dt,sp*dt);b.bx=clamp(b.bx,L,Rr);b.x=b.bx;if(Math.random()<.35)parts.push({x:b.bx+(Math.random()*2-1)*10,y:G0,vx:(Math.random()*2-1)*20,vy:-40-Math.random()*40,life:.4,max:.4,c:['#5a4436','#3a2a24','#8a7a5a'][Math.floor(Math.random()*3)],g:400});
       if(b.t>1.8)go('rumble');break;}
     case 'rumble':{b.x=b.bx;shakeT=Math.max(shakeT,.05);shakeA=1.2;if(Math.random()<.6)parts.push({x:b.bx+(Math.random()*2-1)*12,y:G0,vx:(Math.random()*2-1)*30,vy:-60-Math.random()*60,life:.5,max:.5,c:'#6a5444',g:400});
-      if(b.t>.85){b.y=G0;b.vy=-320;b.dir=p.x<b.x?-1:1;b.vx=b.dir*60;puff(b.x,G0,14,'#5a4436',80,80,.6);tone(1500,700,.18,'sawtooth',.05);
-        if(Math.abs(p.x-b.x)<24&&p.onGround)ratHurtCat(b.x);go('leap');}break;}
+      if(b.t>.85){const pi=PLATES6.findIndex(o=>Math.abs(ARENA_X+o-b.bx)<18);
+        if(pi>=0){b.plate=pi;b.dents[pi]=(b.dents[pi]||0)+1;b.x=ARENA_X+PLATES6[pi];b.y=G0;go('bonk');SFX.clank();SFX.bonk();shakeT=.3;shakeA=2;if(Math.abs(p.x-b.x)<20&&p.onGround)ratHurtCat(b.x);}
+        else{b.y=G0;b.vy=-320;b.dir=p.x<b.x?-1:1;b.vx=b.dir*60;puff(b.x,G0,14,'#5a4436',80,80,.6);tone(1500,700,.18,'sawtooth',.05);if(Math.abs(p.x-b.x)<24&&p.onGround)ratHurtCat(b.x);go('leap');}}break;}
+    case 'bonk':{if(b.t>.4)go('stun');break;}
     case 'leap':{b.vy+=G*dt;b.y+=b.vy*dt;b.x=clamp(b.x+b.vx*dt,L,Rr);hitP();if(b.y>=G0&&b.vy>0){b.y=G0;b.vy=0;shakeT=.2;shakeA=1.5;go('p2pick');}break;}
     // ---- ending: the wall caves in on the babies, the cat digs them out ----
     case 'e_crash':{const t=b.t;p.ctrl=false;keys.L=keys.R=keys.J=false;if(p.onGround)p.vx=0;b.trash=[];b.proj=[];b.babies=[];$('bossBar').hidden=true;
-      if(t>.5&&!b.buried){b.buried={t:0,n:3,out:[]};b.wallSh[1]=1.2;shakeT=1;shakeA=3;hiss(1,.12,700);tone(100,40,1,'sawtooth',.06);SFX.stomp();
+      if(t>1&&!b.buried){b.buried={t:0,n:3,out:[]};b.wallSh[1]=1.2;shakeT=1;shakeA=3;hiss(1,.12,700);tone(100,40,1,'sawtooth',.06);SFX.stomp();
         for(let i=0;i<20;i++)parts.push({x:ARENA_X+250+Math.random()*60,y:G0-40-Math.random()*30,vx:-20-Math.random()*60,vy:-40-Math.random()*60,life:.9,max:.9,c:['#5a4a38','#c8c0a8','#3a5a8a','#8a2a22'][i%4],g:500});}
       if(b.buried){b.buried.t+=dt;if(Math.random()<dt*3)tone(2400+Math.random()*600,1800,.08,'square',.02);}
-      if(t>2.2){p.ctrl=false;go('e_walk');}break;}
-    case 'e_walk':{const tx=ARENA_X+238;p.ctrl=false;if(Math.abs(p.x-tx)>3){p.vx=Math.sign(tx-p.x)*70;p.face=Math.sign(tx-p.x);}else{p.vx=0;p.face=1;go('e_pull');}
+      if(t>3.4){p.ctrl=false;go('e_walk');}break;}
+    case 'e_walk':{const tx=ARENA_X+226;p.ctrl=false;if(Math.abs(p.x-tx)>3){p.vx=Math.sign(tx-p.x)*42;p.face=Math.sign(tx-p.x);}else{p.vx=0;p.face=1;go('e_pull');}
       if(Math.random()<dt*3)tone(2400+Math.random()*600,1800,.08,'square',.02);break;}
-    case 'e_pull':{p.ctrl=false;p.vx=0;p.face=1;const k=Math.floor(b.t/1.1),f=b.t-k*1.1;p.x=ARENA_X+238+Math.round(Math.sin(f*18)*1.5)*(f<.8?1:0);
-      if(f<.8&&Math.random()<.4)puff(ARENA_X+252,G0-6,1,'#5a4a38',40,30,.3);
-      if(k>b.buried.out.length-1&&f>.85&&b.buried.out.length<3){b.buried.out.push(1);const m={x:ARENA_X+254,y:G0-8,dir:-1,t:0,ph:0,st:'e',vy:-160};b.babies.push(m);tone(2600,1800,.12,'square',.03);puff(m.x,m.y,6,'#5a4a38',50,40,.4);}
-      if(b.buried.out.length>=3&&f>1)go('e_see');break;}
-    case 'e_see':{p.ctrl=false;p.vx=0;if(b.t>.4)b.dir=1;if(b.t>2.6){go('e_leave');tone(700,900,.3,'triangle',.03);}break;}
-    case 'e_leave':{b.dir=-1;b.x-=95*dt;if(b.x<ARENA_X-60&&b.t>1.5){go('gone');}break;}
+    case 'e_pull':{p.ctrl=false;p.vx=0;p.face=1;const k=Math.floor(b.t/1.9),f=b.t-k*1.9;p.x=ARENA_X+226+Math.round(Math.sin(f*14)*1.5)*(f<1.4?1:0);
+      if(f<1.4&&Math.random()<.3)puff(ARENA_X+252,G0-6,1,'#5a4a38',40,30,.3);
+      if(k>b.buried.out.length-1&&f>1.45&&b.buried.out.length<3){b.buried.out.push(1);const m={x:ARENA_X+254,y:G0-8,dir:-1,t:0,ph:0,st:'e',vy:-160};b.babies.push(m);tone(2600,1800,.12,'square',.03);puff(m.x,m.y,6,'#5a4a38',50,40,.4);}
+      if(b.buried.out.length>=3&&f>1.8)go('e_see');break;}
+    case 'e_see':{p.ctrl=false;p.vx=0;if(b.t>.8)b.dir=1;if(b.t>4.4){go('e_leave');tone(700,900,.3,'triangle',.03);}break;}
+    case 'e_leave':{b.dir=-1;b.x-=58*dt;if(b.x<ARENA_X-60&&b.t>1.5){go('gone');}break;}
     case 'gone':{if(b.t>.6&&state==='play')winLevel();break;}
   }
   // the rescued babies run to their father, then follow him out
   for(const m of b.babies){if(m.st!=='e')continue;m.ph+=dt*14;if(m.vy!=null){m.vy+=G*dt;m.y+=m.vy*dt;if(m.y>=G0){m.y=G0;m.vy=null;}}
-    const tx=b.state==='e_leave'?b.x+20+m.i*10:b.x+30+(m.i||0)*12;if(m.i==null)m.i=b.babies.indexOf(m);m.dir=Math.sign(tx-m.x)||-1;if(Math.abs(tx-m.x)>2)m.x+=m.dir*Math.min(Math.abs(tx-m.x),110*dt);}}
+    const tx=b.state==='e_leave'?b.x+20+m.i*10:b.x+30+(m.i||0)*12;if(m.i==null)m.i=b.babies.indexOf(m);m.dir=Math.sign(tx-m.x)||-1;if(Math.abs(tx-m.x)>2)m.x+=m.dir*Math.min(Math.abs(tx-m.x),70*dt);}}
 function drawArena6(cx){const b=boss&&boss.kind==='rat6'?boss:null,X=ARENA_X-cx,G0=GROUND_Y;
   // trash walls at both edges of the clearing (the rat slams into them)
   for(const s of [0,1]){const sh=b&&b.wallSh[s]>0?Math.round(Math.sin(gt*60)*2*b.wallSh[s]):0,x0=R(X+(s?WALL6R:0))+sh,w=WALL6L;
@@ -3262,17 +3264,20 @@ function drawArena6(cx){const b=boss&&boss.kind==='rat6'?boss:null,X=ARENA_X-cx,
   // the trash mountain (phase 1), sinking as it collapses
   {const k=b?mtnK6():1;if(k>.02&&!(b&&b.phase===2)){const M=mtnArt6(),hh=Math.round(M.height*k),sh=b&&(b.state==='yelp'||b.state==='collapse')?Math.round(Math.sin(gt*50)*1.5):0;
       ctx.drawImage(M,0,M.height-hh,M.width,hh,R(X+174)+sh,G0-hh+1,M.width,hh);}}
+  if(b&&b.phase===2&&!b.buried)for(let i=0;i<3;i++){if((b.state==='bonk'||b.state==='stun')&&b.plate===i)continue;const x=R(X+PLATES6[i]),y=G0-2,d=b.dents[i]||0;
+    rect(x-18,y-5,36,7,'#16181c');rect(x-17,y-4,34,2,'#a8b0bc');rect(x-17,y-4,34,1,'#e0e6ee');for(let k=0;k<34;k++)rect(x-17+k,y-2,1,3,((k>>1)&1)?'#f2c43a':'#1a1a1a');for(const rx of [-15,-6,5,14])rect(x+rx,y-4,1,1,'#4a525e');for(let k=0;k<d&&k<3;k++)rect(x-3+k*3,y,2,1,'#4a5058');}
   if(b&&b.phase===2&&!b.buried){const M=mtnArt6();ctx.drawImage(M,0,M.height-8,M.width,8,R(X+174),G0-7,M.width,8);} // rubble left from the mountain
   if(b&&b.buried){const x0=R(X+256);for(let i=-22;i<=22;i++){const hh=Math.round(18*Math.cos(i/22*Math.PI/2));for(let y=0;y<hh;y++)rect(x0+i,G0-y,1,1,y===hh-1?'#7a6a52':((i*5+y*11)%7===0)?'#c8c0a8':'#3e3830');}
     // tails and noses of the babies still under the rubbish
     for(let i=b.buried.out.length;i<3;i++){const tx=x0-12+i*12,w=Math.sin(gt*9+i*2);rect(tx,G0-16+i%2*3,1,4,'#d89aa0');rect(tx+R(w),G0-19+i%2*3,1,3,'#d89aa0');}}
   // falling rubbish, babies, thrown lids and bottles
-  if(b){for(const q of b.trash){const x=R(q.x-cx),y=R(q.y);if(q.k==='tire'){const sq=q.squash>0?2:0;for(let a=0;a<28;a++){const t=a/28*Math.PI*2;rect(R(x+Math.cos(t)*6),R(y-6+sq/2+Math.sin(t)*(6-sq)),1,1,'#141416');rect(R(x+Math.cos(t)*4),R(y-6+sq/2+Math.sin(t)*(4-sq/2)),1,1,'#2a2a2e');}const s=q.rot;rect(R(x+Math.cos(s)*5),R(y-6+Math.sin(s)*5),1,1,'#6a6a70');}
+  if(b){for(const q of b.trash){const x=R(q.x-cx),y=R(q.y);if(q.k==='tire'){const sq=q.squash>0?2:0;for(let rr=4;rr<=7;rr++)for(let a=0;a<40;a++){const t=a/40*Math.PI*2;rect(R(x+Math.cos(t)*rr),R(y-7+sq/2+Math.sin(t)*(rr-sq/2)),1,1,rr===7?'#0c0c0e':rr===4?'#3a3a40':'#1c1c20');}for(let i=0;i<4;i++){const s=q.rot+i*Math.PI/2;rect(R(x+Math.cos(s)*6),R(y-7+Math.sin(s)*6),1,1,'#5a5a62');}}
       else if(q.k==='can'){const up=Math.floor(q.rot)%2;if(up){rect(x-2,y-5,4,5,'#c83a3a');rect(x-2,y-5,4,1,'#e8e8e8');}else{rect(x-3,y-3,6,3,'#c83a3a');rect(x+2,y-3,1,3,'#e8e8e8');}}
       else{rect(x-4,y-6,8,6,'#253042');rect(x-3,y-7,6,1,'#253042');rect(x-1,y-9,2,2,'#253042');rect(x-3,y-5,2,2,'#36445c');}}
     for(const m of b.babies)blit(RAT_RUN[Math.floor(m.ph)%RAT_RUN.length],m.x-cx,m.y+RAT_DY,-m.dir);
-    for(const o of b.proj){const x=R(o.x-cx),y=R(o.y);if(o.k==='lid'){const w=Math.abs(Math.cos(o.rot))*4+1;rect(R(x-w),y-1,R(w*2),2,'#a8b0bc');rect(R(x-w),y-1,R(w*2),1,'#e0e6ee');}else{const a=o.rot;for(let i=-3;i<=3;i++)rect(R(x+Math.cos(a)*i),R(y+Math.sin(a)*i),1,1,i>1?'#d8ecf0':'#6ab0d8');}}}}
+    for(const o of b.proj){const x=R(o.x-cx),y=R(o.y);if(o.k==='box'){const f=Math.floor(o.rot*2)%2;rect(x-3,y-3,6,6,'#5a3a22');rect(x-3,y-3,6,6,'#a07848');rect(x-3,y-3,6,1,'#c89a60');rect(x+f*2-2,y-3,1,6,'#7a5a34');}else{const a=o.rot;for(let i=-3;i<=3;i++)rect(R(x+Math.cos(a)*i),R(y+Math.sin(a)*i),1,1,i>1?'#d8ecf0':'#6ab0d8');}}}}
 function drawRatBoss(cx){const b=boss;if(b.state==='gone')return;const x=b.x-cx;
+  if(b.state==='e_see'){const t=b.t;if(t>.6&&t<2.4)bubble(x+b.dir*10,b.y-b.h-14,GLY.q);else if(t>2.6&&t<3.8)bubble(x+b.dir*10,b.y-b.h-14,GLY.ex);}
   if(b.chunks&&b.chunks.length){for(const c of b.chunks){const a=c.t>2.2?1-(c.t-2.2)/.8:1;if(a<=0)continue;alpha(a,()=>{rect(R(c.x-cx),R(c.y-c.h),c.w,c.h,c.c);rect(R(c.x-cx),R(c.y-c.h),c.w,1,'rgba(255,255,255,.25)');});}if(b.state!=='intro')b.chunks=b.chunks.filter(c=>c.t<3);}
   if(b.state==='intro'&&!b.burst){const H6=RAT_HEAP(),sh=b.heapSh?Math.round(Math.sin(gt*55)*b.heapSh*2):0,sq=b.heapSh?Math.round(Math.abs(Math.sin(gt*20))*b.heapSh*2):0;
     ctx.drawImage(H6,R(RAT6_HX()-cx-H6.width/2)+sh,GROUND_Y+2-H6.height+sq,H6.width,H6.height-sq);
@@ -3283,11 +3288,11 @@ function drawRatBoss(cx){const b=boss;if(b.state==='gone')return;const x=b.x-cx;
     for(let i=-18;i<=18;i++){const hh=Math.round(5*Math.cos(i/18*Math.PI/2)*(b.state==='rumble'?1.5:1));for(let y=0;y<hh;y++)rect(X+i,GROUND_Y-y,1,1,y===hh-1?'#7a6a52':'#4a3c30');}
     if(b.state==='rumble'){rect(X-1,GROUND_Y-10,3,6,'#ffd84a');rect(X,GROUND_Y-3,1,1,'#ffd84a');}return;}
   let spr,y=b.y;const A=RAT6,fr=(a,f)=>a[Math.floor(gt*f)%a.length];
-  const S=b.state,DZ=['stun','e_crash','e_walk','e_pull'].includes(S);
+  const S=b.state,DZ=['stun','bonk','e_crash','e_walk','e_pull'].includes(S);
   if(DZ)spr=fr(A.daze,9);else if(S==='recover'||S==='top'||S==='p2pick'||S==='e_see')spr=fr(A.idle,10);
   else if(S==='leap'||S==='climb'||S==='collapse')spr=b.vy<-120?A.leapU:b.vy<120?A.leap:A.leapD;
   else if(S==='kick')spr=fr(A.dig,16);else if(S==='call'||S==='yelp'||S==='p2roar')spr=fr(A.roar,14);
-  else if(S==='throw')spr=fr(A.bite,12);else if(S==='wind')spr=fr(A.run,8);else if(S==='charge'||S==='e_leave')spr=fr(A.run,26);
+  else if(S==='throw'||S==='toss')spr=fr(A.bite,12);else if(S==='wind')spr=fr(A.run,8);else if(S==='charge'||S==='e_leave')spr=fr(A.run,26);
   else if(b.state==='intro'&&b.t>5.4&&b.t<7.3)spr=fr(A.roar,14);else if(b.state==='intro')spr=fr(A.idle,9);
   else if(b.state==='dive')spr=fr(A.dig,16);
   else if(b.state==='run'&&Math.abs(p.x-b.x)<46&&Math.sign(p.x-b.x)===b.dir)spr=fr(A.bite,16);
@@ -3300,6 +3305,7 @@ function drawRatBoss(cx){const b=boss;if(b.state==='gone')return;const x=b.x-cx;
   {const dz=DZ;
     if(!dz&&b.state!=='dive'){const ex=sxp(spr._ex-.5),ey=top+R(spr._ey-.5),pl=.5+.5*Math.sin(gt*9);glow(ex,ey,3.5+pl*1.5,'rgb(255,190,40)',.32+pl*.2);}
     if(!dz&&Math.random()<.35){const mx=sxp(spr._mx)+cx,my=top+spr._my;parts.push({x:mx+(Math.random()*4-2),y:my,vx:(Math.random()-.5)*8,vy:10,life:.7,max:.7,c:Math.random()<.5?'#9adf5a':'#c8f080',g:320});}}
+  if(S==='bonk'||S==='stun'){const px0=R(x),py=R(b.y-b.h+2-(S==='bonk'?Math.max(0,10-b.t*40):0));rect(px0-18,py-1,36,7,'#16181c');rect(px0-17,py,34,2,'#a8b0bc');rect(px0-17,py,34,1,'#e0e6ee');for(let k=0;k<34;k++)rect(px0-17+k,py+2,1,3,((k>>1)&1)?'#f2c43a':'#1a1a1a');for(let k=0;k<(b.dents[b.plate]||0)&&k<3;k++)rect(px0-3+k*3,py,2,1,'#4a5058');}
   if(DZ){for(let i=0;i<3;i++){const a=gt*5+i*2.1;blit(STAR,x+Math.cos(a)*16,b.y-b.h-6+Math.sin(a)*3,1);}}
   if(b.state==='intro'&&b.t>4.65&&b.t<5.5)bubble(p.x-cx,p.y-22,GLY.ex);}
 
