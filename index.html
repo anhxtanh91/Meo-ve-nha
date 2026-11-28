@@ -897,7 +897,7 @@ let boss=null,apple=null,treeShake=0,treeSide=1,lastCheck=140;
 
 function newBoss(){return {x:ARENA_X+W+40,y:60,state:'intro',t:0,dir:-1,hits:0,summoned:0,waveT:1.2,dive:0,flash:0,hw:7,h:11,spd:1,sx:0,sy:0,tx:0,ty:0,vx:0,vy:0,shake:0};}
 function bossSet(s){boss.state=s;boss.t=0;boss.sx=boss.x;boss.sy=boss.y;}
-function bossBar(){const b=$('bossBar');b.hidden=!boss||boss.state==='gone';if(!boss)return;const mx=boss.kind==='frog'?5:3;$('bossFill').style.width=(100*(mx-boss.hits)/mx)+'%';}
+function bossBar(){const b=$('bossBar');b.hidden=!boss||boss.state==='gone';if(!boss)return;const mx=boss.kind==='frog'?5:3;if(boss.kind==='dog'){const d=Math.min(3,boss.dodges||0)+Math.min(3,boss.stomps||0)+boss.hits;$('bossFill').style.width=(100*(9-d)/9)+'%';return;}$('bossFill').style.width=(100*(mx-boss.hits)/mx)+'%';}
 function startBoss(){if(LV===5){boss=newStrayBoss();$('bossIcon').src=STRAY_ICON;bossBar();return;}if(LV===6){boss=newRatBoss();$('bossIcon').src=RAT6_ICON;bossBar();tone(1500,2000,.12,'square',.04);return;}boss=LV===2?newFrogBoss():LV===4?newDogBoss():LV===3?newCrowBoss():newBoss();$('bossIcon').src=LV===2?FROG_ICON:LV===3?CROW_ICON:LV===4?DOG_ICON:QUEEN_ICON;bossBar();LV===2?SFX.bigCroak():LV===3?SFX.caw():LV===4?0:SFX.buzz();}
 function summonMinion(i){
   const e={type:'minion',x:boss.x+(i?10:-10),y:boss.y,yT:112+i*10,hw:5,h:8,t:i*1.3,dir:-1,alive:true,dead:0,vy:0};
@@ -2968,8 +2968,44 @@ function drawChase4(cx){const c=chase4;if(!c){return;}
   alpha(.45*f,()=>glow(wx-30,GROUND_Y-30,110,'rgb(255,120,40)',.5));
   if(Math.random()<.7*f)parts.push({x:c.wall-Math.random()*60,y:GROUND_Y-20-Math.random()*50,vx:20+Math.random()*30,vy:-40-Math.random()*40,life:1.2,max:1.2,c:Math.random()<.5?'#ffb050':'#ff7a20',g:-15});
   if(Math.random()<.35*f)parts.push({x:c.wall-20,y:GROUND_Y-70-Math.random()*20,vx:10,vy:-30,life:1.6,max:1.6,c:'#2a2020',g:-10});}
-function drawArena4(cx){const T0=BURNT||BIGTREE;for(const [x,fl] of [[LTREE_X,1],[TREE_X,0]]){const t=(BURNT||BIGTREE)[fl];const sx=R(x-t.width/2-cx);ctx.drawImage(t,sx,GROUND_Y+2-t.height);
+function drawGiant4(cx){const b=boss&&boss.kind==='dog'?boss:null,X=ARENA_X+170-cx,G=GROUND_Y-6;if(X<-200||X>W+200)return;
+  let ang=0;if(b&&b.phase===3){const t=(b.p3t||0);ang=t<.2?Math.sin(t*80)*.01:Math.min(1.42,Math.pow(Math.max(0,t-.2)/.75,2)*1.42);}
+  const fk=Math.max(.1,fireK);ctx.save();ctx.translate(R(X),G);ctx.rotate(ang);
+  // a huge, half-dead ancient trunk far behind the clearing, burning
+  ctx.fillStyle='#1a100c';ctx.fillRect(-9,-120,18,120);ctx.fillStyle='#2a1a12';ctx.fillRect(-9,-120,4,120);ctx.fillStyle='#0c0806';ctx.fillRect(5,-120,4,120);
+  for(const [y,d,l] of [[-110,1,30],[-92,-1,26],[-70,1,22],[-128,-1,18]]){for(let k=0;k<l;k++){ctx.fillStyle=k%5?'#1a100c':'#3a2414';ctx.fillRect(d*k,y-k*.45,2,3);}}
+  ctx.fillStyle='#1a100c';ctx.fillRect(-4,-136,8,18);
+  ctx.restore();
+  if(!b||b.phase<3||(b.p3t||0)<1.1){for(let i=0;i<5;i++)flame(X+(hashD(i*3)-.5)*14,G-40-i*18,(8+6*Math.abs(Math.sin(gt*2+i)))*fk,4,i*5+77);}
+  if(b&&b.phase===3&&(b.p3t||0)>.9){const k=clamp(((b.p3t||0)-.9)/1.2,0,1);alpha(.6*k,()=>glow(X+60,G-20,120,'rgb(255,90,20)',.5));
+    for(let i=0;i<14;i++)flame(X+8+i*9,G+2-Math.max(0,10-i),(18+16*Math.abs(Math.sin(gt*2.6+i*1.3)))*k*fk,7,i*9+3);}}
+function drawArena4(cx){drawGiant4(cx);const T0=BURNT||BIGTREE;for(const [x,fl] of [[LTREE_X,1],[TREE_X,0]]){const t=(BURNT||BIGTREE)[fl];const sx=R(x-t.width/2-cx);ctx.drawImage(t,sx,GROUND_Y+2-t.height);
   const fk=Math.max(.05,fireK);alpha(.5*fk,()=>glow(sx+t.width/2,GROUND_Y-t.height*.55,t.width*.6,'rgb(255,110,40)',.3));for(let i=0;i<9;i++)flame(sx+18+hashD(i*7+fl)*(t.width-36),GROUND_Y+2-t.height+24+hashD(i*13+fl)*t.height*.48,(10+8*Math.abs(Math.sin(gt*2.4+i)))*fk,4,i*3+fl*11);flame(sx+t.width/2,GROUND_Y-2,14*fk,6,fl*5);}}
+// dog arena: a dry stream bed with a few small puddles across the clearing, and brittle dry branches overhead, smouldering
+let BRANCH4=null;
+function branchArt(){const [c,g]=mkCanvas(W+80,56);const r=mulberry(4242);const P=(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),w,h);};const tips=[];
+  const limb=(x,y,ang,len,th,depth)=>{let px=x,py=y;for(let i=0;i<len;i++){ang+=(r()-.5)*.35;px+=Math.cos(ang);py+=Math.sin(ang)*.9;for(let k=0;k<th;k++)P(px,py+k,1,1,k===0?'#5a3a26':k===th-1?'#a04818':'#24160e');
+      if(depth<3&&r()<.06&&th>1)limb(px,py,ang+(r()<.5?-1:1)*(.5+r()*.6),Math.floor(len*.45),Math.max(1,th-1),depth+1);}tips.push([px,py]);};
+  limb(0,6,.12,150,4,0);limb(W+80,4,Math.PI-.1,160,4,0);limb(40,0,.5,60,2,1);limb(W+40,0,Math.PI-.6,70,2,1);limb(150,0,1.2,30,2,2);
+  BRANCH4={c,tips};return BRANCH4;}
+function drawArenaFX4(cx){const X0=ARENA_X-cx;if(X0>W||X0<-W-80)return;const G=GROUND_Y,fk=Math.max(.1,fireK);const bb=boss&&boss.kind==='dog'?boss:null;
+  // phase 3: the fire from both edges closes in, a curtain of flame on each side
+  const FW=bb?(bb.fw||0)*46:0;if(FW>0){for(const side of [-1,1]){const edge=side<0?LTREE_X+14+FW-cx:TREE_X-14-FW-cx;
+      alpha(.55,()=>glow(edge,G-30,50,'rgb(255,100,30)',.45));for(let i=0;i<10;i++){const fx=edge+side*(i*5-2),hh=(26+14*Math.abs(Math.sin(gt*3+i*1.7)))*(1-i*.05);flame(fx,G+1,hh,6,i*7+(side>0?40:0));}}}
+  // black smoke drifting over the arena once the big tree falls
+  if(bb&&bb.phase===3){const k=clamp((bb.p3t||0)/3,0,1);for(let i=0;i<9;i++){const x=((i*53+gt*(6+i))%(W+120))-60,y=18+(i%4)*14+Math.sin(gt*.4+i)*5;
+      alpha(.28*k,()=>{ctx.fillStyle='#120e10';ctx.beginPath();ctx.ellipse(x,y,28+(i%3)*8,9+(i%2)*4,0,0,Math.PI*2);ctx.fill();});}}
+  // stream bed: a shallow band of cracked dry mud and pebbles, three small puddles that reflect the fire
+  const s0=R(X0+52),s1=R(X0+274);rect(s0,G,s1-s0,4,'#4a3a2a');rect(s0+2,G,s1-s0-4,1,'#6a5440');rect(s0,G+3,s1-s0,1,'#2a2018');
+  for(let x=s0+3;x<s1-4;x+=7){const h=hashD(x-X0);rect(x,G+1,1,2,'#1e140e');rect(x+1,G+2,2+R(h*2),1,'#1e140e');if(h>.55)rect(x+4,G,2,1,'#9a8a70');if(h<.2)rect(x+3,G+1,2,1,'#b0a080');}
+  for(const [dx,w] of [[80,18],[160,14],[248,20]]){const px=R(X0+dx),l=R(px-w/2);rect(l,G,w,3,'#16304a');rect(l+1,G,w-2,1,'#3a6a8a');rect(l-1,G+1,1,1,'#16304a');rect(l+w,G+1,1,1,'#16304a');
+    const fl=.5+.5*Math.sin(gt*3+dx);rect(l+3+R(fl*4),G+1,4,1,`rgba(255,${150+R(fl*60)},70,${.75*fk})`);rect(px+3-R(fl*3),G+2,3,1,`rgba(255,120,40,${.55*fk})`);rect(l+2,G,2,1,'#a8d0e0');}
+  // overhead branches, dry and smouldering: smoke curls up from them, embers glow along the tips and now and then drop
+  const B=BRANCH4||branchArt();ctx.drawImage(B.c,R(X0-40),0);
+  B.tips.forEach(([tx,ty],i)=>{const x=R(X0-40+tx),y=R(ty);if(x<-4||x>W+4)return;const pl=.5+.5*Math.sin(gt*4+i*1.7);
+    rect(x,y,1,1,pl>.5?'#ffb040':'#c04010');if(pl>.8)glow(x,y,3,'rgb(255,120,40)',.4*fk);
+    if(i%2===0)for(let k=0;k<3;k++){const q=((gt*.35+k/3+i*.13)%1),sx=x+Math.sin(q*6+i)*3*q,sy=y-q*26;alpha((1-q)*.4,()=>rect(R(sx)-1,R(sy),3+R(q*3),2,'#8a8288'));}
+    if(Math.random()<.004*fk&&state==='play')parts.push({x:x+cx,y,vx:(Math.random()-.5)*10,vy:10,life:1.6,max:1.6,c:Math.random()<.5?'#ffb040':'#ff6a20',g:40});});}
 // night lighting: everything multiplied by a dark mask with warm/cool light pools
 const [LCV,LG]=mkCanvas(W,H);
 function lightPool(x,y,r,col){const g=LG.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,col);g.addColorStop(1,'rgba(0,0,0,0)');LG.fillStyle=g;LG.fillRect(x-r,y-r,r*2,r*2);}
@@ -3136,13 +3172,15 @@ function drawCrowBoss(cx){const b=boss;
 
 /* ---------- Chó hoang: stomping does nothing; lure it through the flaring fires ---------- */
 const DSC=1.25,DEYE_X=()=>ARENA_X+170,DEYE_Y=GROUND_Y-24,DLEAP=.78; // dog drawn 30% bigger; where its eyes glow in the dark
-function newDogBoss(){return {kind:'dog',x:ARENA_X+232,y:116,state:'intro',t:0,dir:-1,hits:0,flash:0,hw:15,h:23,spd:1,vx:0,vy:0,sc:.42,cnt:0,shake:0,sx:0,sy:0,burnCD:0};}
+function newDogBoss(){return {ph1:true,phase:1,dodges:0,kind:'dog',x:ARENA_X+232,y:116,state:'intro',t:0,dir:-1,hits:0,flash:0,hw:15,h:23,spd:1,vx:0,vy:0,sc:.42,cnt:0,shake:0,sx:0,sy:0,burnCD:0};}
 const arenaFires=()=>fires4.filter(f=>f.arena);
 let seenIntro={}; // after the first try, boss intros are shortened
 function updDogBoss(dt){
   const b=boss;b.t+=dt;b.flash=Math.max(0,b.flash-dt);b.shake=Math.max(0,b.shake-dt);b.burnCD=Math.max(0,b.burnCD-dt);
-  const L=LTREE_X+40,Rx=TREE_X-40;
+  if(b.phase===3){b.p3t=(b.p3t||0)+dt;b.fw=clamp((b.p3t-1.2)/3,0,1);}const FW=(b.fw||0)*46;
+  const L=LTREE_X+40+FW,Rx=TREE_X-40-FW;
   const face=()=>{b.dir=p.x<b.x?-1:1;};
+  if(FW>0&&state==='play'){const wl=LTREE_X+14+FW,wr=TREE_X-14-FW;if(p.x<wl){p.x=Math.max(p.x,wl-2);if(p.inv<=0)hurt(wl-20,false);}if(p.x>wr){p.x=Math.min(p.x,wr+2);if(p.inv<=0)hurt(wr+20,false);}}
   const fall=()=>{b.vy+=G*dt;b.y+=b.vy*dt;if(b.y>=GROUND_Y){b.y=GROUND_Y;b.vy=0;return true;}return false;};
   const fireBetween=()=>arenaFires().some(f=>(f.x-b.x)*(f.x-p.x)<0);
   // runs (or lands) straight in a fire: if it is flaring, the dog gets burnt
@@ -3161,26 +3199,41 @@ function updDogBoss(dt){
         if(k>.28&&!b.dodged){b.dodged=1;p.vy=JV*1.05;p.vx=-120;p.jumping=false;p.onGround=false;p.face=1;SFX.jump();puff(p.x,p.y,6,'#6a5a4a',40,10,.3);}
         if(k>=1){b.sc=1;b.y=GROUND_Y;bossBar();shakeT=.45;shakeA=3;puff(b.x,GROUND_Y,18,'#5a4a40',90,40,.5);b.dir=p.x<b.x?-1:1;p.ctrl=true;bossSet('growl');}}
       break;}
-    case 'growl':{face();b.shake=.15;if(b.t>.8/b.spd){const r=Math.random();if(fireBetween()?r<.72:r<.4){bossSet('prep');SFX.growl();}else bossSet('crouch');}break;}
+    // phase 2: it turns its back on the cat and rakes the ground with its hind legs, kicking a wave of hot ash and embers along the ground
+    case 'p2turn':{b.dir=p.x<b.x?1:-1;if(b.t>.35){bossSet('kick');SFX.growl();}break;}
+    case 'kick':{b.dir=p.x<b.x?1:-1;b.shake=.1;if(Math.random()<.6)puff(b.x-b.dir*16,GROUND_Y-2,1,Math.random()<.4?'#ff8a30':'#5a5050',50,40,.4,-40);
+      if(b.t>.45&&!b.kicked){b.kicked=1;b.waves=b.waves||[];b.waves.push({x:b.x-b.dir*18,d:-b.dir,t:0});SFX.whoosh?SFX.whoosh():hiss(.5,.05,900);shakeT=.15;shakeA=1;}
+      if(b.t>1.0){b.kicked=0;bossSet('p2rest');}break;}
+    case 'p2rest':{if(b.t>1.5){b.k2=(b.k2||0)+1;if(b.k2%3===0){b.dir=p.x<b.x?-1:1;bossSet('prep');}else bossSet('p2turn');}break;}
+    // phase 3: a giant ancient tree in the forest snaps and crashes down, fire roars up behind, the fire at both edges closes in to 2/3 of the arena; the dog is exhausted
+    case 'p3fall':{b.dir=p.x<b.x?-1:1;if(b.t>.9&&!b.cr){b.cr=1;shakeT=.9;shakeA=4;SFX.roar&&SFX.roar();hiss(1.4,.08,300);}if(b.t>2.6){SFX.whimper();bossSet('pant');}break;}
+    case 'pant':{face();if(Math.random()<.08)puff(b.x+b.dir*22,b.y-14,1,'rgba(220,220,230,.5)',10,10,.6,-10);if(b.t>1.1){bossSet('growl');}break;}
+    case 'roar':{face();b.shake=.3;if(b.t<.05&&!b.rr){b.rr=1;SFX.roar&&SFX.roar();SFX.growl();shakeT=.4;shakeA=2;}if(b.t>1.0){b.rr=0;bossSet('prep');b.ph1c=true;}break;}
+    case 'growl':{face();b.shake=.15;if(b.ph1&&b.t>.5){bossSet('roar');break;}if(!b.ph1&&b.t>.8/b.spd){const r=Math.random();if(fireBetween()?r<.72:r<.4){bossSet('prep');SFX.growl();}else bossSet('crouch');}break;}
     case 'crouch':{face();if(b.t>.35/b.spd){bossSet('leap');SFX.bark();const tx=clamp(p.x,L,Rx);b.vx=clamp((tx-b.x)/.72,-270,270)*Math.min(1.25,b.spd);b.vy=-355;}break;}
     case 'leap':{b.x=clamp(b.x+b.vx*dt,L-10,Rx+10);if(b.vx)b.dir=b.vx<0?-1:1;if(fall()&&b.t>.1){bossSet('land');shakeT=.15;shakeA=1.5;puff(b.x,GROUND_Y,8,'#5a4a40',60,20,.4);}break;}
-    case 'land':{dogBurnCheck();if(b.state==='land'&&b.t>.45/b.spd){b.cnt++;bossSet('growl');}break;}
-    case 'prep':{face();if(Math.random()<.4)puff(b.x-b.dir*14,GROUND_Y,1,'#6a5a4a',30,10,.3);if(b.t>.6/b.spd){bossSet('charge');b.vx=b.dir*210*b.spd;}break;}
-    case 'charge':{b.x+=b.vx*dt;if(Math.random()<.5)puff(b.x-b.dir*14,GROUND_Y,1,'#6a5a4a',30,10,.3);
-      dogBurnCheck();
-      if(b.state==='charge'&&((b.vx>0&&b.x>=Rx)||(b.vx<0&&b.x<=L))){b.x=clamp(b.x,L,Rx);bossSet('skid');}break;}
-    case 'skid':{if(Math.random()<.5)puff(b.x+b.dir*10,GROUND_Y,1,'#6a5a4a',40,10,.3);if(b.t>.55){b.cnt++;bossSet('growl');}break;}
+    case 'land':{dogBurnCheck();if(b.state==='land'&&b.t>.45/b.spd){b.cnt++;bossSet(b.phase===3?'pant':'growl');}break;}
+    case 'prep':{face();if(Math.random()<.4)puff(b.x-b.dir*14,GROUND_Y,1,'#6a5a4a',30,10,.3);if(b.t>(b.ph1?.4:.6)/b.spd){bossSet('charge');b.vx=b.dir*(b.ph1?240:210)*b.spd;b.side=Math.sign(p.x-b.x);b.hitCat=false;}break;}
+    case 'charge':{b.x+=b.vx*dt;const CL=b.phase<3?LTREE_X+12:L-24,CR=b.phase<3?TREE_X-12:Rx+24;if(Math.random()<.5)puff(b.x-b.dir*14,GROUND_Y,1,'#6a5a4a',30,10,.3);
+      if(b.phase>=3)dogBurnCheck(); // phases 1-2: the fires don't decide anything yet
+      if(b.ph1&&b.side&&Math.sign(p.x-b.x)!==b.side){b.side=0;if(!b.hitCat){b.dodges=(b.dodges||0)+1;tone(880,1320,.08,'square',.03);bossBar();}}
+      if(b.state==='charge'&&((b.vx>0&&b.x>=CR)||(b.vx<0&&b.x<=CL))){b.x=clamp(b.x,CL,CR);bossSet('skid');}break;}
+    case 'skid':{if(Math.random()<.5)puff(b.x+b.dir*10,GROUND_Y,1,'#6a5a4a',40,10,.3);if(b.t>.55){b.cnt++;if(b.ph1&&(b.dodges||0)>=3){b.ph1=false;b.phase=2;b.stomps=0;SFX.growl();shakeT=.3;shakeA=1.5;}bossSet(b.phase===2?'p2turn':b.phase===3?'pant':'growl');}break;}
     case 'burnt':{b.x=clamp(b.x+b.vx*dt,L-10,Rx+10);if(Math.random()<.5)puff(b.x,b.y-16,1,'#4a4040',20,40,.8,-20);if(fall()&&b.t>.15){b.vx=0;bossSet('shake');}break;}
     case 'shake':{if(Math.random()<.3)puff(b.x,b.y-16,1,'#4a4040',20,40,.8,-20);b.shake=.3;if(b.t>.9){SFX.growl();bossSet('growl');}break;}
     case 'flee':{b.dir=1;b.x+=150*dt;if(Math.random()<.4)puff(b.x,b.y-16,1,'#4a4040',20,40,.8,-20);if(b.t>.6){const k=clamp((b.t-.6)/.8,0,1);b.sc=lerp(1,.4,k);b.y=lerp(GROUND_Y,118,k)-Math.sin(k*Math.PI)*30;}
       if(b.t>2.4&&state==='play'){winLevel();}if(b.t>1.5)b.state2='gone';break;}
   }
+  if(b.waves){for(const w of b.waves){w.t+=dt;w.x+=w.d*150*dt;if(Math.random()<.8)parts.push({x:w.x+(Math.random()*8-4),y:GROUND_Y-2-Math.random()*6,vx:w.d*30+(Math.random()-.5)*20,vy:-30-Math.random()*40,life:.5,max:.5,c:Math.random()<.45?'#ff8a30':Math.random()<.5?'#8a8080':'#5a5050',g:200});
+      if(state==='play'&&p.inv<=0&&!(p.safe>0)&&Math.abs(p.x-w.x)<9&&p.y>GROUND_Y-11){hurt(w.x,false);}}
+    b.waves=b.waves.filter(w=>w.t<2.2&&w.x>LTREE_X&&w.x<TREE_X);}
+  b.stCD=Math.max(0,(b.stCD||0)-dt);
   if(b.state==='intro'||b.state==='flee')return;
   if(state!=='play')return;
   if(overlap(p,b)){
     const fromAbove=p.vy>20&&p.prevY<=b.y-b.h+8;
-    if(fromAbove){p.vy=-260;p.y=b.y-b.h-.1;p.safe=.5;SFX.clank();b.shake=.2;}
-    else if(b.state!=='burnt'&&b.state!=='shake'&&p.inv<=0&&!(p.safe>0))hurt(b.x,false);
+    if(fromAbove){p.vy=-260;p.y=b.y-b.h-.1;p.safe=.5;SFX.clank();b.shake=.2;if(b.phase===2&&b.stCD<=0){b.stCD=.8;b.stomps=(b.stomps||0)+1;b.flash=.3;SFX.whimper();bossBar();if(b.stomps>=3){b.phase=3;b.p3t=0;b.spd=.8;b.waves=[];bossSet('p3fall');}}}
+    else if(b.state!=='burnt'&&b.state!=='shake'&&p.inv<=0&&!(p.safe>0)){hurt(b.x,false);b.hitCat=true;}
   }
 }
 // a furious, slanted red eye under a scowling white-fur brow (lit only by its own glow)
@@ -3200,11 +3253,11 @@ function drawDogEyes(b,cx){const k=b.eyeK,x=DEYE_X()-cx,y=DEYE_Y,gap=2+k*8,sc=.0
     if(blink){rect(R(ex-9*sc),R(y),Math.max(1,R(18*sc)),1,'#ff3a24');continue;}
     drawAngryEye(ex,y,d,sc,k,fl);}
 }
-function drawDogBoss(cx){const b=boss;if(b.state2==='gone')return;if(b.flash>0&&Math.floor(b.flash*20)%2)return;
+function drawDogBoss(cx){const b=boss;if(b.state2==='gone')return;for(const w of b.waves||[]){const x=R(w.x-cx);for(let i=-6;i<=6;i++){const hh=R((7-Math.abs(i))*1.1+Math.sin(gt*20+i)*1.2);if(hh<1)continue;rect(x+i,GROUND_Y-hh,1,hh,i%3?'#6a6060':'#8a8080');if(Math.random()<.3)rect(x+i,GROUND_Y-hh,1,1,'#ff9a30');}glow(x,GROUND_Y-4,10,'rgb(255,120,40)',.35);}if(b.flash>0&&Math.floor(b.flash*20)%2)return;
   let k='stand';const s=b.state;
   if(s==='intro')k='leap';
   else if(s==='leap'||s==='bonk')k='leap';else if(s==='crouch'||s==='prep'||s==='land')k='crouch';else if(s==='charge'||s==='flee')k=['runA','runB','runC','runD'][Math.floor(gt*14)%4];
-  else if(s==='daze'||s==='hurt'||s==='burnt'||s==='shake')k='daze';else if(s==='skid')k='crouch';else if(s==='growl')k='growl';
+  else if(s==='daze'||s==='hurt'||s==='burnt'||s==='shake')k='daze';else if(s==='skid')k='crouch';else if(s==='growl'||s==='roar')k='growl';else if(s==='kick')k=Math.floor(b.t*14)%2?'crouch':'stand';else if(s==='p2turn'||s==='p2rest')k='stand';
   const fr=DOG[k],sc=b.sc*DSC,w=fr.w*sc,h=fr.h*sc;const sx=b.shake>0?Math.round(Math.sin(gt*80)):0;
   if(s==='intro'&&!b.jumped)return; // only the red eyes show (drawn over the dark in drawNight)
   if(sc>=.99*DSC)alpha(.25,()=>rect(b.x-cx-22,GROUND_Y-2,44,2,'#000'));
@@ -3219,6 +3272,7 @@ function drawDogBoss(cx){const b=boss;if(b.state2==='gone')return;if(b.flash>0&&
       if(s==='growl'&&Math.random()<.12)parts.push({x:fx(0)+cx,y:Y0+R(fr._my*sc),vx:-b.dir*16,vy:-8,life:.9,max:.9,c:'rgba(220,220,230,.5)',g:-10});}
     if((run||s==='skid')&&b.y>=GROUND_Y-1&&Math.random()<.5)parts.push({x:b.x-b.dir*12+(Math.random()*8-4),y:GROUND_Y-1,vx:-b.dir*(10+Math.random()*20),vy:-10-Math.random()*20,life:.5,max:.5,c:Math.random()<.5?'#6a5a4a':'#4a4038',g:60});
     if((s==='burnt'||s==='hurt'||b.hits>0)&&Math.random()<(s==='burnt'?.7:.12*b.hits))parts.push({x:b.x+(Math.random()*24-12),y:Y0+4+Math.random()*6,vx:(Math.random()-.5)*6,vy:-14-Math.random()*10,life:1.1,max:1.1,c:Math.random()<.3?'#ff8a30':'#3a3434',g:-6});}
+  if(s==='roar'){const mx=b.x-cx+b.dir*22,my=b.y-16;for(let i=0;i<3;i++){const q=((b.t*1.8+i/3)%1);alpha((1-q)*.55,()=>{ctx.strokeStyle='#ffd0a0';ctx.lineWidth=1;ctx.beginPath();ctx.arc(R(mx),R(my),4+q*30,b.dir>0?-1:Math.PI-1,b.dir>0?1:Math.PI+1);ctx.stroke();});}}
   if(s==='daze'){for(let i=0;i<3;i++){const a=gt*5+i*2.1;blit(STAR,b.x-cx+(b.dir>0?10:-10)+Math.cos(a)*8,b.y-28+Math.sin(a)*2,1);}}
 }
 
@@ -4571,7 +4625,7 @@ function drawWorld(){
   drawDecay(cx);
   drawSprout(cx);
   if(LV===5)drawDeco5(cx);
-  if(LV===4){drawCamp(cx);drawFires4(cx);drawChase4(cx);}
+  if(LV===4){drawCamp(cx);drawFires4(cx);drawChase4(cx);drawArenaFX4(cx);}
   if(LV===3)drawHoppers(cx);
   drawAmbient(cx);
   drawFish(cx);
