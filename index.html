@@ -3390,22 +3390,29 @@ function drawChase4(cx){const c=chase4;if(!c){return;}
   if(Math.random()<.7*f)parts.push({x:c.wall-Math.random()*60,y:GROUND_Y-20-Math.random()*50,vx:20+Math.random()*30,vy:-40-Math.random()*40,life:1.2,max:1.2,c:Math.random()<.5?'#ffb050':'#ff7a20',g:-15});
   if(Math.random()<.35*f)parts.push({x:c.wall-20,y:GROUND_Y-70-Math.random()*20,vx:10,vy:-30,life:1.6,max:1.6,c:'#2a2020',g:-10});}
 // the giant's trunk, rotated about its foot (ang>0 leans right); flames ride along it
-function giantTrunk4(X,G,ang,fk){ctx.save();ctx.translate(R(X),G);ctx.rotate(ang);
+// the giant's trunk, rotated about its foot (ang>0 leans right); mode 0 whole, 1 the stump left after it snaps, 2 the snapped top half
+function giantTrunk4(X,G,ang,fk,mode=0){ctx.save();ctx.translate(R(X),G);ctx.rotate(ang);
+  if(mode){ctx.beginPath();if(mode===1){ctx.moveTo(-12,20);ctx.lineTo(-12,-60);ctx.lineTo(-6,-66);ctx.lineTo(-2,-61);ctx.lineTo(3,-70);ctx.lineTo(7,-63);ctx.lineTo(12,-65);ctx.lineTo(12,20);}
+    else{ctx.moveTo(-40,-150);ctx.lineTo(40,-150);ctx.lineTo(40,-60);ctx.lineTo(12,-62);ctx.lineTo(7,-60);ctx.lineTo(3,-67);ctx.lineTo(-2,-58);ctx.lineTo(-6,-63);ctx.lineTo(-40,-57);}ctx.closePath();ctx.clip();}
   ctx.fillStyle='#1a100c';ctx.fillRect(-9,-120,18,120);ctx.fillStyle='#2a1a12';ctx.fillRect(-9,-120,4,120);ctx.fillStyle='#0c0806';ctx.fillRect(5,-120,4,120);
   for(const [y,d,l] of [[-110,1,30],[-92,-1,26],[-70,1,22],[-128,-1,18]]){for(let k=0;k<l;k++){ctx.fillStyle=k%5?'#1a100c':'#3a2414';ctx.fillRect(d*k,y-k*.45,2,3);}}
   ctx.fillStyle='#1a100c';ctx.fillRect(-4,-136,8,18);ctx.fillStyle='#1a100c';ctx.fillRect(-9,0,18,9);ctx.fillStyle='#2a1a12';ctx.fillRect(-9,0,4,9);
-  if(Math.abs(ang)>.3)for(let i=-116;i<0;i+=7)if(hashD(i+9)>.45){ctx.fillStyle=fk>.3?'#ff6a20':'#5a2a14';ctx.fillRect(-1,i,2,1);} // embers in the cracks
+  if(mode){ctx.fillStyle=fk>.3?'#ff7a20':'#6a4a30';for(let x=-8;x<9;x+=2)ctx.fillRect(x,mode===1?-62-((x*7)&3):-63+((x*5)&3),1,1);} // raw splintered wood, glowing
+  if(mode===2)for(let i=-130;i<-64;i+=7)if(hashD(i+9)>.45){ctx.fillStyle=fk>.3?'#ff6a20':'#5a2a14';ctx.fillRect(-1,i,2,1);} // embers in the cracks
   ctx.restore();if(fk<=.02)return;
-  for(let i=0;i<5;i++){const L=40+i*18,x=X+Math.sin(ang)*L+(hashD(i*3)-.5)*8*Math.cos(ang),y=G-Math.cos(ang)*L-(Math.abs(ang)>.3?6:0);flame(x,y,(8+6*Math.abs(Math.sin(gt*2+i)))*fk,4,i*5+77);}}
+  for(let i=0;i<5;i++){const L=40+i*18;if(mode===1&&L>60||mode===2&&L<70)continue;const x=X+Math.sin(ang)*L+(hashD(i*3)-.5)*8*Math.cos(ang),y=G-Math.cos(ang)*L-(Math.abs(ang)>.3?6:0);flame(x,y,(8+6*Math.abs(Math.sin(gt*2+i)))*fk*(mode===2&&Math.abs(ang)>1?.7:1),4,i*5+77);}}
+// the snapped top half, centred at (x,y) and turned by a
+function giantTop4(x,y,a,fk){giantTrunk4(x-Math.sin(a)*100,y+Math.cos(a)*100,a,fk,2);}
 function drawGiant4(cx){const b=boss&&boss.kind==='dog'?boss:null,X=ARENA_X+170-cx,G=GROUND_Y-6;if(X<-200||X>W+200)return;
   const fk=Math.max(.1,fireK)*(1-.85*clamp(typeof rainK!=='undefined'?rainK:0,0,1));
   // a huge, half-dead ancient trunk far behind the clearing, burning; it creaks in phase 3 and falls on the dog after the fight
-  if(giant4F)giantTrunk4(X,G,giant4F.a,fk);
-  else if(!(b&&b.br&&b.br.g)){const ang=b&&b.phase===3?Math.sin(gt*1.6)*.012+(b.p3t<1.2?Math.sin(gt*40)*.008:0):0;giantTrunk4(X,G,ang,fk);}
+  if(giant4F){giantTrunk4(X,G,0,fk,1);giantTop4(giant4F.x-cx,GROUND_Y-8,giant4F.sd*Math.PI/2,fk);}
+  else if(b&&b.br&&b.br.g&&b.br.k>0)giantTrunk4(X,G,0,fk,1);
+  else{const ang=b&&b.phase===3?Math.sin(gt*1.6)*.012+(b.p3t<1.2?Math.sin(gt*40)*.008:0):0;giantTrunk4(X,G,ang,fk);}
   // the trunk stands on the ground: flared roots gripping a mound of scorched soil (they stay when it falls, torn)
   {const bx=R(X),by=GROUND_Y+2;for(let y=0;y<12;y++){const hw=9+Math.round(Math.pow(y/11,2)*10);for(let x=-hw;x<=hw;x++){const gap=y>5&&Math.abs(x)>8&&Math.sin(x*.9)>.55;if(gap)continue;rect(bx+x,by-12+y,1,1,x<-hw+3?'#2a1a12':x>hw-3?'#0c0806':(hashD(x*7+y)>.8?'#3a2414':'#1a100c'));}}
    for(let x=-24;x<=24;x++){const h=Math.round(3*Math.cos(x/24*Math.PI/2));for(let y=0;y<h;y++)rect(bx+x,by-y,1,1,y===h-1?'#3a2a20':'#22160e');}
-   if(fireK>.2&&!giant4F)for(const ex of [-11,4,13])if(Math.sin(gt*3+ex)>-.3)rect(bx+ex,by-3,1,1,'#ff7a20');}
+   if(fireK>.2)for(const ex of [-11,4,13])if(Math.sin(gt*3+ex)>-.3)rect(bx+ex,by-3,1,1,'#ff7a20');}
   if(b&&b.phase===3&&(b.p3t||0)>.9&&!giant4F){const k=clamp(((b.p3t||0)-.9)/1.2,0,1);alpha(.45*k,()=>glow(X,G-60,110,'rgb(255,90,20)',.5));}}
 function drawArena4(cx){drawGiant4(cx);const T0=BURNT||BIGTREE;for(const [x,fl] of [[LTREE_X,1],[TREE_X,0]]){const t=(BURNT||BIGTREE)[fl];const sx=R(x-t.width/2-cx);ctx.drawImage(t,sx,GROUND_Y+2-t.height);
   const fk=Math.max(.05,fireK);alpha(.5*fk,()=>glow(sx+t.width/2,GROUND_Y-t.height*.55,t.width*.6,'rgb(255,110,40)',.3));for(let i=0;i<9;i++)flame(sx+18+hashD(i*7+fl)*(t.width-36),GROUND_Y+2-t.height+24+hashD(i*13+fl)*t.height*.48,(10+8*Math.abs(Math.sin(gt*2.4+i)))*fk,4,i*3+fl*11);flame(sx+t.width/2,GROUND_Y-2,14*fk,6,fl*5);}}
@@ -3603,11 +3610,11 @@ const DSC=1.25*2/3,DEYE_X=()=>ARENA_X+170,DEYE_Y=GROUND_Y-24,DLEAP=.78; // dog a
 function newDogBoss(){return {ph1:true,phase:1,dodges:0,kind:'dog',x:ARENA_X+232,y:116,state:'intro',t:0,dir:-1,hits:0,flash:0,hw:10,h:15,spd:1,vx:0,vy:0,sc:.42,cnt:0,shake:0,sx:0,sy:0,burnCD:0};}
 const arenaFires=()=>fires4.filter(f=>f.arena);
 let seenIntro={}; // after the first try, boss intros are shortened
-function startRescue4(b){b.vx=b.vy=0;b.y=GROUND_Y;b.cs=p.x>=b.x?1:-1;{const X0=ARENA_X+170,sd=b.x>=X0?1:-1;b.x=X0+sd*28;b.cs=sd;b.br={g:1,sd,a:0,va:0,lift:0};}b.fwOv=1;
+function startRescue4(b){b.vx=b.vy=0;b.y=GROUND_Y;b.cs=p.x>=b.x?1:-1;{const X0=ARENA_X+170,sd=b.x>=X0?1:-1;b.x=X0+sd*52;b.cs=-sd;b.br={g:1,sd,k:0,x:X0,y:GROUND_Y-106,a:0,off:0};}b.fwOv=1;
   p.ctrl=false;keys.L=keys.R=keys.J=false;$('bossBar').hidden=true;SFX.whimper();bossSet('r_fall');if(!cutView)show('skip',false);}
 // the giant tree on top of the dog, and the black fade as they leap out
 function drawRescue4(cx){const b=boss;if(!b||b.kind!=='dog')return;const r=b.br;
-  if(r&&r.g){const fk=Math.max(.1,fireK);giantTrunk4(ARENA_X+170-cx,GROUND_Y-6,r.a-r.sd*(r.lift||0),fk);}
+  if(r&&r.g&&r.k>0)giantTop4(r.x+r.off-cx,r.y,r.a,Math.max(.1,fireK));
   if(b.state==='r_pin'||b.state==='r_push'){const q=(gt*.7)%1;alpha(.6*(1-q),()=>bubble(b.x-cx+b.dir*14,b.y-34-q*4,GLY.ex));}
   if(p.bub&&b.state==='r_trap')bubble(p.x-cx+7,p.y-20,GLY.ex);}
 function updDogBoss(dt){
@@ -3644,11 +3651,13 @@ function updDogBoss(dt){
     case 'p2rest':{if(b.t>1.5){b.k2=(b.k2||0)+1;if(b.k2%3===0){b.dir=p.x<b.x?-1:1;bossSet('prep');}else bossSet('p2turn');}break;}
     // phase 3: a giant ancient tree in the forest snaps and crashes down, fire roars up behind, the fire at both edges closes in to 2/3 of the arena; the dog is exhausted
     // ---- after the fight: the giant burning tree falls and pins the dog, the cat pushes it off, they're trapped, the dog carries the cat out over the flames ----
-    case 'r_fall':{const r=b.br,A=Math.atan2(28,13);if(b.t<.5){r.a=r.sd*Math.sin(b.t*50)*.01;if(!r.cr){r.cr=1;hiss(.6,.06,260);}break;}r.va+=4.2*dt;r.a+=r.sd*r.va*dt;if(Math.abs(r.a)>=A){r.a=r.sd*A;r.va=0;shakeT=.4;shakeA=3;SFX.whimper();SFX.bossHit();puff(b.x,b.y-14,16,'#3a3030',60,50,.9,-30);puff(b.x,b.y-12,12,'#ffb040',70,60,.5);bossSet('r_pin');}break;}
-    case 'r_pin':{const tx=b.x+b.cs*26;p.face=Math.sign(b.x-p.x)||1;const d=tx-p.x;p.vx=0;if(Math.abs(d)>2){p.x+=Math.sign(d)*Math.min(Math.abs(d),80*dt);p.face=Math.sign(d);b.walkC=1;}else{p.face=-b.cs;b.walkC=0;}
+    case 'r_fall':{const r=b.br,X0=ARENA_X+170;if(b.t<.6){b.shake=.1;if(!r.cr){r.cr=1;hiss(.6,.06,260);}break;}if(!r.k){SFX.clank();puff(X0,GROUND_Y-66,10,'#3a3030',40,40,.8,-20);puff(X0,GROUND_Y-66,8,'#ffb040',60,40,.4);}
+      r.k=clamp((b.t-.6)/.75,.001,1);const e=r.k*r.k;r.x=lerp(X0+r.sd*4,b.x,r.k);r.y=lerp(GROUND_Y-106,b.y-13,e);r.a=r.sd*r.k*Math.PI/2;
+      if(r.k>=1){shakeT=.4;shakeA=3;SFX.whimper();SFX.bossHit();puff(b.x,b.y-14,16,'#3a3030',60,50,.9,-30);puff(b.x,b.y-12,12,'#ffb040',70,60,.5);bossSet('r_pin');}break;}
+    case 'r_pin':{const tx=b.x+b.cs*42;p.face=Math.sign(b.x-p.x)||1;const d=tx-p.x;p.vx=0;if(Math.abs(d)>2){p.x+=Math.sign(d)*Math.min(Math.abs(d),80*dt);p.face=Math.sign(d);b.walkC=1;}else{p.face=-b.cs;b.walkC=0;}
       if(b.t>.6&&Math.random()<.05)SFX.whimper();if(b.t>1.2&&Math.abs(d)<=2){b.walkC=0;bossSet('r_push');}if(b.t>4){p.x=tx;bossSet('r_push');}break;}
-    case 'r_push':{const r=b.br,k=clamp(b.t/2.6,0,1),bx0=ARENA_X+170+r.sd*28;p.face=-b.cs;p.vx=0;p.x=bx0+b.cs*(26+Math.min(k*3,1)*4)+Math.sin(b.t*20)*.5;r.lift=Math.sin(Math.min(1,k*1.4)*Math.PI*.5)*.16;b.x=bx0+b.cs*Math.max(0,k-.45)/.55*14;if(Math.random()<.3)puff(p.x,p.y,1,'#6a5a4a',20,10,.3);
-      if(b.t>2.6){giant4F={a:r.sd*(Math.PI/2-.03)};b.br=null;shakeT=.5;shakeA=3;SFX.clank();SFX.bossHit();puff(ARENA_X+170+r.sd*60,GROUND_Y,22,'#5a4a40',80,30,.6);puff(ARENA_X+170+r.sd*60,GROUND_Y-6,12,'#ffb040',70,40,.5);bossSet('r_trap');}break;}
+    case 'r_push':{const r=b.br,k=clamp(b.t/2.6,0,1);p.face=-b.cs;p.vx=0;p.x=b.x+b.cs*(42-k*10)+Math.sin(b.t*20)*.5;r.off=-b.cs*k*44;r.a=r.sd*Math.PI/2+b.cs*Math.sin(k*Math.PI)*.08;r.y=b.y-13+k*5;if(Math.random()<.3)puff(p.x,p.y,1,'#6a5a4a',20,10,.3);
+      if(b.t>2.6){giant4F={x:r.x+r.off,sd:r.sd};b.br=null;SFX.clank();puff(r.x+r.off,GROUND_Y,12,'#5a4a40',50,30,.5);bossSet('r_trap');}break;}
     case 'r_trap':{b.fwOv=Math.min(1.5,(b.fwOv||1)+dt*.4);p.vx=0;if(b.t>.4&&b.t<1.6)p.face=Math.floor(b.t*2.5)%2?1:-1;p.bub=b.t>.3&&b.t<1.8;if(b.t>.9&&!b.up){b.up=1;SFX.growl();}if(b.t>2.2){p.bub=false;bossSet('r_grab');}break;}
     case 'r_grab':{const tx=p.x-b.cs*0-b.dir*15;b.dir=Math.sign(p.x-b.x)||1;const d=p.x-b.dir*15-b.x;b.x+=Math.sign(d)*Math.min(Math.abs(d),90*dt);if(Math.abs(d)<2){b.carry=1;SFX.bark();b.jd=Math.sign(ARENA_X+W/2-b.x)||1;bossSet('r_crouch');}break;}
     case 'r_crouch':{b.dir=b.jd;if(b.t>.5){bossSet('r_jump');b.vx=b.jd*170;b.vy=-185;SFX.jump&&SFX.jump();}break;}
