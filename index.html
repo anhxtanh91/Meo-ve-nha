@@ -160,8 +160,7 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rend
       <button class="mi sel" type="button" id="btnStart" data-a="new">Chơi mới</button>
       <button class="mi" type="button" id="btnCont" data-a="cont">Chơi tiếp</button>
       <button class="mi" type="button" id="btnLevels" data-a="levels">Chọn màn</button>
-      <button class="mi" type="button" id="btnCuts" data-a="cuts">Xem lại cutscene</button>
-      <button class="mi" type="button" id="btnAlbum" data-a="album">Album ảnh</button>
+      <button class="mi" type="button" id="btnAlbum" data-a="album">Album</button>
       <button class="mi" type="button" id="btnOpt" data-a="opt">Cài đặt</button>
       <button class="mi" type="button" id="btnQuit" data-a="quit">Thoát game</button>
     </div>
@@ -183,7 +182,7 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rend
       <button class="mi" type="button" data-a="resume">Tiếp tục</button>
       <button class="mi" type="button" data-a="levels">Chọn màn</button>
       <button class="mi" type="button" data-a="sound">Âm thanh</button>
-      <button class="mi" type="button" data-a="album">Album ảnh</button>
+      <button class="mi" type="button" data-a="album">Album</button>
       <button class="mi" type="button" data-a="home">Quay về màn hình chính</button>
       <button class="mi" type="button" data-a="cheat">Cheat</button>
       <div id="cheatBox" hidden><input id="cheatIn" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="Nhập mã"><button class="btn" type="button" id="cheatOk">OK</button></div>
@@ -391,8 +390,8 @@ Object.assign(CAT_FR,{"runm0":["...o.....o..................","..opo...opo......
 const CAT_HEADBOX_={"stand": [2, 10, 8], "walk": [3, 11, 7], "sit": [2, 10, 7], "wag1": [2, 10, 8], "wag2": [2, 10, 8]};
 const CAT_HEADBOX=Object.assign({},CAT_HEADBOX_);for(let i=0;i<6;i++)CAT_HEADBOX['sitw'+i]=CAT_HEADBOX_.sit;CAT_HEADBOX.groom0=CAT_HEADBOX.groom1=CAT_HEADBOX.groom2=CAT_HEADBOX.yawn=CAT_HEADBOX_.sit;CAT_HEADBOX.standB=CAT_HEADBOX_.stand;CAT_HEADBOX.sitB=CAT_HEADBOX_.sit;
 const catCache={};
-function catSprite(k,eye,look,pal){
-  const key=k+'|'+eye+'|'+look+(pal?'|S':'');if(catCache[key])return catCache[key];
+function catSprite(k,eye,look,pal,wph=-1){
+  const key=k+'|'+eye+'|'+look+(pal?'|S':'')+(wph>=0?'|w'+wph:'');if(catCache[key])return catCache[key];
   let rows=(CAT_FR[k]||CAT_FR[k.replace(/B$/,'')]||CAT_FR.stand).map(r=>r.split(''));
   if((k==='standB'||k==='sitB')&&!CAT_FR[k]){const j=rows.length-(k==='sitB'?7:5);rows.splice(j,0,rows[j].slice());}
   const H0=rows.length,Wd=rows[0].length;
@@ -401,6 +400,7 @@ function catSprite(k,eye,look,pal){
     if(eye==='closed'||eye==='happy')rows[y][x]=lower?'o':'y';else if(eye==='half')rows[y][x]=lower?'E':'y';}
   // look back: mirror the head
   const hb=CAT_HEADBOX[k];if(look<0&&hb){for(let y=0;y<=hb[2];y++){const seg=rows[y].slice(hb[0],hb[1]+1).reverse();for(let i=0;i<seg.length;i++)rows[y][hb[0]+i]=seg[i];}}
+  if(wph>=0)rows=catTailWave(rows,wph/8*Math.PI*2);
   const mk=flip=>{const [c,cx]=mkCanvas(Wd,H0);for(let y=0;y<H0;y++)for(let x=0;x<Wd;x++){const ch=rows[y][x];if(ch==='.')continue;const PL=pal||CAT_PAL;cx.fillStyle=PL[ch]||PL.y;cx.fillRect(flip?Wd-1-x:x,y,1,1);}return c;};
   return catCache[key]={l:mk(false),r:mk(true),h:H0,w:Wd};
 }
@@ -427,8 +427,25 @@ function catFrameKey(P,t){
     default:return 'stand';
   }
 }
+// soft tail (user: the tail was stiff): the part of the tail beyond the body bends in a travelling wave, the tip swinging most
+function catTailWave(rows,ph){const H=rows.length,Wd=rows[0].length,src=rows.map(r=>r.slice());
+  let bY=-1;for(let y=0;y<H;y++)if(src[y].slice(12,17).join('')==='ooooo'){bY=y;break;}if(bY<1)return rows;
+  const out=src.map(r=>r.slice());
+  let up=false;for(let y=0;y<bY;y++)for(let x=17;x<Wd;x++)if(src[y][x]!=='.')up=true;
+  if(up){ // tail rises above the back: each row above the back slides sideways, more toward the tip
+    const SH=[];let pv=0;for(let y=bY-1;y>=0;y--){const d=(bY-y)/bY;pv=clamp(Math.round(Math.sin(ph-(bY-y)*.55)*2.2*d),pv-1,pv+1);SH[y]=pv;} // neighbouring rows never differ by more than 1px, so the tail never breaks
+    SH[bY]=0;for(let y=0;y<bY;y++){const sh=SH[y],sb=SH[y+1];if(!sh&&!sb)continue;
+      for(let x=17;x<Wd;x++)out[y][x]='.';for(const k of sh===sb?[sh]:[sb,sh])for(let x=17;x<Wd;x++){const c=src[y][x];if(c==='.')continue;const nx=x+k;if(nx>=17&&nx<Wd)out[y][nx]=c;}} // where the bend changes, the row is drawn at both offsets so it stays joined
+    return out;}
+  // tail held out behind (jumping): each column past the rump bobs up and down
+  let x0=Wd;for(let x=19;x<Wd;x++){let any=false;for(let y=bY;y<Math.min(H,bY+4);y++)if(src[y][x]!=='.')any=true;if(any){x0=Math.min(x0,x);}}
+  if(x0>=Wd-1)return rows;x0=Math.max(x0,20);
+  let pc=0;for(let x=x0;x<Wd;x++){const d=(x-x0+1)/(Wd-x0),pb=pc,sh=pc=clamp(Math.round(Math.sin(ph-(x-x0)*.6)*2*d),pc-1,pc+1);if(!sh&&!pb)continue;
+    for(let y=Math.max(0,bY-2);y<Math.min(H,bY+4);y++)out[y][x]='.';for(const k of sh===pb?[sh]:[pb,sh])for(let y=Math.max(0,bY-2);y<Math.min(H,bY+4);y++){const c=src[y][x];if(c==='.')continue;const ny=y+k;if(ny>=0&&ny<H)out[ny][x]=c;}}
+  return out;}
 function drawCatAt(P,t,x,y,face){
-  const eye=P.eye||'open';const look=P.hf<-.45?-1:0;const fk=catFrameKey(P,t);const s=catSprite(fk,eye,look);
+  const eye=P.eye||'open';const look=P.hf<-.45?-1:0;const fk=catFrameKey(P,t);
+  const wav=/^(stand|walk|run|crouch|jumpup|apex|fall|wag|play)/.test(fk),s=catSprite(fk,eye,look,undefined,wav?Math.floor(t*(P.k==='run'?9:5))%8:-1);
   // sitting frames keep the rump where the standing cat's hips were
   const dx=(fk.startsWith('sit')||fk.startsWith('groom')||fk==='yawn')?5:0;
   x=R(x);y=R(y);
@@ -4163,6 +4180,10 @@ const CUTS=[{a:'cut1',name:'Mở đầu',note:'Chuyến xe buýt',ok:()=>true},
   {a:'cutEnd',name:'Kết thúc',note:'Về đến nhà',ok:d=>d.includes(5)}];
 // album: the user's paintings shown in the story, each unlocked once its level is cleared
 const ALBUM=[{id:'pic1',name:'Tranh 1',note:'Bầy ong và mảnh tổ cuối cùng',lv:1},{id:'pic4',name:'Tranh 2',note:'Chó hoang và muông thú thoát khỏi rừng cháy',lv:4}];
+// Album (user): one hub holding three shelves: cutscenes, flashbacks and paintings
+function buildHub(){const d=completedLevels(),n=f=>CUTS.filter(C=>f(C)&&C.ok(d)).length,N=f=>CUTS.filter(f).length,isF=C=>C.name.startsWith('Flashback'),pics=ALBUM.filter(A=>d.includes(A.lv)).length;
+  let h=thumbCard('sec_cuts',true,CUT_TH.boss1,'Cutscene',`${n(C=>!isF(C))}/${N(C=>!isF(C))} cảnh`)+thumbCard('sec_flash',true,CUT_TH.dream1,'Flashback',`${n(isF)}/${N(isF)} giấc mơ`)+thumbCard('sec_pics',true,$('pic1').src,'Tranh',`${pics}/${ALBUM.length} bức tranh`);
+  h+='<button class="mi" type="button" data-a="back">Quay lại</button>';$('llist').innerHTML=h;}
 function buildAlbum(){const d=completedLevels();let h='';
   for(const A of ALBUM){const ok=d.includes(A.lv);h+=thumbCard('alb_'+A.id,ok,$(A.id).src,A.name,ok?A.note:`hoàn thành Màn ${LEVELS.find(L=>L.id===A.lv).n} để mở`);}
   h+='<button class="mi" type="button" data-a="back">Quay lại</button>';$('llist').innerHTML=h;}
@@ -4179,7 +4200,7 @@ function updCutView(dt){if(cutView!=='boss')return;cvT+=dt;if(boss&&boss.state!=
 // thumbnail cards: scenes the player has already reached are in colour, the rest grey (cheat still lets them play)
 function thumbCard(a,ok,img,title,note){const can=ok||cheat;return `<${can?'button type="button"':'div'} class="mi tc${ok?'':' gray'}${can?'':' locked'}" data-a="${can?a:'none'}"><img alt="" src="${img||''}"><span class="cap"><b>${ok?'':'🔒 '}${title}</b>${note}</span></${can?'button':'div'}>`;}
 function buildCuts(){const d=completedLevels();let h='';
-  for(const C of CUTS)h+=thumbCard(C.a,C.ok(d),CUT_TH[C.a],C.name,C.note);
+  const fb=menuPage==='flash';for(const C of CUTS)if(C.name.startsWith('Flashback')===fb)h+=thumbCard(C.a,C.ok(d),CUT_TH[C.a],C.name,C.note);
   h+='<button class="mi" type="button" data-a="back">Quay lại</button>';$('llist').innerHTML=h;}
 // every cutscene ends by dimming to black instead of cutting off
 const SF={a:0,dir:0,cb:null,spd:1};
@@ -4193,9 +4214,10 @@ function saveAudio(){try{localStorage.setItem('meo-ve-nha-audio',JSON.stringify(
 function adjVol(which,d){if(which==='mus')musVol=clamp(musVol+d,0,10);else{vol=clamp(vol+d,0,10);}
   if(muted&&d>0){muted=false;$('mute').textContent='♪ on';}applyVol();drawVol();saveAudio();if(which==='sfx')tone(660,660,.06,'square',.05);}
 function menuMark(){MI().forEach((el,i)=>{el.classList.toggle('sel',i===menuSel);if(i===menuSel&&menuPage!=='main'&&el.scrollIntoView)try{el.scrollIntoView({block:'nearest'});}catch(e){}});}
-function setPage(pg){menuPage=pg;if(pg==='levels')buildLevels();if(pg==='cuts')buildCuts();if(pg==='album')buildAlbum();$('llist').classList.toggle('thumbs',pg==='cuts'||pg==='album');$('llist').classList.toggle('alb',pg==='album');$('llist').classList.toggle('lv',pg==='levels');$('mlist').hidden=pg!=='main';$('slist').hidden=pg!=='sound';$('llist').hidden=pg!=='levels'&&pg!=='cuts'&&pg!=='album';$('menuKeys').textContent=pg==='main'?'↑ ↓ chọn · Enter xác nhận · Esc đóng':'↑ ↓ chọn · ← → chỉnh âm lượng · Esc quay lại';
-  menuSel=0;drawVol();menuMark();document.querySelector('#ovMenu h2').textContent=pg==='main'?'Cài đặt':pg==='sound'?'Âm thanh':pg==='cuts'?'Cutscene':pg==='album'?'Album ảnh':'Chọn màn';
-  if(pg==='cuts'||pg==='album'){$('menuKeys').textContent='← → ↑ ↓ chọn · Enter xem · Esc quay lại';}
+const GRID_PG=['album','cuts','flash','pics'];
+function setPage(pg){menuPage=pg;if(pg==='levels')buildLevels();if(pg==='cuts'||pg==='flash')buildCuts();if(pg==='pics')buildAlbum();if(pg==='album')buildHub();$('llist').classList.toggle('thumbs',GRID_PG.includes(pg));$('llist').classList.toggle('alb',pg==='album'||pg==='pics');$('llist').classList.toggle('lv',pg==='levels');$('mlist').hidden=pg!=='main';$('slist').hidden=pg!=='sound';$('llist').hidden=pg!=='levels'&&!GRID_PG.includes(pg);$('menuKeys').textContent=pg==='main'?'↑ ↓ chọn · Enter xác nhận · Esc đóng':'↑ ↓ chọn · ← → chỉnh âm lượng · Esc quay lại';
+  menuSel=0;drawVol();menuMark();document.querySelector('#ovMenu h2').textContent=pg==='main'?'Cài đặt':pg==='sound'?'Âm thanh':pg==='cuts'?'Cutscene':pg==='flash'?'Flashback':pg==='pics'?'Tranh':pg==='album'?'Album':'Chọn màn';
+  if(GRID_PG.includes(pg)){$('menuKeys').textContent='← → ↑ ↓ chọn · Enter xem · Esc quay lại';}
   if(pg==='levels'){$('menuKeys').textContent='↑ ↓ chọn · Enter chơi · Esc quay lại';const it=MI();const k=it.findIndex(e=>!e.classList.contains('locked'));menuSel=Math.max(0,k);menuMark();}}
 function openMenu(){if(state!=='play'||paused)return;paused=true;keys.L=keys.R=keys.J=false;show('banner',false);$('cheatBox').hidden=true;$('cheatMsg').textContent='';setPage('main');show('ovMenu',true);}
 function closeMenu(){paused=false;show('ovMenu',false);$('menuBtn').blur();if(fromTitle){fromTitle=false;if(state==='title')show('ovTitle',true);}}
@@ -4209,7 +4231,6 @@ function titleDo(a){ensureAudio();
   if(a==='new'){runReset();startCut();}
   else if(a==='cont'){const n=contLevel();if(!n){tone(200,120,.15,'square',.05);return;}startLevel(n);}
   else if(a==='levels')openTitleSub('levels');
-  else if(a==='cuts')openTitleSub('cuts');
   else if(a==='album')openTitleSub('album');
   else if(a==='opt')openTitleSub('sound');
   else if(a==='quit'){ // a web page can't really quit: try to close the tab, leave fullscreen, go quiet and show a goodbye screen
@@ -4222,7 +4243,9 @@ function menuDo(a){
   else if(a==='sound')setPage('sound');
   else if(a==='levels')setPage('levels');
   else if(a==='home'){closeMenu();cutView=false;LV=1;lastCheck=140;resetLevel();setState('title');}
+  else if(a==='back'&&(menuPage==='cuts'||menuPage==='flash'||menuPage==='pics')){const from=menuPage;setPage('album');menuSel=['cuts','flash','pics'].indexOf(from);menuMark();}
   else if(a==='back'&&fromTitle){closeMenu();}
+  else if(/^sec_/.test(a))setPage({sec_cuts:'cuts',sec_flash:'flash',sec_pics:'pics'}[a]);
   else if(a==='cut1'){closeMenu();cutView=true;lastCheck=140;startCut();}
   else if(a==='cut5'){closeMenu();cutView=true;startLevel(5);}
   else if(a==='cutEnd'){closeMenu();cutView=true;LV=5;startEnding();}
@@ -4260,7 +4283,7 @@ function menuKey(e){
   const c=e.code;e.preventDefault();
   if(c==='Escape'){if(menuPage!=='main'){menuDo('back');}else closeMenu();return;}
   const items=MI();const cur=items[menuSel].dataset.a;
-  if(menuPage==='cuts'||menuPage==='album'){const cols=getComputedStyle($('llist')).gridTemplateColumns.split(' ').length||1,n=items.length,last=n-1;let k=menuSel;
+  if(GRID_PG.includes(menuPage)){const cols=getComputedStyle($('llist')).gridTemplateColumns.split(' ').length||1,n=items.length,last=n-1;let k=menuSel;
     if(c==='ArrowRight'||c==='KeyD')k=Math.min(last,k+1);else if(c==='ArrowLeft'||c==='KeyA')k=Math.max(0,k-1);else if(c==='ArrowDown'||c==='KeyS')k=k===last?last:Math.min(last,k+cols);else if(c==='ArrowUp'||c==='KeyW')k=k===last?Math.max(0,last-1):Math.max(0,k-cols);else k=-1;
     if(k>=0){menuSel=k;menuMark();return;}}
   if(c==='ArrowDown'||c==='KeyS'){menuSel=(menuSel+1)%items.length;menuMark();}
