@@ -2513,6 +2513,8 @@ function dogMask(k,o={}){const rows=Array.isArray(k)?k:DOGMASK[k],w=rows[0].leng
     // fur strands flowing back along the body
     for(let k2=0;k2<Math.floor(w*h/40);k2++){const x=Math.floor(hashD(k2*7+w)*w),y=Math.floor(hashD(k2*13+h)*h);if(!on(x,y)||!on(x+2,y+1)||!on(x,y-2))continue;
       for(let i=0;i<3;i++){const c=m.get(x+1+i,y+1+Math.round(i*.5));if(c===D||c===SAD||c===CC||c===EE)m.px(x+1+i,y+1+Math.round(i*.5),c===SAD?'#3e3834':c===EE?CC:c===CC?BB:CC);}}
+    // keep narrow gaps (between legs, behind the ear) open like the reference, instead of filling them with outline
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(!any(x,y)){const L=any(x-1,y)||any(x-2,y),Rr=any(x+1,y)||any(x+2,y),U=any(x,y-1),Dn=any(x,y+1)||any(x,y+2);if((L&&Rr&&(any(x-1,y)||any(x+1,y)))||(U&&Dn))m.px(x+1,y+1,'__');}
     // face: dark nose, lip line, red eye (or dazed X), bared teeth when snarling
     const ex=x0+(o.eye?o.eye[0]:5),ey=ys+(o.eye?o.eye[1]:-1);
     if(o.ear){const [ax,ay]=o.ear;for(let i=0;i<6;i++)for(let j=0;j<3;j++){const X=x0+ax+i,Y=ys+ay+j+Math.floor(i/3);if(on(X,Y)&&on(X,Y+1))m.px(X+1,Y+1,j===0?'#2a2420':i===0?'#141010':BB);}
