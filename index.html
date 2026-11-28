@@ -1134,7 +1134,7 @@ function startBeeSave1(b){bossSet('q_fall');b.vx=0;b.vy=-60;b.dir=-1;b.tx=HIVE_L
   apple=null;const sw=[];for(const e of enemies)if(e.type==='minion'&&e.alive)sw.push({x:e.x,y:e.y-6});enemies=enemies.filter(e=>e.type!=='minion');
   for(let i=sw.length;i<16;i++)sw.push({x:ARENA_X+(i%2?-20:W+20),y:20+hashD(i*7)*60});
   b.swarm=sw.map((s,i)=>({x:s.x,y:s.y,ph:hashD(i*13)*6.3,i,tx:0,ty:0,wT:0,vx:0,vy:0}));}
-function updBeeSave1(b,dt){const t=b.t,lg=b.lg,HX=HIVE_LAST(),SPOT=HX+15;p.vx=0;b.walkC=0;
+function updBeeSave1(b,dt){const t=b.t,lg=b.lg,HX=HIVE_LAST(),SPOT=HX+15;p.vx=0;b.walkC=0;p.idleT=0;
   const go=s=>bossSet(s);
   // the swarm: hovers high and wary, then rings the cat, then streams away to the top right
   if(b.swarm)for(const s of b.swarm){let tx,ty;const a=s.ph+gt*(1.4+(s.i%3)*.3);
@@ -1156,7 +1156,7 @@ function updBeeSave1(b,dt){const t=b.t,lg=b.lg,HX=HIVE_LAST(),SPOT=HX+15;p.vx=0;
     case 'q_see':{b.y=GROUND_Y-30+Math.sin(gt*3)*2;b.dir=p.x<b.x?-1:1;p.face=Math.sign(b.x-p.x)||1;if(t>1.8){p.bub=0;SFX.buzz();go('q_circle');}break;}
     case 'q_circle':{const a=t*2.2;b.x=lerp(b.x,p.x+Math.cos(a)*14,Math.min(1,dt*3));b.y=lerp(b.y,p.y-30+Math.sin(a)*4,Math.min(1,dt*3));b.dir=Math.sin(a)>0?-1:1;p.face=Math.sin(t*1.3)>0?1:-1;
       if(t>.4&&Math.random()<dt*2)SFX.buzz();if(t>3.4){SFX.buzz();go('q_leave');}break;}
-    case 'q_leave':{b.dir=1;b.x+=(70+t*60)*dt;b.y-=(30+t*30)*dt;p.face=1;if(t>3.2){go('q_gone');if(state==='play')winLevel();}break;}
+    case 'q_leave':{b.dir=1;b.x+=(70+t*60)*dt;b.y-=(30+t*30)*dt;p.face=1;const camR=cam+W+8;if(t>3.2&&(t>9||b.swarm.every(s=>s.y<-8||s.x>camR))&&(b.y<-20||b.x>camR)){go('q_gone');if(state==='play')winLevel();}break;}
     case 'q_gone':{b.x=ARENA_X+W+200;b.y=-100;if(t>2){b.swarm=null;b.state2='gone';}break;}
   }
   if(lg){lg.t+=dt;if(lg.st==='creak'){lg.ang=Math.sin(lg.t*30)*.06;lg.x=ARENA_X+300+Math.sin(lg.t*40)*.6;}
@@ -1175,12 +1175,12 @@ function drawLog1(cx,behind){const b=boss;if(LV!==1||!b||!b.state.startsWith('q_
   if(lg.st==='creak'&&Math.sin(gt*20)>0)rect(X-2,Y+10,1,1,'#c8a070');}
 function drawArenaFront1(cx){if(!A1)makeArena1();const ax=ARENA_X-R(cx);if(ax>W+20||ax<-W-60)return;
   // the abandoned chainsaw, its bar driven into the edge of the stump and still idling: shakes, puffs blue exhaust, sawdust spitting out of the cut
-  const on=state!=='title',f=on?Math.floor(gt*24)%2:0,jx=on?Math.round(Math.sin(gt*61)*.6):0,jy=on&&Math.sin(gt*47)>.3?-1:0,sx=ax+16,sy=GROUND_Y-20;
-  ctx.save();ctx.translate(sx+jx,sy+jy);ctx.rotate(.42);ctx.drawImage(A1.saw[f].r,-12,-10);ctx.restore();
+  // the chainsaw lies switched off on the ground beside the stump
+  ctx.save();ctx.translate(ax+8,GROUND_Y-7);ctx.rotate(-.04);ctx.drawImage(A1.saw[0].r,-23,-8);ctx.restore();
   ctx.drawImage(A1.stump,R(ax+ST1.cx-A1.sox),GROUND_Y-A1.soy);
   rect(ax+38,GROUND_Y-1,3,1,'#3e2214');rect(ax+37,GROUND_Y,1,3,'#2a160c'); // the kerf the bar has cut
-  if(on){for(let i=0;i<4;i++){const q=(gt*.9+i/4)%1;alpha(.3*(1-q),()=>rect(R(sx-10-q*10+Math.sin(q*7+i)*2),R(sy-4-q*16),2+Math.floor(q*2),2,'#a8b0bc'));}
-    for(let i=0;i<4;i++){const q=(gt*2.3+i/4)%1;rect(R(ax+36-q*10),R(GROUND_Y-2-q*6+q*q*12),1,1,i%2?'#e8cc96':'#c8a070');}}
+  // the old woodcutter's axe, its blade bitten into the stump's face
+  {const X=ax+70;ctx.drawImage(AXE.r,X-9,GROUND_Y-23);rect(X-5,GROUND_Y,11,1,'#3a2012');rect(X-1,GROUND_Y+1,3,2,'#2a160c');}
   for(let x=-6;x<=4;x++){const h=Math.round(2*Math.cos(x/6*1.5));for(let y=0;y<h;y++)rect(ax+30+x,GROUND_Y-y,1,1,y?'#e8cc96':'#c8a070');} // a little heap of sawdust
   const h=HIVE1[6],s=A1.hive[h.s];ctx.drawImage(s.r,R(ax+h.x-s.w/2),GROUND_Y-12); // a chunk fallen onto the face
   drawLog1(cx,false);
@@ -1189,7 +1189,7 @@ function drawArenaFront1(cx){if(!A1)makeArena1();const ax=ARENA_X-R(cx);if(ax>W+
     if(apple.hit&&apple.y>=GROUND_Y-5)alpha(.8,()=>{rect(X-6,GROUND_Y,12,1,'#e8961a');rect(X-4,GROUND_Y-1,8,1,'#f4b834');});}
 }
 let saw1T=0;
-function sawSound1(dt){if(LV!==1||state==='title'||!ac||muted)return;const d=Math.abs(p.x-(ARENA_X+20));if(d>260)return;saw1T-=dt;if(saw1T>0)return;saw1T=.085;const v=.018*(1-d/260);tone(62+Math.random()*6,48,.07,'sawtooth',v);}
+function sawSound1(dt){return;if(LV!==1||state==='title'||!ac||muted)return;const d=Math.abs(p.x-(ARENA_X+20));if(d>260)return;saw1T-=dt;if(saw1T>0)return;saw1T=.085;const v=.018*(1-d/260);tone(62+Math.random()*6,48,.07,'sawtooth',v);}
 
 /* ================= level 2: Hồ Sen (lotus pond) ================= */
 const WATER_Y=148,PAD_W=28;
