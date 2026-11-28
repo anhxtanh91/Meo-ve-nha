@@ -3541,9 +3541,9 @@ for(let i=0;i<26;i++){const k=((gt*(.1+hashD(i*3)*.08)+hashD(i*5))%1),x=((hashD(
 function drawRain4(cx){alpha(.1*rainK,()=>rect(0,0,W,H,'#9aa8b8'));for(let i=0;i<Math.floor(160*rainK);i++){const x0=hash(i*7+1)*(W+60),y0=hash(i*13+2)*(H+30);const sp=i<100?300:440;const y=((y0+gt*sp)%(H+30))-20,x=((x0-gt*sp*.28-cx*(i<100?.3:1))%(W+60)+W+60)%(W+60)-30;alpha(i<100?.45:.7,()=>{for(let k=0;k<(i<100?6:9);k++)rect(x-k*.28,y+k,1,1,i<100?'#aab6c4':'#e2eaf4');});}}
 
 /* ---------- wild dog boss ---------- */
-/* ---------- Quạ Đầu Đàn: perches on the power line out of reach; a scarecrow springboard launches the cat up ---------- */
+/* ---------- Quạ Đầu Đàn: perches on the giant scarecrow's arms out of reach (her nest is in its ribcage); a scarecrow springboard launches the cat up ---------- */
 const POLE_L=()=>ARENA_X+16,POLE_R=()=>ARENA_X+W-16,SCARE_X=()=>ARENA_X+W/2,SCARE_TOP=GROUND_Y-33;
-const wireY=x=>{const a=POLE_L(),b=POLE_R();return 54+12*Math.sin(Math.PI*clamp((x-a)/(b-a),0,1));};
+const wireY=x=>GS3.beam; // the crow walks along the giant scarecrow's iron crossbar
 let scareWob=0;
 const ROCK_C={o:'#1e1a16',d:'#5a5248',m:'#8a8274',l:'#b8b0a0',w:'#e8e2d2'};
 const ROCK_S=['...oooo...','..ommmmo..','.omlwlmmo.','omlwlmmmdo','ommlmmmmdo','ommmmmdddo','.ommmdddo.','..oooooo..','..........'];
@@ -3618,17 +3618,103 @@ function updCrowBoss(dt){
     b.hits++;b.flash=.5;b.ivT=3.5;p.launch=0;p.vy=60;SFX.bossHit();SFX.caw();puff(b.x,b.y-8,14,'#2c2838',70,60,.7);puff(b.x,b.y-8,6,'#fff3a0',50,40,.4);bossBar();
     if(b.hits>=3){bossSet('dead');b.vy=-120;b.vx=40;}else{bossSet('hit');b.vy=-90;b.vx=(b.x<ARENA_X+W/2?1:-1)*60;b.spd*=1.15;b.flockT=Math.min(b.flockT,2);}}}
 }
+// ---- the giant scarecrow: iron bars, torn sacks, barbed wire and rotten straw, a torn straw hat; the Crow Queen's nest sits in its hollow ribcage ----
+const GS3={W:300,H:142,cx:150,beam:57}; // drawn at arena x+10, screen y 2; beam = top of the iron crossbar (where the crow walks)
+let GS3C=null;
+function giantScare3(){if(GS3C)return GS3C;const {W:w,H:h,cx}=GS3,[c,g]=mkCanvas(w,h),r=mulberry(3303);const Y0=2;
+  const P=(x,y,ww,hh,col)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y)-Y0,ww,hh);};
+  const RU=['#2a1410','#4a2418','#6a3420','#8a4626','#a85c30','#d07a3c'],SK=['#3a2818','#5a4028','#7a5a38','#9a7848','#b89462'],ST=['#5a4824','#7a6430','#a08440','#c8a858','#e0c478'],HT=['#5a4020','#8a6a30','#b89048','#d8b060','#f0d488'],BW=['#262224','#4a4648','#7a7678'];
+  const line=(x0,y0,x1,y1,col,th=1)=>{const n=Math.max(1,Math.ceil(Math.hypot(x1-x0,y1-y0)));for(let i=0;i<=n;i++)P(x0+(x1-x0)*i/n-(th>>1),y0+(y1-y0)*i/n-(th>>1),th,th,col);};
+  // a rusted iron bar between two points, lit along the top edge, pitted with rust
+  const bar=(x0,y0,x1,y1,th)=>{const n=Math.max(1,Math.ceil(Math.hypot(x1-x0,y1-y0))),nx=-(y1-y0)/n,ny=(x1-x0)/n;
+    for(let i=0;i<=n;i++){const x=x0+(x1-x0)*i/n,y=y0+(y1-y0)*i/n;for(let k=0;k<th;k++){const o=k-(th-1)/2,v=th>1?k/(th-1):.5;P(x+nx*o,y+ny*o,1,1,v<.2?RU[4]:v<.5?RU[3]:v<.8?RU[2]:RU[1]);}
+      if(r()<.07)P(x,y,1,1,RU[5]);else if(r()<.06)P(x+nx,y+ny,1,1,RU[0]);}};
+  // ---- the post and its splayed brace legs, down to the ground ----
+  bar(cx-1,100,cx-1,GROUND_Y,5);bar(cx,104,cx-22,GROUND_Y,3);bar(cx,104,cx+22,GROUND_Y,3);
+  for(const s of [-1,1]){P(cx+s*22-3,GROUND_Y-2,7,2,RU[1]);P(cx+s*22-3,GROUND_Y-2,7,1,RU[3]);}
+  for(let y=110;y<GROUND_Y;y+=6)P(cx-3,y,5,1,RU[1]);
+  // ---- the spine and the hollow ribcage: curved iron ribs round a dark hollow ----
+  bar(cx,48,cx,104,4);
+  // a few rags of sacking hang inside the cage; the sky shows through between the ribs
+  for(let i=0;i<4;i++){const x=cx-16+i*10+r()*3,l=6+r()*8;for(let j=0;j<l;j++)P(x+Math.round(Math.sin(j*.5+i)),66+j,2,1,j%3?SK[1]:SK[0]);}
+  for(let i=0;i<6;i++){const y0=62+i*6.5,sp=24-Math.abs(i-2)*2.6,dn=10+i*.6;for(const s of [-1,1]){if(i===4&&s>0)continue; // one rib snapped off
+      let px=cx,py=y0;for(let k=1;k<=14;k++){const t=k/14,x=cx+s*sp*Math.sin(t*Math.PI*.78),y=y0+(1-Math.cos(t*Math.PI*.78))*dn*.55+t*3;bar(px,py,x,y,2);px=x;py=y;}
+      P(px-1,py,2,2,RU[0]);}}
+  {const s=1,i=4,y0=62+i*6.5;let px=cx,py=y0;for(let k=1;k<=6;k++){const t=k/14,x=cx+s*22*Math.sin(t*Math.PI*.78),y=y0+t*4;bar(px,py,x,y,2);px=x;py=y;}P(px,py-1,1,3,RU[5]);}
+  // ---- the nest in the bottom of the ribcage: twigs, wire, straw and scraps of plastic ----
+  for(let i=0;i<140;i++){const a=r()*Math.PI,rr=18+r()*12,x=cx+Math.cos(a)*rr*(r()<.5?1:-1)*.95,y=100+Math.sin(a)*4+r()*6,l=3+r()*6,an=(r()-.5)*.9;line(x,y,x+Math.cos(an)*l,y+Math.sin(an)*l,r()<.6?['#3a2414','#5a3a20','#7a5430'][Math.floor(r()*3)]:ST[Math.floor(r()*4)]);}
+  for(let i=0;i<10;i++){const x=cx-24+r()*48,y=99+r()*7;P(x,y,2+Math.floor(r()*3),1,['#d8d4c8','#3a6a9a','#c84a3a','#e8e0a0'][Math.floor(r()*4)]);}
+  for(let i=0;i<5;i++){const x=cx-22+r()*44,y=100+r()*5;line(x,y,x+5,y+1,BW[2]);}
+  // ---- a ragged sack vest draped over the shoulders, torn open across the chest ----
+  for(const s of [-1,1]){for(let y=60;y<96;y++){const x0=cx+s*(14+Math.max(0,(y-60)*.35)),x1=cx+s*(33-Math.max(0,(y-78)*.6));const a=Math.min(x0,x1),b=Math.max(x0,x1);
+      for(let x=Math.round(a);x<=b;x++){if(y>86&&r()<(y-86)/12)continue;const sh=(x+y*3)%5===0?SK[1]:y<62?SK[4]:(s>0&&x>b-3)||(s<0&&x<a+3)?SK[1]:SK[2+((x*7+y)%9===0?1:0)];P(x,y,1,1,sh);}}
+    for(let k=0;k<5;k++){const x=cx+s*(16+k*3.5),y=94+r()*5;line(x,86,x+s*(r()-.5)*2,y,SK[1]);}
+    P(cx+s*24,70,3,3,'#6a4a5a');P(cx+s*24,70,3,1,'#8a6a7a');P(cx+s*20,80,2,2,SK[0]);} // a patch, a hole
+  // ---- the crossbar arms: an iron I-beam, sacks hanging from it, straw bursting out of the torn ends ----
+  const L0=8,R0=w-8,BY=GS3.beam;
+  for(let x=L0;x<=R0;x++){P(x,BY,1,1,RU[5]);P(x,BY+1,1,1,RU[4]);P(x,BY+2,1,1,RU[3]);P(x,BY+3,1,1,RU[2]);P(x,BY+4,1,1,RU[1]);if(r()<.08)P(x,BY+2,1,1,RU[1]);if(x%22===4){P(x,BY+1,1,1,'#2a1410');P(x,BY+3,1,1,'#2a1410');}}
+  for(const s of [-1,1]){const xa=cx+s*38,xb=cx+s*128;for(let x=Math.min(xa,xb);x<=Math.max(xa,xb);x++){const u=Math.abs(x-cx)/128,hang=Math.round(9+7*Math.sin(u*9+s)+(r()<.3?2:0)*(u>.5?1:0));
+      for(let y=BY+5;y<BY+5+hang;y++)P(x,y,1,1,y===BY+5?SK[3]:((x*3+y)%6===0?SK[1]:y>BY+hang?SK[1]:SK[2]));}
+    // the sleeve ends: straw bursting out and hanging down
+    const ex=cx+s*130;for(let i=0;i<28;i++){const x=ex+s*r()*10,l=6+r()*16;line(x,BY+5+r()*4,x+s*(r()*4),BY+5+l,ST[1+Math.floor(r()*4)]);}
+    // the rope cinching each sleeve
+    for(let y=BY+3;y<BY+18;y++)P(ex-s*2,y,2,1,y%2?'#8a7448':'#5a4a2c');}
+  // barbed wire coiled round the arms and the spine
+  for(const s of [-1,1])for(let x=cx+s*12;Math.abs(x-cx)<136;x+=s*1){const t=Math.abs(x-cx),y=BY+2.5+Math.sin(t*.55)*3.6;P(x,y,1,1,Math.sin(t*.55)>0?BW[1]:BW[0]);if(Math.round(t)%9===0){P(x-1,y-1,1,1,BW[2]);P(x+1,y+1,1,1,BW[2]);P(x+1,y-1,1,1,BW[1]);P(x-1,y+1,1,1,BW[1]);}}
+  for(let y=62;y<104;y++){const x=cx+Math.sin(y*.6)*5;if(Math.abs(x-cx)>2.5||y%3===0)P(x,y,1,1,BW[1]);if(y%8===0){P(x-1,y,1,1,BW[2]);P(x+1,y,1,1,BW[2]);}}
+  // ---- neck: straw bursting from a sack collar tied with wire ----
+  for(let i=0;i<30;i++){const x=cx-9+r()*18;line(x,44+r()*3,x+(r()-.5)*5,52+r()*6,ST[1+Math.floor(r()*4)]);}
+  for(let x=cx-8;x<=cx+8;x++){P(x,51,1,1,BW[1]);if(x%3===0)P(x,50,1,1,BW[2]);}
+  // ---- head: a stuffed burlap sack, stitched mouth, two torn eye holes ----
+  for(let y=22;y<50;y++){const v=(y-36)/14,half=Math.round(16*Math.sqrt(Math.max(0,1-v*v))*(y>44?1-(y-44)*.06:1));for(let x=-half;x<=half;x++){const e=Math.abs(x)>half-2,wv=(x+y)%4===0||(x-y)%4===0;
+      P(cx+x,y,1,1,y<24?SK[4]:e?SK[1]:wv?SK[2]:x<-half*.3?SK[4]:SK[3]);}}
+  for(const s of [-1,1]){for(let k=0;k<4;k++)line(cx+s*(6-k*.5),30+k*.4,cx+s*(10+k*.3),31+k*1.6,'#1a0c08',1);P(cx+s*5,31,7*s>0?6:6,5,'#0e0604');P(cx+(s>0?4:-10),30,6,6,'#120806');}
+  for(let x=-8;x<=8;x++){P(cx+x,42+Math.round(Math.abs(x)*.12),1,1,'#2a1810');if(x%2===0)line(cx+x,40,cx+x,44,'#4a3018');}
+  P(cx-12,35,3,2,SK[1]);P(cx+10,25,2,3,'#6a4a5a'); // a patch on the forehead, a hole in the cheek
+  for(let i=0;i<10;i++){const x=cx-14+r()*28;line(x,48,x+(r()-.5)*4,50+r()*3,ST[3]);}
+  // ---- the torn straw hat: wide sagging brim, a crown with holes, straw unravelling ----
+  for(let x=-34;x<=34;x++){const sag=Math.round((x/34)**2*4),yb=20+sag;if(Math.abs(x)>28&&r()<.35)continue;for(let y=yb;y<yb+3;y++)P(cx+x,y,1,1,y===yb?HT[4]:(x+y)%3===0?HT[1]:HT[2]);}
+  for(let y=4;y<20;y++){const half=Math.round(14+(y-4)*.25);for(let x=-half;x<=half;x++){const weave=(x*2+y)%4===0;P(cx+x,y,1,1,y===4?HT[4]:x<-half+2?HT[1]:weave?HT[1]:x<0?HT[3]:HT[2]);}}
+  P(cx-15,17,31,2,'#6a2a20');P(cx-15,17,31,1,'#8a3a2a'); // faded band
+  P(cx+3,6,5,4,'#120806');P(cx-9,10,3,3,'#120806');P(cx+30,21,4,2,'#120806');P(cx-26,21,3,1,'#120806'); // holes
+  for(let i=0;i<16;i++){const x=cx-34+r()*68,a=r()<.5;line(x,22,x+(r()-.5)*4,25+r()*5,HT[1+Math.floor(r()*3)]);if(a)line(cx+(r()-.5)*26,4,cx+(r()-.5)*30,r()*3,HT[3]);}
+  // rim light from the low sun behind the scarecrow
+  {const d=g.getImageData(0,0,w,h),q=d.data,o=new Uint8ClampedArray(q);for(let y=1;y<h;y++)for(let x=1;x<w-1;x++){const i=(y*w+x)*4;if(!o[i+3])continue;const up=((y-1)*w+x)*4,lf=(y*w+x-1)*4;if(!o[up+3]||!o[lf+3]){q[i]=Math.min(255,q[i]*1.25+40);q[i+1]=Math.min(255,q[i+1]*1.12+14);q[i+2]=q[i+2]*1.02;}}g.putImageData(d,0,0);}
+  return GS3C=c;}
+// ---- the hungry chicks in the nest: fuzzy grey heads, huge gaping beaks with yellow flanges ----
+const GS3_CH=(()=>{const a=[],r=mulberry(77);for(let i=0;i<13;i++){const row=i<7?0:1;a.push({x:row?-19+(i-7)*7.6+r()*2:-24+i*8+r()*2,y:row?101:97+r()*2,ph:r()*6,sp:2.5+r()*3,big:r()<.3,lean:r()<.5?-1:0});}return a;})();
+function drawChick3(x,y,open,lean,big){x=R(x);y=R(y);const s=big?1:0;
+  // fuzzy grey head and neck stretched up out of the nest
+  rect(x-1,y,3,4,'#2a2632');rect(x-2-s,y-2,5+s*2,3,'#2a2632');rect(x-1-s,y-3,3+s*2,1,'#2a2632');rect(x-2-s,y-2,1,1,'#4a4656');rect(x-1-s,y-3,2,1,'#5a5666');
+  rect(x+lean,y-2,1,1,'#0a0808');
+  // the beak points up at the sky; open, it is a big gaping V with yellow flanges round a red throat
+  const bx=x+lean,by=y-3-s;
+  if(open>.35){const o=open>.75?3:2;for(let k=0;k<=o;k++){rect(bx-1-Math.round(k*.6),by-k,1,1,k===0?'#f0c840':'#5a5048');rect(bx+1+Math.round(k*.6),by-k,1,1,k===0?'#f0c840':'#5a5048');}
+    for(let k=1;k<=o;k++)rect(bx-Math.round(k*.6),by-k,1+Math.round(k*1.2)-0,1,k<2?'#b83a30':'#e05848');rect(bx-1,by,3,1,'#f0c840');}
+  else{rect(bx,by-1,1,2,'#5a5048');rect(bx,by-2,1,1,'#7a7068');}}
+let GS3L=null;function GS3_LIP(){if(GS3L)return GS3L;const [c,g]=mkCanvas(60,12),r=mulberry(909);for(let i=0;i<90;i++){const x=3+r()*54,y=3+r()*6+Math.abs(x-30)*-.05,l=3+r()*6,an=(r()-.5)*.7,col=r()<.6?['#3a2414','#5a3a20','#7a5430'][Math.floor(r()*3)]:['#7a6430','#a08440','#c8a858'][Math.floor(r()*3)];
+    for(let k=0;k<l;k++){g.fillStyle=col;g.fillRect(Math.round(x+Math.cos(an)*k),Math.round(y+Math.sin(an)*k),1,1);}}return GS3L=c;}
+function drawGiantScare3(cx){const X=R(ARENA_X+10-cx),C=giantScare3(),b=boss&&boss.kind==='crow2'?boss:null;ctx.drawImage(C,X,2);const mx=X+GS3.cx;
+  // dull red glints deep in the eye holes, brighter when the Crow Queen is close
+  const pl=.5+.5*Math.sin(gt*2.3);for(const s of [-1,1]){rect(mx+s*7-(s<0?1:0),33,1,1,'#7a1008');if(pl>.6)rect(mx+s*7-(s<0?1:0),33,1,1,'#c02010');}
+  // torn sack strips and rags fluttering in the wind from the arms and vest
+  for(let i=0;i<14;i++){const s=i<7?-1:1,k=i%7,x=mx+s*(44+k*13),y=GS3.beam+5+10+((k*5)%4),l=4+(k*3)%5,sw=Math.sin(gt*3+i*1.7)*1.4;
+    for(let j=0;j<l;j++)rect(x+Math.round(sw*j/l),y+j,1,1,j<l-1?'#5a4028':'#3a2818');}
+  for(const s of [-1,1])for(let k=0;k<3;k++){const x=mx+s*(18+k*5),sw=Math.sin(gt*2.6+k+s)*1.2;for(let j=0;j<5;j++)rect(x+Math.round(sw*j/5),96+k+j,1,1,'#5a4028');}
+  // the chicks: they stretch up and gape, screaming harder whenever their mother calls or comes near
+  const hungry=b&&(b.state==='call'||Math.abs(b.x-(ARENA_X+160))<40)?1:0;
+  for(const c of GS3_CH){const v=Math.sin(gt*c.sp+c.ph),open=clamp(v*.9-.1+hungry*.7,0,1),up=Math.round(Math.max(0,v)*2+hungry*2);drawChick3(mx+c.x,c.y-up,open,c.lean,c.big);}
+  ctx.drawImage(GS3_LIP(),mx-30,98);
+  if(hungry&&Math.random()<.04)tone(3200+Math.random()*900,3600,.04,'square',.008);
+  // the straw-bale springboard at its feet
+  const sx=R(SCARE_X()-cx),sq=scareWob>.45?2:0,w=scareWob>0?Math.round(Math.sin(scareWob*30)*1.5*scareWob/.6):0;
+  for(let k=0;k<2;k++){const y=GROUND_Y-16-k*16+(k?sq:sq>>1),x=sx-11+(k?1:0)+(k?w:0),hh=16-(k?0:sq>>1);
+    rect(x,y,22,hh,'#a08440');rect(x,y,22,1,'#e0c478');rect(x,y+1,22,1,'#c8a858');for(let j=0;j<22;j+=3)rect(x+j,y+2,1,hh-3,'#7a6430');rect(x+21,y+1,1,hh-1,'#5a4824');rect(x,y+hh-1,22,1,'#5a4824');
+    rect(x+5,y,1,hh,'#3a3030');rect(x+16,y,1,hh,'#3a3030'); // baling wire
+    for(let j=0;j<5;j++)rect(x-1+((j*7+k*3)%23),y-1-(j%2),1,2,'#c8a858');}
+}
 function drawArena3(cx){
-  const a=POLE_L()-cx,bb=POLE_R()-cx;
-  for(const x of [a,bb]){rect(x-2,38,4,GROUND_Y-38,'#4a2e2a');rect(x-1,38,1,GROUND_Y-38,'#6a4438');rect(x-9,44,18,3,'#4a2e2a');rect(x-8,44,16,1,'#6a4438');rect(x-7,52,2,2,'#c8c8b8');rect(x+5,52,2,2,'#c8c8b8');}
-  for(let x=Math.floor(a);x<=bb;x++){const y=wireY(x+cx);rect(x,y,1,1,'#2a1a28');rect(x,y+6,1,1,'#3a2434');}
-  // scarecrow springboard
-  const sx=R(SCARE_X()-cx),w=scareWob>0?Math.round(Math.sin(scareWob*30)*2*scareWob/.6):0,top=SCARE_TOP+(scareWob>.45?2:0);
-  rect(sx-1,top+8,3,GROUND_Y-top-8,'#6a4428');rect(sx-14+w,top+12,29,2,'#6a4428');
-  rect(sx-6+w,top+11,13,11,'#8a4a5a');rect(sx-6+w,top+11,13,1,'#a85a6a');rect(sx-2+w,top+14,1,1,'#e8c060');rect(sx+2+w,top+17,1,1,'#e8c060');
-  for(const d of [-15,13])for(let i=0;i<3;i++)rect(sx+d+w,top+12+i,2,1,'#e8c070');
-  rect(sx-5+w,top,11,9,'#e8c890');rect(sx-5+w,top,11,1,'#f8e0b0');rect(sx-3+w,top+3,2,2,'#3a2418');rect(sx+2+w,top+3,2,2,'#3a2418');rect(sx-2+w,top+6,5,1,'#8a5a3a');
-  rect(sx-8+w,top-1,17,2,'#c89a40');rect(sx-4+w,top-4,9,3,'#c89a40');rect(sx-4+w,top-4,9,1,'#e0b860');
+  drawGiantScare3(cx);const sx=R(SCARE_X()-cx),top=SCARE_TOP;
   // hint arrow while the boss is up
   if(boss&&boss.kind==='crow2'&&boss.hits===0&&boss.state==='perch'&&Math.floor(gt*2)%2)rect(sx,top-9,1,3,'#fff0b0');
 }
