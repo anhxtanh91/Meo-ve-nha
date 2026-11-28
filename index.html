@@ -3266,7 +3266,7 @@ function drawArena6(cx){const b=boss&&boss.kind==='rat6'?boss:null,X=ARENA_X-cx,
       ctx.drawImage(M,0,M.height-hh,M.width,hh,R(X+174)+sh,G0-hh+1,M.width,hh);}}
   if(b&&b.phase===2&&!b.buried)for(let i=0;i<3;i++){if((b.state==='bonk'||b.state==='stun')&&b.plate===i)continue;const x=R(X+PLATES6[i]),y=G0-2,d=b.dents[i]||0;
     rect(x-18,y-5,36,7,'#16181c');rect(x-17,y-4,34,2,'#a8b0bc');rect(x-17,y-4,34,1,'#e0e6ee');for(let k=0;k<34;k++)rect(x-17+k,y-2,1,3,((k>>1)&1)?'#f2c43a':'#1a1a1a');for(const rx of [-15,-6,5,14])rect(x+rx,y-4,1,1,'#4a525e');for(let k=0;k<d&&k<3;k++)rect(x-3+k*3,y,2,1,'#4a5058');}
-  if(b&&b.phase===2&&!b.buried){const M=mtnArt6();ctx.drawImage(M,0,M.height-8,M.width,8,R(X+174),G0-7,M.width,8);} // rubble left from the mountain
+  if(b&&b.phase===2&&!b.buried&&state!=='outro'){const M=mtnArt6();ctx.drawImage(M,0,M.height-8,M.width,8,R(X+174),G0-7,M.width,8);} // rubble left from the mountain
   if(b&&b.buried){const x0=R(X+256);for(let i=-22;i<=22;i++){const hh=Math.round(18*Math.cos(i/22*Math.PI/2));for(let y=0;y<hh;y++)rect(x0+i,G0-y,1,1,y===hh-1?'#7a6a52':((i*5+y*11)%7===0)?'#c8c0a8':'#3e3830');}
     // tails and noses of the babies still under the rubbish
     for(let i=b.buried.out.length;i<3;i++){const tx=x0-12+i*12,w=Math.sin(gt*9+i*2);rect(tx,G0-16+i%2*3,1,4,'#d89aa0');rect(tx+R(w),G0-19+i%2*3,1,3,'#d89aa0');}}
@@ -4596,9 +4596,9 @@ function saveGame(){try{const done=new Set(completedLevels());done.add(LV);local
 let bedS=null;
 function bedSpot(){const key=LV+':'+LW+':'+(LV===5&&boss?boss.bin:'');if(bedS&&bedS.key===key)return bedS;
   if(LV===5){const bn=bins5[boss&&boss.bin>=0?boss.bin:2]||{x:ARENA_X+250};bedS={key,kind:'lid',x:bn.x,gy:GROUND_Y-22,y:GROUND_Y-22};return bedS;} // the city: curls up on the lid of the can the stray hid in
-const kind={1:'roots',4:'roots',6:'box',5:'box',3:'scarecrow',2:'drum'}[LV]||'box';
+const kind={1:'roots',4:'roots',6:'rag',5:'box',3:'scarecrow',2:'drum'}[LV]||'box';
   let c=Math.floor((ARENA_X+(LV===6?205:LV===2?236:LV===1?264:248))/T);for(let k=0;k<12&&groundY(c)>H;k++)c--;
-  const gy=groundY(c),x=c*T+8;bedS={key,kind,x,gy,y:gy-(kind==='sweater'?3:kind==='box'?3:kind==='drum'?4:kind==='scarecrow'?3:1)};return bedS;}
+  const gy=groundY(c),x=c*T+8;bedS={key,kind,x,gy,y:gy-(kind==='rag'?3:kind==='sweater'?3:kind==='box'?3:kind==='drum'?4:kind==='scarecrow'?3:1)};return bedS;}
 // finely drawn sleeping spots, painted once into canvases: [back layer, front layer] drawn around the sleeping cat
 const BEDART={};
 function bedArt(kind){const key=kind+(kind==='roots'?LV:'');if(BEDART[key])return BEDART[key];
@@ -4677,6 +4677,17 @@ const b=bedSpot(),X=R(b.x-cx),G=b.gy;if(X<-50||X>W+50)return;
   if(b.kind==='box'||b.kind==='roots'){const A=bedArt(b.kind)[front?'front':'back'];ctx.drawImage(A.c,X-A.ox,G-A.h+(b.kind==='box'?0:1));
     if(b.kind==='roots'&&LV===4&&!front){for(let i=0;i<3;i++){const q=(gt*.35+i/3)%1;alpha((1-q)*.35,()=>rect(R(X-6+i*5+Math.sin(q*6+i)*3),R(G-A.h+4-q*22),2,2,'#8a8a90'));}} // thin smoke still curling off the charred top
     if(b.kind==='roots'&&LV!==4&&!front){const sw=Math.round(Math.sin(gt*1.5)*.6);rect(X-7+sw,G-A.h+5,2,1,'#7aaa4a');rect(X-6+sw,G-A.h+4,1,1,'#9ac860');}return;}
+  if(b.kind==='rag'){ // junkyard (user): a torn, filthy scrap of old plaid blanket; the cat burrows in, a flap pulled over its back
+    const C=(x,y)=>{const ch=(((x+40)>>2)+((y+40)>>2))&1,ln=((x+40)%8===0)||((y+40)%6===0),d=((x*7+y*13)%17===0);return d?'#3a3830':ln?'#9a5a48':ch?'#6a7686':'#56606e';};
+    if(!front){ // crumpled heap behind and under the cat
+      for(let x=-24;x<=24;x++){const h=Math.round(4+3*Math.max(0,1-Math.abs(x+6)/16)+2*Math.sin(x*.47+.5)+(x<-4&&x>-16?3:0)-(Math.abs(x)>20?2:0));
+        for(let y=0;y<h;y++){let c=C(x,y);if(y===h-1)c='#8a96a4';rect(X+x,G-1-y,1,1,c);}}
+      for(const [hx,hy] of [[-16,3],[11,2],[19,1],[-8,6]])rect(X+hx,G-1-hy,2,2,'#1a1814');            // holes
+      for(const x of [-26,-23,-20,22,25]){rect(X+x,G-1,1,1,'#56606e');rect(X+x+(x<0?-1:1),G-1,1,1,'#3a4048');} // frayed threads
+      alpha(.3,()=>rect(X-25,G,51,1,'#000'));return;}
+    // the loose flap tucked over the sleeping cat's hindquarters, torn edge hanging down
+    for(let x=-15;x<=2;x++){const top=G-9+Math.round(Math.abs(x+7)*.3+Math.sin(x*.8)*.6),bot=G-1;for(let y=top;y<bot;y++)rect(X+x,y,1,1,C(x,y));rect(X+x,top,1,1,'#8a96a4');}
+    for(const [fx,fl] of [[-15,2],[-11,1],[-7,2],[-3,1],[1,3]])rect(X+fx,G-1,1,fl,'#56606e');rect(X+3,G-5,1,4,'#3a4048');rect(X-9,G-7,2,2,'#1a1814');return;}
   if(b.kind==='drum'){drawDrum(X,G,front);return;}
   if(b.kind==='scarecrow'){drawScarecrowBed(X,G,front);return;}
   if(b.kind==='sweater'){ // a discarded old wool sweater, maroon knit with a mustard band, a hole and a loose thread
@@ -4810,7 +4821,7 @@ function drawDream(){if(!dream)return;const k=dream.k,d=dream.d;if(k<=0&&d<=0)re
     gr=ctx.createRadialGradient(sx,sy,0,sx,sy,r0+44);gr.addColorStop(0,`rgba(255,214,182,${.5*k})`);gr.addColorStop(.55,`rgba(255,200,205,${.26*k})`);gr.addColorStop(1,'rgba(255,200,190,0)');ctx.globalCompositeOperation='screen';ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);}
   ctx.globalCompositeOperation='source-over';
   drawBossVignette();
-  if(catVis)drawPlayer(cam); // the cat stays crisp black on top of the grade
+  if(catVis){drawPlayer(cam);drawBed(cam,1);} // the cat stays crisp black on top of the grade, still tucked under the front of its bed
   if(d>0){const gr=ctx.createRadialGradient(sx,sy,Math.max(0,r0*(1-d)),sx,sy,Math.max(1,r1*(1.2-d)));gr.addColorStop(0,`rgba(0,0,0,${Math.min(1,d*d*1.1)})`);gr.addColorStop(1,`rgba(0,0,0,${Math.min(1,d*1.6)})`);ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
     if(d>=1){ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);}}
   ctx.restore();}
