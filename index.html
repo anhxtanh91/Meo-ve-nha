@@ -4609,9 +4609,11 @@ function roundWin(x,y,w,h,frame){rect(x-3,y-3,w+6,h+6,frame);rect(x-3,y-3,2,2,'#
 // seated ones sit on the benches. Everyone stares at a flickering phone that lights their face.
 const CROWD=[
   {x:20,k:'sit',sd:11},{x:46,k:'sit',sd:12},{x:96,k:'sit',sd:13},{x:226,k:'sit',sd:14},{x:302,k:'sit',sd:15},
-  {x:72,k:'f',hd:58,hold:1,hs:78,sd:1},{x:88,k:'s',f:1,hd:56,hold:1,hs:100,sd:2},{x:110,k:'s',f:-1,hd:76,hold:0,sd:3},
-  {x:208,k:'s',f:1,hd:57,hold:1,hs:220,sd:5},{x:240,k:'f',hd:55,hold:1,hs:244,sd:6},{x:284,k:'s',f:-1,hd:58,hold:1,hs:268,sd:9},{x:296,k:'f',hd:77,hold:0,sd:10}];
+  {x:72,k:'f',hd:74,hold:1,sd:1},{x:88,k:'s',f:1,hd:70,hold:1,sd:2},{x:110,k:'s',f:-1,hd:76,hold:0,sd:3},
+  {x:208,k:'s',f:1,hd:72,hold:1,sd:5},{x:240,k:'f',hd:69,hold:1,sd:6},{x:284,k:'s',f:-1,hd:73,hold:1,sd:9},{x:296,k:'f',hd:77,hold:0,sd:10}];
 const [crowdCv,crowdG]=mkCanvas(W,H);
+// where a standing passenger's raised hand is: just above and a touch outside the shoulder, swinging with the bus
+function holdPos(P,c,t){const sw=Math.round(Math.sin(t*1.7+P.sd)*.6+c.sway*2),x=P.x+sw,f=P.k==='s'?P.f:0,shx=f?x+f*2:x+6;return [R(shx+(f?f:1)+c.sway*3),P.hd-3];}
 function crowdBody(P,c,t){
   const sw=P.k==='sit'?0:Math.round(Math.sin(t*1.7+P.sd)*.6+c.sway*2),x=P.x+sw,K='#000';
   const line=(ax,ay,bx,by,w)=>{const n=Math.max(1,Math.ceil(Math.hypot(bx-ax,by-ay)));for(let k=0;k<=n;k++){const u=k/n;rect(lerp(ax,bx,u)-(w>>1),lerp(ay,by,u),w,1,K);}};
@@ -4620,9 +4622,9 @@ function crowdBody(P,c,t){
     line(x-8,hd+14,x-9,hd+24,3);line(x-9,hd+24,x-2,hd+25,3);line(x+8,hd+14,x+9,hd+24,3);line(x+9,hd+24,x+3,hd+25,3);rect(x-2,hd+21,5,6,K);
     P.ph=[x-1,hd+22,3,4];P.fc=[x-3,hd+4,7,6];return;}
   const hd=P.hd,hip=hd+40,f=P.k==='s'?P.f:0;
-  // the raised hand grips the bottom bar of the bus's own hanging handle (which swings with the bus): shoulder -> bent elbow -> fist round the bar
-  const hs=P.hs||x,ha=c.sway*(1+.15*Math.sin(hs)),hx=R(hs+ha*9),hy=51;
-  const arm=(sx,sy)=>{const o=hx>=sx?2:-2,ex=R(lerp(sx,hx,.4)+o),ey=R(lerp(sy,hy,.55));line(sx,sy,ex,ey,3);line(ex,ey,hx,hy+2,2);rect(hx-1,hy-1,3,4,K);rect(hx+(hx>=sx?-2:2),hy,1,2,K);};
+  // the raised hand grips the bottom bar of a strap hanging right above the shoulder (strap drawn with the bus handles): shoulder -> slightly bent elbow -> fist
+  const [hx,hy]=holdPos(P,c,t);
+  const arm=(sx,sy)=>{const o=f?-f:(hx>=sx?1:-1),ex=R((sx+hx)/2+o),ey=R((sy+hy)/2);line(sx,sy,ex,ey,3);line(ex,ey,hx,hy+1,2);rect(hx-1,hy-1,3,3,K);rect(hx-1,hy-2,3,1,K);};
   if(!f){
     rect(x-4,hd,9,10,K);rect(x-5,hd+1,11,4,K);rect(x-2,hd+10,5,2,K);rect(x-8,hd+12,16,29,K);rect(x-7,hip,6,150-hip,K);rect(x+1,hip,6,150-hip,K);rect(x-8,147,7,3,K);rect(x+1,147,7,3,K);
     if(P.hold)arm(x+6,hd+13);else{line(x+7,hd+13,x+9,hd+34,3);}
@@ -4724,8 +4726,12 @@ function drawInterior(t){
   drawInteriorBase(t,c);
   // hanging handles from the overhead bars, swinging with the bus
   rect(0,34,W,2,'#8a919a');rect(0,34,W,1,'#c3c9cf');
-  for(const sx of [30,54,78,100,220,244,268,292]){const a=c.sway*(1+.15*Math.sin(sx));for(let k=0;k<9;k++)rect(sx+a*k,36+k,1,1,'#5a666c');const ex=R(sx+a*9);
+  for(const sx of [30,54,78,100,220,244,268,292]){if(CROWD.some(P=>P.hold&&Math.abs(P.x+(P.k==='s'?P.f*2:6)-sx)<9))continue; // a passenger's own strap hangs here
+    const a=c.sway*(1+.15*Math.sin(sx));for(let k=0;k<9;k++)rect(sx+a*k,36+k,1,1,'#5a666c');const ex=R(sx+a*9);
     rect(ex-3,45,7,1,'#9aa1a8');rect(ex-3,45,1,6,'#9aa1a8');rect(ex+3,45,1,6,'#9aa1a8');rect(ex-2,51,5,2,'#9aa1a8');}
+  // the long straps the standing passengers hold, hanging down to their raised hands
+  for(const P of CROWD){if(!P.hold)continue;const [hx,hy]=holdPos(P,c,t),tx=R(hx-c.sway*3);
+    const n=hy-6-36;for(let k=0;k<n;k++)rect(R(lerp(tx,hx,k/n)),36+k,1,1,'#5a666c');rect(hx-3,hy-6,7,1,'#9aa1a8');rect(hx-3,hy-6,1,6,'#9aa1a8');rect(hx+3,hy-6,1,6,'#9aa1a8');rect(hx-2,hy,5,2,'#9aa1a8');}
   if(!c.inDoor&&c.catY>=FLOOR_Y)catShadow(c.catX,c.catY,8);
   // dusk: dim the inside, keep the glass bright
   ctx.save();ctx.beginPath();ctx.rect(-2,-2,W+4,H+4);
