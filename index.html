@@ -2416,41 +2416,40 @@ function dogFrame(k){
     if(k==='growl'||k==='leap'){const my=low?9:10;for(let x=0;x<5;x++)E(x,my,'#4a1414');E(1,my-1,'#ffffff');E(3,my-1,'#ffffff');E(2,my+1,'#ffffff');E(4,my+1,'#ffffff');}
   });}
 // ---- the stray dog, rebuilt as a jointed rig so every move gets many in-between frames (faces left; feet on row 25) ----
-const DW=66,DH=28,DGND=25;
+const DW=66,DH=36,DGND=33;
 function dogRig(o){ // o: hip/shoulder points, leg angles [nearFront,farFront,nearHind,farHind] as [upper,lower], head, jaw, tail, ears, eye
   const P=WOLF_PAL,AA=P[0],BB=P[1],CC=P[2],D=P[3],EE=P[4],FF=P[5],GG=P[6],SAD='#4a4440',CRM='#a8a29a',NL='#6e6562',FL='#3a3532';
   if(o.ground!==false){const ft=(rx,ry,a1,a2,l1,l2)=>ry+Math.cos(a1)*l1+Math.cos(a1+a2)*l2;
-    const my=Math.max(ft(o.sh[0],o.sh[1]+2.4,o.lg[0][0],o.lg[0][1],6.4,6.2),ft(o.sh[0],o.sh[1]+2,o.lg[1][0],o.lg[1][1],6.4,6.2),ft(0,o.hip[1]+1.2,o.lg[2][0],o.lg[2][1],6.6,7),ft(0,o.hip[1]+1,o.lg[3][0],o.lg[3][1],6.4,7));
+    const my=Math.max(ft(o.sh[0],o.sh[1]+2.4,o.lg[0][0],o.lg[0][1],7.4,7.2),ft(o.sh[0],o.sh[1]+2,o.lg[1][0],o.lg[1][1],7.4,7.2),ft(0,o.hip[1]+1.2,o.lg[2][0],o.lg[2][1],7.6,8),ft(0,o.hip[1]+1,o.lg[3][0],o.lg[3][1],7.4,8));
     const dy=DGND-my;o.sh=[o.sh[0],o.sh[1]+dy];o.hip=[o.hip[0],o.hip[1]+dy];o.head=[o.head[0],o.head[1]+dy];}
   const s=shapeSprite(DW,DH,'#141010',m=>{
     const leg=(rx,ry,a1,a2,l1,l2,col,front)=>{const kx=rx-Math.sin(a1)*l1,ky=ry+Math.cos(a1)*l1,fx=kx-Math.sin(a1+a2)*l2,fy=ky+Math.cos(a1+a2)*l2;
       m.cap(rx,ry,kx,ky,front?2.1:2.7,col);m.cap(kx,ky,fx,fy,front?1.2:1.3,col);m.cap(fx,fy,fx-(front?1.7:1.5),fy+.2,1.15,col);return [fx,fy];};
     const [hx,hy]=o.hip,[sx,sy]=o.sh,[nx,ny]=o.head,jw=o.jaw||0;
     // far legs first, deep in shadow, with a dull rim on the front edge
-    leg(sx+1,sy+2,o.lg[1][0],o.lg[1][1],6.4,6.2,FL,1);leg(hx,hy+1,o.lg[3][0],o.lg[3][1],6.4,7,FL,0);
+    leg(sx+1,sy+2,o.lg[1][0],o.lg[1][1],7.4,7.2,FL,1);leg(hx,hy+1,o.lg[3][0],o.lg[3][1],7.4,8,FL,0);
     m.recolor((x,y,c)=>c===FL&&m.get(x-1,y)!==FL,BB);m.recolor((x,y,c)=>c===FL&&m.get(x+1,y)!==FL&&m.get(x+1,y)!==BB,AA);m.recolor((x,y,c)=>c===FL,AA);
     // tail: bushy, darker at the root, pale-tipped, fur sticking out along both edges
     {let x=hx+3.5,y=hy-2.2,a=o.tail;for(let i=0;i<10;i++){const tx=x+Math.cos(a)*1.35,ty=y+Math.sin(a)*1.35;m.cap(x,y,tx,ty,.8+Math.sin((i+1)/11*Math.PI)*1.3,i>7?'#9e9892':i>5?'#5a5450':'#4e4844');
-      if(i>1&&i<9){const r=.8+Math.sin((i+1)/11*Math.PI)*1.3;m.px(Math.round(tx+Math.sin(a)*(r+.8)),Math.round(ty-Math.cos(a)*(r+.8)),'#5a5450');if(i%2)m.px(Math.round(tx-Math.sin(a)*(r+.8)+1),Math.round(ty+Math.cos(a)*(r+.8)),'#4e4844');}
       x=tx;y=ty;a+=o.tc||0;}
      m.recolor((x,y,c)=>(c==='#5a5450'||c==='#4e4844')&&!m.get(x,y-1),EE);m.recolor((x,y,c)=>c==='#9e9892'&&!m.get(x,y-1),GG);}
     // torso: deep chest, tucked belly, heavy haunch; then neck and head
-    m.cap(sx,sy,hx,hy,4.3,D);m.disc(sx+.5,sy+1.2,5.1,D);m.disc(hx,hy+.2,4.5,D);m.cap(sx+3,sy+3.6,hx-3,hy+2,2.2,D);
+    m.cap(sx,sy,hx,hy,3.7,D);m.disc(sx+.5,sy+1.5,5.4,D);m.cap(sx+.5,sy+1.5,sx+4,sy+3.5,3.6,D);m.disc(hx,hy+.2,4.4,D);
     m.cap(sx-1.5,sy-1,nx+1.5,ny+1,3.4,D);
     // volume: per column, light rim on top, a dark wolf saddle, mid flank, pale cream belly
     for(let x=0;x<DW;x++){let t=-1,b=-1;for(let y=0;y<DH;y++)if(m.get(x,y)===D){if(t<0)t=y;b=y;}if(t<0)continue;const hgt=b-t+1;
       for(let y=t;y<=b;y++){if(m.get(x,y)!==D)continue;const v=(y-t)/Math.max(1,hgt-1),back=x>sx-1&&x<hx+3;let c=D;
         if(v<.1)c=FF;else if(v<.22)c=EE;else if(back&&v<.46)c=hashD(x*5+y*3)>.12?SAD:CC;else if(v<.62)c=D;else if(v<.8)c=CC;else c=x>sx+2&&x<hx-3?(hashD(x*7+y)>.8?CRM:EE):CC;
         m.px(x,y,c);}}
-    // fur strokes running back along the flank, highlights on the shoulder blade and haunch muscles
-    for(let y=0;y<DH;y++)for(let x=0;x<DW;x++){const c=m.get(x,y);if(c!==D&&c!==CC)continue;if((x+y*2)%7===0&&hashD(x*3+y*7)>.55)m.px(x,y,c===D?CC:BB);else if((x+y*2)%7===3&&hashD(x*9+y)>.85)m.px(x,y,EE);}
-    for(const [mx,my,r] of [[sx+2,sy+2.5,3.6],[hx-.5,hy+1.5,3.9]])for(let a=-2.6;a<-.3;a+=.12){const x=Math.round(mx+Math.cos(a)*r),y=Math.round(my+Math.sin(a)*r);const c=m.get(x,y);if(c&&c!==FF&&c!==EE)m.px(x,y,a<-1.4?EE:D);
-      const x2=Math.round(mx+Math.cos(a+3.4)*r),y2=Math.round(my+Math.sin(a+3.4)*r);const c2=m.get(x2,y2);if(c2&&c2!==FF)m.px(x2,y2,CC);}
-    // fur sticking out of the silhouette: hackles on the neck and back, a ragged fringe under the belly and chest
-    for(let x=Math.floor(sx-4);x<hx+3;x++){let t=-1;for(let y=0;y<DH;y++)if(m.get(x,y)){t=y;break;}if(t<1)continue;const hk=x<sx+6?.35:.72;if(hashD(x*13+1)>hk){m.px(x,t-1,EE);if(x<sx+3&&hashD(x*7)>.5)m.px(x+1,t-2,EE);}}
-    for(let x=Math.floor(sx-1);x<hx-3;x++){let b=-1;for(let y=DH-1;y>=0;y--)if(m.get(x,y)===CRM||m.get(x,y)===EE||m.get(x,y)===CC){b=y;break;}if(b<0||b>=DH-1)continue;if(hashD(x*17+3)>.62)m.px(x,b+1,EE);}
+    // fur: strands that follow the body (they move with it, no shimmer), soft clumped tufts on the neck ruff, back and belly
+    const along=(u,v)=>{const x=sx+(hx-sx)*u,y=sy+(hy-sy)*u;return [x,y-4.4+v*9];};
+    for(let k=0;k<26;k++){const u=hashD(k*7+1)*.95,v=.25+hashD(k*13+5)*.55,[x0,y0]=along(u,v),L=2+(k%2);
+      for(let i=0;i<L;i++){const x=Math.round(x0+i),y=Math.round(y0+i*.6);const c=m.get(x,y);if(!c||c===FF)continue;m.px(x,y,c===SAD?'#3e3834':c===CRM||c===EE?CC:c===CC?BB:CC);}
+      if(k%3===0){const x=Math.round(x0-1),y=Math.round(y0-1);const c=m.get(x,y);if(c===D||c===CC)m.px(x,y,EE);}}
+    for(const [mx,my,r] of [[sx+2,sy+2.5,3.6],[hx-.5,hy+1.5,3.9]])for(let a=-2.5;a<-.5;a+=.15){const x=Math.round(mx+Math.cos(a)*r),y=Math.round(my+Math.sin(a)*r);const c=m.get(x,y);if(c===D||c===SAD||c===CC)m.px(x,y,EE);}
+    const tuft=(x,y,dx,dy,c)=>{for(let i=0;i<3;i++){const px=Math.round(x+dx*i),py=Math.round(y+dy*i);if(!m.get(px,py))m.px(px,py,c);}};
     // head: skull, cheek ruff, long tapering muzzle, pale chin and cheek, dark nose
-    m.disc(nx,ny,3.8,D);m.disc(nx+1,ny+1,3.2,D);m.cap(nx-1.5,ny+.4,nx-4.6,ny+1,2.3,D);m.cap(nx-4.6,ny+1,nx-7.4,ny+1.5,1.5,D);
+    m.disc(nx,ny,4.3,D);m.disc(nx+1.3,ny+1.2,3.6,D);m.cap(nx-1.5,ny+.5,nx-5,ny+1.2,2.6,D);m.cap(nx-5,ny+1.2,nx-8,ny+1.7,1.7,D);
     if(jw>0){m.cap(nx-2,ny+2.4,nx-6,ny+2.6+jw*2.4,1.1,CC);}
     m.recolor((x,y,c)=>c===D&&!m.get(x,y-1)&&x<nx+4,FF);m.recolor((x,y,c)=>c===D&&x<nx+4&&m.get(x,y-1)===FF,EE);
     m.recolor((x,y,c)=>c===D&&x<nx+1&&y>ny+.5,CRM);m.recolor((x,y,c)=>c===D&&x>=nx+1&&x<nx+4&&y>ny+1&&(x+y)%2,CRM);
@@ -2459,11 +2458,11 @@ function dogRig(o){ // o: hip/shoulder points, leg angles [nearFront,farFront,ne
     // ears: pointed, pink inside, laid back when running
     const ea=o.ear||0;for(const [ox,c] of [[2.2,BB],[.6,D]]){const bx=nx+ox,by=ny-2.8,tx=bx+Math.sin(ea)*3.2,ty=by-Math.cos(ea)*3.2;m.cap(bx,by,(bx+tx)/2,(by+ty)/2,1.3,c);m.cap(bx,by,tx,ty,.55,c);if(c===D){m.px(Math.round((bx+tx)/2),Math.round((by+ty)/2)+1,'#8a5a5a');m.px(Math.round(tx),Math.round(ty),FF);}}
     // near legs on top: lit front edge, dark back edge, darker paws with toes
-    leg(sx+.5,sy+2.4,o.lg[0][0],o.lg[0][1],6.4,6.2,NL,1);leg(hx-.8,hy+1.2,o.lg[2][0],o.lg[2][1],6.6,7,NL,0);
+    leg(sx+.5,sy+2.4,o.lg[0][0],o.lg[0][1],7.4,7.2,NL,1);leg(hx-.8,hy+1.2,o.lg[2][0],o.lg[2][1],7.6,8,NL,0);
     m.recolor((x,y,c)=>c===NL&&m.get(x-1,y)!==NL&&m.get(x-1,y)!==EE,EE);m.recolor((x,y,c)=>c===NL&&m.get(x+1,y)!==NL,CC);m.recolor((x,y,c)=>c===NL&&!m.get(x,y+1),BB);
     m.recolor((x,y,c)=>c===NL&&(y*3+x)%5===0,CC);m.recolor((x,y,c)=>c===NL,D);
     // muzzle tip, teeth, eye
-    const tipx=Math.round(nx-7.6),tipy=Math.round(ny+.8);m.px(tipx,tipy,'#141010');m.px(tipx,tipy+1,'#2a2020');m.px(tipx+1,tipy,'#2a2020');m.px(tipx+1,tipy-1,GG);
+    const tipx=Math.round(nx-8.4),tipy=Math.round(ny+1);m.px(tipx,tipy,'#141010');m.px(tipx,tipy+1,'#2a2020');m.px(tipx+1,tipy,'#2a2020');m.px(tipx+1,tipy-1,GG);
     m.px(Math.round(nx-4),Math.round(ny+1.6),BB); // the lip line
     if(jw>0){for(let i=0;i<4;i++)m.px(Math.round(nx-5.5+i),Math.round(ny+2+jw),i%2?'#ffffff':'#4a1414');m.px(Math.round(nx-5),Math.round(ny+3+jw*1.6),'#ffffff');}
     const ex=Math.round(nx-1.6),ey=Math.round(ny-.6);
@@ -2472,25 +2471,27 @@ function dogRig(o){ // o: hip/shoulder points, leg angles [nearFront,farFront,ne
     o._e=[ex,ey];o._m=[Math.round(nx-5),Math.round(ny+2+jw)];});
   s._ex=o._e[0]+.5;s._ey=o._e[1]+.5;s._my=o._m[1]+.5;s._mx=o._m[0];return s;}
 // poses: x0 = chest is near x=20, hips near x=44; legs hang straight when angle 0
-function dogPose(k,ph){const T=Math.PI*2,S=Math.sin,C=Math.cos;
-  const base=(sy,hy)=>({sh:[19,sy],hip:[43,hy],head:[10,sy-4],lg:[[0,0],[0,0],[0,0],[0,0]],tail:-.45,tc:.07,ear:.45,jaw:0});
-  if(k==='run'){const q=ph*T,o=base(11.5+S(q*2)*.9,11.2+S(q*2+1.4)*.9);
-    const stretch=S(q)*2.6;o.sh[0]=19-stretch*.5;o.hip[0]=43+stretch*.5;
-    const fl=(f)=>{const a=S(q+f);return [-.85*a,a>0?.25:1.25*Math.max(0,-S(q+f+.9))+.1];}; // front: reach forward, fold on the swing back
-    const hl=(f)=>{const a=S(q+f);return [-.8*a,a<0?-.15:-1.1*Math.max(0,S(q+f-.6))-.05];};
-    o.lg=[fl(0),fl(.55),hl(Math.PI+.2),hl(Math.PI+.75)];o.head=[9.5+stretch*-.3,7.5+S(q*2+.6)*.9];o.ear=1.05;o.tail=-.22+S(q)*.1;o.tc=.01;o.jaw=.35;return o;}
-  if(k==='stand'){const o=base(11,11);o.lg=[[.05,0],[-.1,0],[-.05,0],[.15,0]];o.head=[10,6.5+S(ph*T)*.4];return o;}
-  if(k==='growl'){const o=base(12.5,10);o.lg=[[.3,-.35],[.15,-.2],[-.1,.15],[.12,.05]];o.head=[11,11.5+S(ph*T)*.5];o.ear=1.25;o.jaw=1+S(ph*T*2)*.3;o.tail=-.05;return o;}
-  if(k==='crouch'){const o=base(15,13.5);o.sh[0]=20;o.hip[0]=41;o.lg=[[.55,-1.05],[.45,-.95],[-.9,1.75],[-.7,1.55]];o.head=[11,12];o.ear=1.15;o.jaw=.5;o.tail=.2;return o;}
-  if(k==='leapU'){const o=base(7,12);o.sh[0]=17;o.hip[0]=45;o.lg=[[.9,.5],[.7,.7],[-1.1,-.2],[-.9,-.3]];o.head=[8,3];o.ear=1.2;o.jaw=.8;o.tail=.35;o.ground=false;return o;}
-  if(k==='leap'){const o=base(9,9);o.sh[0]=16;o.hip[0]=46;o.lg=[[1.3,.2],[1.1,.4],[-1.3,.1],[-1.1,-.1]];o.head=[7,6];o.ear=1.3;o.jaw=1;o.tail=.08;o.ground=false;return o;}
-  if(k==='leapD'){const o=base(12,8.5);o.sh[0]=18;o.hip[0]=44;o.lg=[[.35,-.1],[.15,0],[-.6,1],[-.4,.8]];o.head=[9,9];o.ear=1.1;o.jaw=.9;o.tail=-.3;o.ground=false;return o;}
-  if(k==='daze'){const o=base(12,11.5);o.lg=[[-.25,.1],[.2,0],[.25,-.1],[-.2,0]];o.head=[11,10.5+S(ph*T)*.6];o.ear=-.35;o.daze=1;o.tail=.55;o.tc=.12;return o;}
-  if(k==='kick'){const q=ph*T,o=base(15,10.5);o.sh[0]=20;o.lg=[[.35,-.7],[.25,-.6],[-.5-1.1*Math.max(0,S(q)),.2+.6*Math.max(0,-S(q))],[-.4-1.1*Math.max(0,S(q+2)),.2+.6*Math.max(0,-S(q+2))]];o.head=[12,12];o.ear=1.2;o.jaw=.7;o.tail=-.4;return o;}
-  if(k==='lie'){const o=base(19,19);o.sh[0]=19;o.hip[0]=42;o.lg=[[1.45,.1],[1.4,.15],[-1.35,-.1],[-1.4,.1]];o.head=[9,19+S(ph*T)*.3];o.ear=-.6;o.daze=1;o.tail=.15;o.tc=-.02;return o;}
+function dogPose(k,ph){const T=Math.PI*2,S=Math.sin,C=Math.cos; // shapes follow the user's dog pose reference: compact body, deep chest, long legs, tail carried up
+  const base=(sy,hy)=>({sh:[20,sy],hip:[40,hy],head:[11,sy-6],lg:[[0,0],[0,0],[0,0],[0,0]],tail:-.95,tc:.11,ear:.3,jaw:0});
+  if(k==='run'){const q=ph*T,o=base(12+S(q*2)*1,11.6+S(q*2+1.4)*1);
+    const stretch=S(q)*3;o.sh[0]=20-stretch*.6;o.hip[0]=40+stretch*.6;
+    const fl=(f)=>{const a=S(q+f);return [-1.15*a,a>0?.2:1.4*Math.max(0,-S(q+f+.9))+.1];}; // front: reach far forward, fold on the swing back
+    const hl=(f)=>{const a=S(q+f);return [-1.05*a,a<0?-.1:-1.2*Math.max(0,S(q+f-.6))-.05];};
+    o.lg=[fl(0),fl(.55),hl(Math.PI+.2),hl(Math.PI+.75)];o.head=[10-stretch*.4,7.5+S(q*2+.6)*1];o.ear=1.05;o.tail=-.35+S(q)*.15;o.tc=.03;o.jaw=.35;return o;}
+  if(k==='stand'){const o=base(11,11.5);o.lg=[[.05,0],[-.12,0],[-.15,.12],[.12,0]];o.head=[11,4.5+S(ph*T)*.4];o.tail=-1.05+S(ph*T)*.08;return o;}
+  if(k==='growl'){const o=base(12.5,10);o.lg=[[.3,-.35],[.15,-.2],[-.1,.15],[.12,.05]];o.head=[11,11.5+S(ph*T)*.5];o.ear=1.25;o.jaw=1+S(ph*T*2)*.3;o.tail=-.2;return o;}
+  if(k==='crouch'){const o=base(19,9);o.sh[0]=19;o.hip[0]=39;o.lg=[[1.25,.25],[1.15,.3],[-.15,.1],[.05,0]];o.head=[10,15];o.ear=1.15;o.jaw=.5;o.tail=-1.2;o.tc=.14;return o;} // play-bow: chest down, rump up, ready to spring
+  if(k==='leapU'){const o=base(7,13);o.sh[0]=18;o.hip[0]=41;o.lg=[[1,.6],[.8,.8],[-1.2,-.2],[-1,-.3]];o.head=[9,2];o.ear=1.2;o.jaw=.8;o.tail=-.2;o.ground=false;return o;}
+  if(k==='leap'){const o=base(10,10);o.sh[0]=17;o.hip[0]=42;o.lg=[[1.5,.1],[1.35,.3],[-1.5,.1],[-1.3,-.1]];o.head=[8,6];o.ear=1.3;o.jaw=1;o.tail=-.15;o.ground=false;return o;}
+  if(k==='leapD'){const o=base(13,9);o.sh[0]=19;o.hip[0]=41;o.lg=[[.4,-.1],[.2,0],[-.7,1.1],[-.5,.9]];o.head=[10,9];o.ear=1.1;o.jaw=.9;o.tail=-.6;o.ground=false;return o;}
+  if(k==='rear'){const q=ph*T,o=base(9,18);o.sh[0]=27;o.hip[0]=38;o.lg=[[1.2+S(q*2)*.25,1.1],[.9+S(q*2+1)*.25,1.2],[.35,.2],[.5,.1]];o.head=[21,4+S(q)*.5];o.ear=.9;o.jaw=1.2+S(q*2)*.3;o.tail=.4;o.tc=.02;return o;} // rears up on its hind legs to roar
+  if(k==='sit'){const o=base(10,19);o.sh[0]=24;o.hip[0]=38;o.lg=[[-.02,0],[.08,0],[1.35,-2.6],[1.25,-2.5]];o.head=[18,2+S(ph*T)*.3];o.ear=.2;o.tail=.15;o.tc=-.02;return o;}
+  if(k==='daze'){const o=base(12,11.5);o.lg=[[-.25,.1],[.2,0],[.25,-.1],[-.2,0]];o.head=[12,11+S(ph*T)*.6];o.ear=-.35;o.daze=1;o.tail=.5;o.tc=.12;return o;}
+  if(k==='kick'){const q=ph*T,o=base(15,10.5);o.sh[0]=21;o.lg=[[.35,-.7],[.25,-.6],[-.5-1.1*Math.max(0,S(q)),.2+.6*Math.max(0,-S(q))],[-.4-1.1*Math.max(0,S(q+2)),.2+.6*Math.max(0,-S(q+2))]];o.head=[12,12];o.ear=1.2;o.jaw=.7;o.tail=-.6;return o;}
+  if(k==='lie'){const o=base(22,22);o.sh[0]=20;o.hip[0]=39;o.lg=[[1.5,0],[1.45,.05],[-1.3,2.5],[-1.25,2.4]];o.head=[12,17+S(ph*T)*.3];o.ear=-.5;o.daze=1;o.tail=.05;o.tc=-.01;return o;} // lying: front legs stretched out ahead, hind legs tucked, head up
   return base(11,11);}
 const DOG={};
-{const add=(k,n,pk)=>{for(let i=0;i<n;i++)DOG[k+i]=dogRig(dogPose(pk||k,i/n));};add('run',12);add('stand',8);add('growl',8);add('daze',8);add('kick',8);add('lie',4);
+{const add=(k,n,pk)=>{for(let i=0;i<n;i++)DOG[k+i]=dogRig(dogPose(pk||k,i/n));};add('run',12);add('stand',8);add('growl',8);add('daze',8);add('kick',8);add('lie',4);add('rear',8);add('sit',4);
  for(const k of ['crouch','leapU','leap','leapD'])DOG[k]=dogRig(dogPose(k,0));
  DOG.stand=DOG.stand0;DOG.growl=DOG.growl0;DOG.daze=DOG.daze0;DOG.runA=DOG.run0;DOG.runB=DOG.run3;DOG.runC=DOG.run6;DOG.runD=DOG.run9;}
 const DOG_DARK={stand:tintCv(DOG.stand.r,'#3a3450'),crouch:tintCv(DOG.crouch.r,'#3a3450'),leap:tintCv(DOG.leap.r,'#4a4060')};
@@ -3639,9 +3640,9 @@ function drawDogBoss(cx){const b=boss;if(b.state2==='gone')return;for(const w of
   let k='stand';const s=b.state,R12=r=>'run'+(Math.floor(gt*r)%12),air=()=>b.vy<-110?'leapU':b.vy>110?'leapD':'leap';
   if(s==='intro')k='leap';
   else if(s==='leap'||s==='bonk')k=air();else if(s==='crouch'||s==='prep'||s==='land'||s==='skid'||s==='r_crouch')k='crouch';else if(s==='charge'||s==='flee')k=R12(40);
-  else if(s==='daze'||s==='hurt'||s==='burnt'||s==='shake'||s==='r_fall')k='daze'+(Math.floor(gt*8)%8);else if(s==='growl'||s==='roar')k='growl'+(Math.floor(gt*10)%8);else if(s==='kick')k='kick'+(Math.floor(b.t*22)%8);
+  else if(s==='daze'||s==='hurt'||s==='burnt'||s==='shake'||s==='r_fall')k='daze'+(Math.floor(gt*8)%8);else if(s==='roar')k='rear'+(Math.floor(gt*10)%8);else if(s==='growl')k='growl'+(Math.floor(gt*10)%8);else if(s==='kick')k='kick'+(Math.floor(b.t*22)%8);
   else if(s==='r_pin'||s==='r_push')k='lie'+(Math.floor(gt*3)%4);else if(s==='r_jump')k=b.landed?R12(40):air();else if(s==='r_grab'||s==='r_leave')k=R12(s==='r_leave'?40:26);
-  else if(s==='r_trap'&&b.t<.9)k='daze'+(Math.floor(gt*8)%8);else k='stand'+(Math.floor(gt*5)%8);
+  else if(s==='r_trap'&&b.t<.9)k='daze'+(Math.floor(gt*8)%8);else if(s==='r_rest')k='sit'+(Math.floor(gt*3)%4);else k='stand'+(Math.floor(gt*5)%8);
   const fr=DOG[k]||DOG.stand,sc=b.sc*DSC,w=fr.w*sc,h=fr.h*sc;const sx=b.shake>0?Math.round(Math.sin(gt*80)):0;
   if(s==='intro'&&!b.jumped)return; // only the red eyes show (drawn over the dark in drawNight)
   if(sc>=.99*DSC)alpha(.25,()=>rect(b.x-cx-22,GROUND_Y-2,44,2,'#000'));
