@@ -939,7 +939,7 @@ function updBoss(dt){
       else{b.y=LOW;b.x+=b.vx*dt;if(b.dive!==2)b.vx*=Math.pow(.02,dt);}
       b.x=clamp(b.x,LTREE_X+14,TREE_X-14);
       if(b.y>LOW-6&&Math.random()<.5)puff(b.x-b.dir*9,GROUND_Y,1,'#d9c9a3',20,10,.3);
-      if(b.dive===2&&b.skid&&((b.vx>0&&b.x>=b.tx)||(b.vx<0&&b.x<=b.tx))){b.x=b.tx;const away=b.tx>CX?-1:1;bossSet('crash');b.vx=70*away;b.vy=-150;treeShake=.6;treeSide=away<0?1:-1;SFX.bonk();puff(b.tx>CX?TREE_X:LTREE_X,100,12,'#69c24a',60,40,.6);apple={x:b.x+away*10,y:36,vy:0,vx:0,hit:false,t:0};}
+      if(b.dive===2&&b.skid&&((b.vx>0&&b.x>=b.tx)||(b.vx<0&&b.x<=b.tx))){b.x=b.tx;const away=b.tx>CX?-1:1;bossSet('crash');b.vx=70*away;b.vy=-150;treeShake=.6;treeSide=away<0?1:-1;SFX.bonk();puff(b.tx>CX?TREE_X:LTREE_X,100,12,'#69c24a',60,40,.6);apple={x:b.x+away*10,y:58,vy:0,vx:0,hit:false,t:0};}
       else if(b.dive!==2&&b.skid&&b.t>.28){b.dive++;bossSet('move');}
       break;}
     case 'crash':{b.vy+=G*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;if(b.y>=GROUND_Y){b.y=GROUND_Y;b.vy=0;b.vx=0;}if(apple)apple.x=lerp(apple.x,b.x+2,Math.min(1,dt*6));break;}
@@ -1015,11 +1015,100 @@ function drawBossRaw(cx){
 }
 function drawArenaTree(cx){
   if(LV===5)return;if(LV===6){drawArena6(cx);return;}if(LV===2){drawArena2(cx);return;}if(LV===4){drawArena4(cx);return;}if(LV===3){drawArena3(cx);return;}
-  const sh=treeShake>0?Math.round(Math.sin(gt*70)*2*treeShake/.6):0;
-  ctx.drawImage(APPLE_TREE,R(TREE_X-APPLE_TREE.width/2-cx+(treeSide>0?sh:0)),GROUND_Y+2-APPLE_TREE.height);
-  ctx.drawImage(APPLE_TREE_L,R(LTREE_X-APPLE_TREE.width/2-cx+(treeSide<0?sh:0)),GROUND_Y+2-APPLE_TREE.height);
-  if(apple)blit(APPLE,apple.x-cx,apple.y+5,1);
+  drawArenaBack1(cx); // Màn 1: felled trunks, broken snags and smashed honeycomb (apple trees gone)
 }
+/* ===== Màn 1 boss arena: a giant freshly sawn stump as the floor, felled trunks all around,
+   an abandoned chainsaw idling in the corner and broken honeycomb dripping honey on the low branches ===== */
+const ST1={cx:140,rx:102,ry:5}; // stump top face, x relative to ARENA_X; its middle line is GROUND_Y
+const HIVE1=[{x:56,y:53,side:-1,main:1,s:0},{x:68,y:47,side:-1,s:1},{x:40,y:117,side:-1,s:2},{x:264,y:53,side:1,main:1,s:0},{x:252,y:47,side:1,s:2},{x:280,y:117,side:1,s:1},{x:198,y:126,side:0,s:2,log:1}];
+let A1=null;
+function hiveSprite(k){const w=[14,11,9][k],h=[12,10,8][k];return shapeSprite(w+2,h+5,'#5a2a08',m=>{
+  const cx=w/2+1;for(let y=0;y<h;y++){const hw=(w/2)*(y<2?.6+y*.2:1-Math.max(0,y-h*.55)/(h*.7));for(let x=0;x<w+2;x++)if(Math.abs(x+.5-cx)<=hw)m.px(x,y,'#e8a428');}
+  // hex cells: walls light, holes dark, some still capped with wax
+  for(let y=0;y<h;y++)for(let x=0;x<w+2;x++){if(!m.get(x,y))continue;const ox=(Math.floor(y/2)%2)*1;const cx2=(x+ox)%3,cy2=y%2;
+    if(cx2===1&&cy2===1)m.px(x,y,hashD(x*7+y*13+k)>.55?'#f6d27a':'#9a5a10');else if(cy2===0)m.px(x,y,'#f4c45a');}
+  // torn, ragged bottom edge with honey oozing out of it
+  for(let x=0;x<w+2;x++){const b=h-1-Math.floor(hashD(x*3+k*5)*3);for(let y=b+1;y<h;y++)m.clear(x,y);if(m.get(x,b)&&hashD(x*11+k)>.55){m.px(x,b+1,'#f0a020');if(hashD(x*5+k)>.5)m.px(x,b+2,'#e89418');}}
+  m.recolor((x,y)=>x<=2,'#c88420');m.px(Math.round(cx),0,'#6a3a12');m.px(Math.round(cx),1,'#7a4a1a');});}
+function makeArena1(){
+  const BK='#6a3e22',BL='#8a5a32',BD='#3e2214',BX='#4e2c18';
+  // ---- the giant stump: flat ringed top face + bark sides flaring into roots ----
+  const {rx,ry}=ST1,SW=rx*2+48,SH=48,cx0=SW/2,cy0=12;const [sc,sg]=mkCanvas(SW,SH);const P=(x,y,c)=>{sg.fillStyle=c;sg.fillRect(x,y,1,1);};
+  for(let y=cy0;y<SH;y++){const d=y-cy0,hw=rx+1+(d>14?Math.pow(d-14,1.55)*.55:0);
+    for(let x=Math.floor(cx0-hw);x<=Math.ceil(cx0+hw);x++){if(x<0||x>=SW)continue;const nx=(x-cx0)/hw;
+      // roots: lobes at the flared base, with soil gaps between them
+      if(d>16){const lob=Math.abs(nx)>.82?Math.sin((Math.abs(nx)-.82)*40+(nx<0?1:0)):1;if(lob<-.2&&d>20)continue;}
+      let c=Math.abs(Math.sin(x*.9+hashD(x)*2))>.55?BK:BX;if(hashD(x*13)>.72)c=BL;if(hashD(x*5+3)>.86)c=BD;
+      if(nx<-.75)c=c===BL?BK:BD;else if(nx>.8&&c===BL)c='#9a6a3a';
+      if((d+Math.floor(hashD(x)*9))%11===0&&hashD(x*3+d)>.4)c=BD; // bark plates crack across
+      if(d>18&&hashD(x*17+d*3)>.9)c='#5a8a3a';if(d>22&&hashD(x*7+d)>.82)c='#4a7a32'; // moss near the roots
+      P(x,y,c);}}
+  // top face: concentric growth rings, dark heart, pale sapwood, bark rim, a couple of drying cracks
+  for(let y=cy0-ry-1;y<=cy0+ry+1;y++)for(let x=cx0-rx-2;x<=cx0+rx+2;x++){const dx=(x+.5-cx0)/rx,dy=(y+.5-cy0)/(ry+.5),r=Math.hypot(dx,dy);if(r>1.02)continue;
+    const a=Math.atan2(dy,dx),rr=r*30+Math.sin(a*3+1)*.5+Math.sin(a*7)*.25;let c=(Math.floor(rr)%2)?'#e0bc84':'#d4ac70';if(Math.floor(rr)%5===0)c='#bc8e56';
+    if(r<.2)c=(Math.floor(rr)%2)?'#c89058':'#b87e48';if(r<.025)c='#7a4a26';if(r>.88)c=(Math.floor(rr)%2)?'#ecd4a2':'#e4c890';
+    if(r>.95)c=y<cy0?'#4e2c18':'#6a3e22';if(r>.95&&y>cy0&&hashD(x)>.6)c='#8a5a32';
+    if(r<.95&&y===cy0-ry+1&&hashD(x*3)>.5)c='#f2dcae'; // the lit back of the face
+    P(x,y,c);}
+  for(const [a,l] of [[.3,.62],[2.6,.5],[4.1,.7],[5.4,.35]])for(let r=.05;r<l;r+=.004){const x=Math.round(cx0+Math.cos(a+Math.sin(r*20)*.05)*r*rx),y=Math.round(cy0+Math.sin(a)*r*ry);P(x,y,r<.3?'#6a4224':'#9a6a3a');}
+  for(let i=0;i<46;i++){const x=Math.round(cx0+(hashD(i*7)-.5)*rx*1.6),y=Math.round(cy0+(hashD(i*11)-.5)*ry*1.4);P(x,y,'#c89a62');P(x+1,y,'#c89a62');} // chain-saw scoring
+  // splinters left standing where the trunk tore off at the back hinge
+  for(let x=cx0+18;x<cx0+64;x++){const h=Math.floor(hashD(x*3)*6*Math.sin((x-cx0-18)/46*Math.PI))+1;const yb=Math.round(cy0-ry*Math.sqrt(Math.max(0,1-((x-cx0)/rx)**2)))+1;
+    for(let k=0;k<h;k++)P(x,yb-k,k===h-1?'#f6e2b8':x%2?'#e8cc96':'#c4a06a');}
+  // honey that has dripped onto the face
+  for(const [hx,w] of [[56-ST1.cx+cx0-38,7],[198-ST1.cx+cx0-38,5],[cx0+60,4]]){for(let x=-w;x<=w;x++){const yy=cy0+1+(Math.abs(x)<w*.6?0:0);P(hx+x,yy,'#e8961a');if(Math.abs(x)<w-1)P(hx+x,yy-1,'#f4b834');}P(hx-1,cy0,'#ffe08a');}
+  // ---- broken snags framing the arena, with low branches carrying the smashed hive ----
+  const snag=dir=>shapeSprite(64,130,'#24120a',m=>{const tx=dir>0?14:50;
+    m.cap(tx,129,tx,40,11,BK);m.cap(tx,129,tx-dir*1,90,13,BK);m.cap(tx-14,128,tx-6,118,4,BK);m.cap(tx+14,128,tx+6,118,4,BK);
+    for(let y=18;y<44;y++)for(let x=tx-11;x<=tx+11;x++){const top=24+Math.floor(hashD(x*5)*16)+(x===tx+3?-10:0)+(x===tx-4?-6:0);if(y>=top)m.px(x,y,y<top+3?'#d8b888':BK);} // jagged broken top
+    // low branches angling up into the arena (the hive pieces hang under them)
+    m.cap(tx+dir*8,46,tx+dir*48,26,3,BK);m.cap(tx+dir*44,28,tx+dir*54,20,1.6,BK);m.cap(tx+dir*28,36,tx+dir*36,22,1.4,BK);
+    m.cap(tx-dir*9,96,tx-dir*14,88,2,BK);m.cap(tx+dir*9,104,tx+dir*26,96,2.2,BK);
+    m.recolor((x,y,c)=>c===BK&&(hashD(x*7)>.7),BL);m.recolor((x,y,c)=>c===BK&&(hashD(x*3+1)>.82||hashD(x+y*31)>.94),BD);
+    m.recolor((x,y,c)=>(c===BK||c===BL)&&x*dir<(tx-dir*6)*dir,BX);
+    m.recolor((x,y,c)=>c!=='#d8b888'&&y>110&&hashD(x*13+y)>.8,'#5a8a3a');
+    for(let y=48;y<70;y++)m.px(tx+dir*2,y,BD);m.px(tx+dir*2,70,'#1a0a04'); // a long lightning crack
+  });
+  // ---- felled trunks lying all around behind the stump ----
+  const log=(w,r,endR)=>shapeSprite(w,r*2+3,'#24120a',m=>{m.cap(r+1,r+1,w-r-2,r+1,r,BK);
+    m.recolor((x,y)=>y<=3,BL);m.recolor((x,y)=>y>=r*2-1,BX);m.recolor((x,y,c)=>c===BK&&hashD(x*5+y)>.85,BD);
+    const ex=endR?w-r-2:r+1;for(let y=0;y<r*2+3;y++)for(let x=ex-3;x<=ex+3;x++){const e=Math.hypot((x-ex)/3,(y-r-1)/r);if(e<=1)m.px(x,y,e>.82?'#c8a070':Math.floor(e*5)%2?'#e0bc84':'#d0a66c');}
+    m.px(ex,r+1,'#8a5a30');
+    for(const k of [.3,.55,.8]){const bx=Math.round(w*k);m.cap(bx,r*.3,bx+(k>.5?3:-3),-4,1.2,BK);}});
+  A1={stump:sc,sox:cx0,soy:cy0,snL:snag(1),snR:snag(-1),logs:[log(120,7,1),log(110,6,0),log(70,5,1)],hive:[hiveSprite(0),hiveSprite(1),hiveSprite(2)],saw:sawSprites()};}
+function sawSprites(){return [0,1].map(f=>shapeSprite(46,16,'#141414',m=>{
+  // body: orange engine housing, dark top handle loop, pull-cord, guide bar with a moving chain
+  m.rect(4,6,16,8,'#e8641a');m.rect(5,5,14,1,'#f6843a');m.rect(4,12,16,2,'#b8480e');m.cap(6,4,16,4,1.2,'#2a2a2a');m.rect(6,4,1,3,'#2a2a2a');m.rect(16,4,1,3,'#2a2a2a');
+  m.rect(1,9,4,4,'#2a2a2a');m.px(2,10,'#e8641a');m.rect(8,8,6,3,'#3a3a3a');m.rect(9,8,4,1,'#5a5a5a');m.px(15,7,'#ffe066');m.px(15,10,'#2a2a2a');m.px(16,10,'#2a2a2a');
+  m.rect(20,8,24,4,'#9aa0a8');m.rect(20,8,24,1,'#c8ccd2');m.cap(43,10,43,10,2,'#9aa0a8');m.rect(20,11,24,1,'#6a7078');
+  for(let x=20;x<45;x++){if((x+f)%2===0){m.px(x,7,'#3a3a40');m.px(x,12,'#3a3a40');}}m.px(45,10,'#3a3a40');m.px(45,9,(f?'#3a3a40':'#6a6a70'));
+  m.rect(20,9,3,2,'#2a2a2a');m.px(10,13,'#141414');m.px(17,13,'#141414');}));}
+function drawArenaBack1(cx){if(!A1)makeArena1();const ax=ARENA_X-R(cx);if(ax>W+20||ax<-W-60)return;
+  const sh=treeShake>0?Math.round(Math.sin(gt*70)*2*treeShake/.6):0;
+  // felled trunks lying in a jumble behind the stump
+  ctx.drawImage(A1.logs[1].r,ax-20,GROUND_Y-12);ctx.drawImage(A1.logs[0].r,ax+168,GROUND_Y-15);ctx.drawImage(A1.logs[2].l,ax+92,GROUND_Y-24);
+  ctx.drawImage(A1.snL.r,ax+LTREE_X-ARENA_X-14+(treeSide<0?sh:0),GROUND_Y+2-130);ctx.drawImage(A1.snR.r,ax+TREE_X-ARENA_X-50+(treeSide>0?sh:0),GROUND_Y+2-130);
+  // honeycomb pieces stuck under the low branches, honey dripping off them
+  for(const h of HIVE1){if(h.log)continue;if(h.main&&apple&&(apple.x>ARENA_X+160?1:-1)===h.side)continue;const s=A1.hive[h.s],sw=h.side!==0&&treeSide===h.side?sh:0;
+    const X=ax+h.x+sw,Y=h.y+Math.round(Math.sin(gt*1.3+h.x)*.4);ctx.drawImage(h.side<0?s.r:s.l,R(X-s.w/2),R(Y-2));
+    drip1(X+(h.s===1?2:-1),Y+s.h-4,h.x);}
+  // a few bees crawl over the wreckage
+  for(let i=0;i<4;i++){const h=HIVE1[[0,3,1,4][i]],a=gt*(1.2+i*.3)+i*2;const bx=ax+h.x+Math.cos(a)*4,by=h.y+3+Math.sin(a*1.3)*2;rect(R(bx),R(by),2,1,'#f2c02a');rect(R(bx)+1,R(by),1,1,'#2a1a08');}}
+function drip1(x,y,seed){const q=(gt*.42+hashD(seed)*.9)%1,fy=y+(q<.62?0:Math.pow((q-.62)/.38,2)*(GROUND_Y-2-y));
+  if(q<.62){const l=Math.round(q/.62*3);rect(R(x),R(y),1,l+1,'#e8961a');if(l>1)rect(R(x),R(y)+l,1,1,'#ffd060');}else{rect(R(x),R(fy),1,2,'#f0a020');rect(R(x),R(fy),1,1,'#ffe08a');}}
+function drawArenaFront1(cx){if(!A1)makeArena1();const ax=ARENA_X-R(cx);if(ax>W+20||ax<-W-60)return;
+  ctx.drawImage(A1.stump,R(ax+ST1.cx-A1.sox),GROUND_Y-A1.soy);
+  const h=HIVE1[6],s=A1.hive[h.s];ctx.drawImage(s.r,R(ax+h.x-s.w/2),GROUND_Y-12); // a chunk fallen onto the face
+  // the falling honeycomb that knocks the queen out
+  if(apple){const s0=A1.hive[0],X=R(apple.x-cx),Y=R(apple.y);ctx.save();ctx.translate(X,Y);if(!apple.hit||apple.y<GROUND_Y-5)ctx.rotate(apple.t*(apple.hit?9:3));ctx.drawImage(s0.r,-s0.w/2,-s0.h/2);ctx.restore();
+    if(apple.hit&&apple.y>=GROUND_Y-5)alpha(.8,()=>{rect(X-6,GROUND_Y,12,1,'#e8961a');rect(X-4,GROUND_Y-1,8,1,'#f4b834');});}
+  // the abandoned chainsaw, still idling: shakes, puffs blue exhaust, chain creeping round
+  const on=state!=='title',f=on?Math.floor(gt*24)%2:0,jx=on?Math.round(Math.sin(gt*61)*.6):0,jy=on&&Math.sin(gt*47)>.3?-1:0,sx=ax+4,sy=GROUND_Y-15;
+  ctx.drawImage(A1.saw[f].r,sx+jx,sy+jy);
+  if(on){for(let i=0;i<4;i++){const q=(gt*.9+i/4)%1;alpha(.3*(1-q),()=>rect(R(sx+1-q*10+Math.sin(q*7+i)*2),R(sy+9-q*16),2+Math.floor(q*2),2,'#a8b0bc'));}
+    for(let i=0;i<3;i++){const q=(gt*2.3+i/3)%1;rect(R(sx+46+q*6),R(sy+9-q*5+q*q*10),1,1,i%2?'#e8cc96':'#c8a070');}}}
+let saw1T=0;
+function sawSound1(dt){if(LV!==1||state==='title'||!ac||muted)return;const d=Math.abs(p.x-(ARENA_X+20));if(d>260)return;saw1T-=dt;if(saw1T>0)return;saw1T=.085;const v=.018*(1-d/260);tone(62+Math.random()*6,48,.07,'sawtooth',v);}
 
 /* ================= level 2: Hồ Sen (lotus pond) ================= */
 const WATER_Y=148,PAD_W=28;
@@ -1599,7 +1688,7 @@ const bannerFor=id=>`<b>Màn ${LVINFO[id].n}</b><span>${LVINFO[id].name}</span>`
 const nextLevel=id=>{const i=ORDER.indexOf(id);return i>=0&&i<ORDER.length-1?ORDER[i+1]:0;};
 const FIRE_C=117,FIRE_X=FIRE_C*16;
 let fireK=1,rainK=0,ign4=null,ign4Done=false; // the forest only catches fire once the cat has watched it start at the camp
-function fireAt(x){if(LV!==4)return 0;return clamp((x-FIRE_X+40)/260,0,1)*fireK;}
+function fireAt(x){if(LV!==4)return 0;return clamp((x-FIRE_X+40)/70,0,1)*fireK;} // once lit, the whole forest past the camp burns at full strength
 
 function buildMapN(){
   map=[...Array(ROWS)].map(()=>Array(COLS).fill(' '));
@@ -2974,8 +3063,12 @@ function drawGiant4(cx){const b=boss&&boss.kind==='dog'?boss:null,X=ARENA_X+170-
   // a huge, half-dead ancient trunk far behind the clearing, burning
   ctx.fillStyle='#1a100c';ctx.fillRect(-9,-120,18,120);ctx.fillStyle='#2a1a12';ctx.fillRect(-9,-120,4,120);ctx.fillStyle='#0c0806';ctx.fillRect(5,-120,4,120);
   for(const [y,d,l] of [[-110,1,30],[-92,-1,26],[-70,1,22],[-128,-1,18]]){for(let k=0;k<l;k++){ctx.fillStyle=k%5?'#1a100c':'#3a2414';ctx.fillRect(d*k,y-k*.45,2,3);}}
-  ctx.fillStyle='#1a100c';ctx.fillRect(-4,-136,8,18);
+  ctx.fillStyle='#1a100c';ctx.fillRect(-4,-136,8,18);ctx.fillStyle='#1a100c';ctx.fillRect(-9,0,18,9);ctx.fillStyle='#2a1a12';ctx.fillRect(-9,0,4,9);
   ctx.restore();
+  // the trunk stands on the ground: flared roots gripping a mound of scorched soil (they stay when it falls, torn)
+  {const bx=R(X),by=GROUND_Y+2;for(let y=0;y<12;y++){const hw=9+Math.round(Math.pow(y/11,2)*10);for(let x=-hw;x<=hw;x++){const gap=y>5&&Math.abs(x)>8&&Math.sin(x*.9)>.55;if(gap)continue;rect(bx+x,by-12+y,1,1,x<-hw+3?'#2a1a12':x>hw-3?'#0c0806':(hashD(x*7+y)>.8?'#3a2414':'#1a100c'));}}
+   for(let x=-24;x<=24;x++){const h=Math.round(3*Math.cos(x/24*Math.PI/2));for(let y=0;y<h;y++)rect(bx+x,by-y,1,1,y===h-1?'#3a2a20':'#22160e');}
+   if(fireK>.2)for(const ex of [-11,4,13])if(Math.sin(gt*3+ex)>-.3)rect(bx+ex,by-3,1,1,'#ff7a20');}
   if(!b||b.phase<3||(b.p3t||0)<1.1){for(let i=0;i<5;i++)flame(X+(hashD(i*3)-.5)*14,G-40-i*18,(8+6*Math.abs(Math.sin(gt*2+i)))*fk,4,i*5+77);}
   if(b&&b.phase===3&&(b.p3t||0)>.9){const k=clamp(((b.p3t||0)-.9)/1.2,0,1);alpha(.6*k,()=>glow(X+60,G-20,120,'rgb(255,90,20)',.5));
     for(let i=0;i<14;i++)flame(X+8+i*9,G+2-Math.max(0,10-i),(18+16*Math.abs(Math.sin(gt*2.6+i*1.3)))*k*fk,7,i*9+3);}}
@@ -3611,7 +3704,7 @@ let bedS=null;
 function bedSpot(){const key=LV+':'+LW+':'+(LV===5&&boss?boss.bin:'');if(bedS&&bedS.key===key)return bedS;
   if(LV===5){const bn=bins5[boss&&boss.bin>=0?boss.bin:2]||{x:ARENA_X+250};bedS={key,kind:'lid',x:bn.x,gy:GROUND_Y-22,y:GROUND_Y-22};return bedS;} // the city: curls up on the lid of the can the stray hid in
 const kind={1:'roots',4:'roots',6:'box',5:'box',3:'scarecrow',2:'drum'}[LV]||'box';
-  let c=Math.floor((ARENA_X+(LV===6?205:LV===2?236:248))/T);for(let k=0;k<12&&groundY(c)>H;k++)c--;
+  let c=Math.floor((ARENA_X+(LV===6?205:LV===2?236:LV===1?264:248))/T);for(let k=0;k<12&&groundY(c)>H;k++)c--;
   const gy=groundY(c),x=c*T+8;bedS={key,kind,x,gy,y:gy-(kind==='sweater'?3:kind==='box'?3:kind==='drum'?4:kind==='scarecrow'?3:1)};return bedS;}
 // finely drawn sleeping spots, painted once into canvases: [back layer, front layer] drawn around the sleeping cat
 const BEDART={};
@@ -4259,7 +4352,7 @@ function drawDecay(cx){if(LV>2)return;
     }}
   // the boss arena: wasteland / poisoned ground props
   if(cx>ARENA_X-W){const ax=ARENA_X-R(cx);
-    if(LV===1){for(const [dx,kd] of [[64,0],[150,1],[236,0]]){if(kd===1)ctx.drawImage(FELLED.l,ax+dx-25,GROUND_Y-14);else{ctx.drawImage(STUMP.r,ax+dx-15,GROUND_Y-23);if(dx===64){ctx.drawImage(AXE.r,ax+dx-9,GROUND_Y-19-23);rect(ax+dx-5,GROUND_Y-19,11,1,'#3a2012');rect(ax+dx-1,GROUND_Y-18,3,2,'#2a160c');rect(ax+dx,GROUND_Y-16,1,4,'#2a160c');rect(ax+dx+1,GROUND_Y-13,1,3,'#3a2012');}}}for(let i=0;i<9;i++){const gx=ax+20+i*33+Math.floor(hashD(i*7+5)*14);rect(gx,GROUND_Y-3,1,3,'#9a7a3a');rect(gx+2,GROUND_Y-2,1,2,'#b0904a');rect(gx+4,GROUND_Y-4,1,4,'#8a6a30');}}
+    if(LV===1){drawArenaFront1(cx);}
     else{for(const [dx,w] of [[50,20],[110,14],[170,26],[236,16],[280,12]])puddle(ax+dx,GROUND_Y,w,gt,dx);for(let i=0;i<14;i++){const jx=ax+8+i*22+Math.floor(hashD(i*7+3)*12);if(sprout&&Math.abs(jx+5-(sprout.x-R(cx)))<16)continue;junk(jx,GROUND_Y+1,Math.floor(hashD(i*5+1)*7)%7);}ctx.drawImage(BARREL.r,ax+24,GROUND_Y-24);ctx.drawImage(BARREL_T.r,ax+250,GROUND_Y-18);ctx.drawImage(BARREL_G.r,ax+282,GROUND_Y-24);drawToxicPile(ax+FROG_PILE,boss&&boss.kind==='frog'&&boss.state==='intro'?boss.boil||0:0);}}
 
 }
@@ -5453,7 +5546,7 @@ function update(dt){
   else if(state==='arrive'){updArrive(dt);updBus(dt);updParts(dt);}
   else if(state==='play'){
     if(!p.ctrl&&LV===1&&bus.gone&&!boss)p.ctrl=true; // the cat waits until the bus has driven off screen
-    updCutView(dt);if(state!=='play')return;if(lvS&&!cutView)lvS.t+=dt;updPlayer(dt);if(state==='play'){updEnemies(dt);updHeaps6(dt);updFish();updBoss(dt);updFires4();updIgn4(dt);updChase4(dt);updHoppers(dt);updCity5(dt);if(LV===2){updPads(dt);updWaves(dt);updJumpers(dt);}}updBus(dt);updParts(dt);
+    updCutView(dt);if(state!=='play')return;if(lvS&&!cutView)lvS.t+=dt;updPlayer(dt);if(state==='play'){updEnemies(dt);updHeaps6(dt);updFish();updBoss(dt);sawSound1(dt);updFires4();updIgn4(dt);updChase4(dt);updHoppers(dt);updCity5(dt);if(LV===2){updPads(dt);updWaves(dt);updJumpers(dt);}}updBus(dt);updParts(dt);
     const target=boss?ARENA_X:ign4?FIRE_X-176:p.x-W*.42;cam+=(target-cam)*Math.min(1,dt*(boss?4:7));cam=clamp(cam,LV===5?CAMMIN5:0,LW-W);
     if(bannerT>0){bannerT-=dt;if(bannerT<=0)show('banner',false);}
   }
