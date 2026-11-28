@@ -3401,10 +3401,13 @@ function drawCamp(cx){const x0=FIRE_X-110-R(cx);if(x0<-140||x0>W+20)return;const
   rect(tx-6,gy-9,7,6,'#e8e8f0');rect(tx-5,gy-10,2,1,'#e8e8f0');rect(tx-2,gy-11,2,2,'#e8e8f0');rect(tx-6,gy-4,7,1,'#b8b8c8'); // white plastic bag
   rect(tx+3,gy-6,8,3,'#6ab0d8');rect(tx+11,gy-5,2,1,'#2a6aa0');rect(tx+5,gy-6,3,1,'#a8daf0'); // a plastic bottle on its side
   rect(tx-12,gy-3,4,3,'#c83a3a');rect(tx-12,gy-3,4,1,'#e8e8e8'); // a crushed can
-  if(ign4){const t=ign4.t,ig=clamp((t-3.4)/1.2,0,1);
-    if(ig>0){alpha(.6,()=>glow(tx,gy-8,16+ig*16,'rgb(255,130,40)',.45));flame(tx-4,gy-2,ig*12,4,2);flame(tx+3,gy-2,ig*15+Math.sin(gt*9)*2,5,5);flame(tx+8,gy-2,ig*9,3,8);if(ig>.4)rect(tx-6,gy-9,7,6,'#3a2a20');}
+  if(ign4||ign4Done){const t=ign4?ign4.t:9,ig=clamp((t-3.4)/1.2,0,1);
+    // once lit the litter keeps burning after the cutscene (user: the fire went out when the cutscene ended), and the flames creep on into the dry grass towards the forest
+    if(ig>0){alpha(.6,()=>glow(tx+8,gy-8,16+ig*22,'rgb(255,130,40)',.45));flame(tx-4,gy-2,ig*12,4,2);flame(tx+3,gy-2,ig*15+Math.sin(gt*9)*2,5,5);flame(tx+8,gy-2,ig*9,3,8);if(ig>.4)rect(tx-6,gy-9,7,6,'#3a2a20');
+      const sp=ign4?clamp((t-4.2)/1.6,0,1):1;for(let i=0;i<4;i++){const k=clamp(sp*4-i,0,1);if(k>0){flame(tx+16+i*9,gy-1,k*(8+3*Math.sin(gt*6+i*2)),3,i*3+1);rect(tx+12+i*9,gy-1,8,1,'#2a1a14');}}
+      if(Math.random()<.12)parts.push({x:tx+cx+Math.random()*40-6,y:gy-12,vx:(Math.random()-.3)*12,vy:-26-Math.random()*24,life:.9,max:.9,c:Math.random()<.5?'#ffc060':'#ff8a30',g:-8});}
     if(t>1.2&&t<2.2){const k=(t-1.2);for(let i=0;i<5;i++)rect(R(fx-60+((k*120+i*37)%140)),R(gy-30+Math.sin(i*2+t*5)*8+i*4),2,1,i%2?'#9a7032':'#6a8a3a');} // the gust carries dry leaves
-    if(ign4.bub)bubble(p.x-cx+7,p.y-22,ign4.bub==='q'?GLY.q:GLY.ex);}
+    if(ign4&&ign4.bub)bubble(p.x-cx+7,p.y-22,ign4.bub==='q'?GLY.q:GLY.ex);}
 }
 // the fire starts: a gust fans the campfire nobody put out, embers land on the plastic and dry leaves, and it spreads into the forest
 function updIgn4(dt){if(LV!==4||state!=='play'||cutView==='boss')return;
@@ -3605,7 +3608,10 @@ function scareCollide3(){if(LV!==3||!SC3||p.vy<0)return;const was=p.onArm;p.onAr
     if(was===A.s){const lim=scPiv(A.s)+A.s*5;if((p.x-lim)*A.s<0){p.x=lim;p.vx=0;}}
     const y=armTopY(A,p.x);if(y===null)continue;if(p.prevY<=y+4&&p.y>=y-2){p.y=y;p.vy=0;p.onGround=true;p.onArm=A.s;const lim=scPiv(A.s)+A.s*5;if((p.x-lim)*A.s<0){p.x=lim;p.vx=0;p.y=armTopY(A,p.x)??p.y;}}}}
 function crowSpring(){ // the straw bales at the scarecrow's feet are a springboard
-  const sx=SCARE_X();if(p.vy>0&&p.prevY<=SCARE_TOP+1&&p.y>=SCARE_TOP&&Math.abs(p.x-sx)<9){p.y=SCARE_TOP;p.vy=-440;p.jumping=false;p.launch=1.1;p.onGround=false;scareWob=.6;tone(260,620,.18,'triangle',.06);puff(sx,SCARE_TOP,6,'#e8c070',40,20,.4);}}
+  const sx=SCARE_X();if(p.vy>0&&p.prevY<=SCARE_TOP+1&&p.y>=SCARE_TOP&&Math.abs(p.x-sx)<9){
+    // once the fight is over (rescue cutscene, outro) the heap is just a heap: the cat lands on it instead of bouncing forever (user bug)
+    if(!(boss&&boss.kind==='crow2'&&!/^s_|gone/.test(boss.state)&&state==='play'&&p.ctrl)){p.y=SCARE_TOP;p.vy=0;p.onGround=true;p.launch=0;return;}
+    p.y=SCARE_TOP;p.vy=-440;p.jumping=false;p.launch=1.1;p.onGround=false;scareWob=.6;tone(260,620,.18,'triangle',.06);puff(sx,SCARE_TOP,6,'#e8c070',40,20,.4);}}
 const scHurt=(x)=>{if(state==='play'&&p.inv<=0&&!(p.safe>0))hurt(x,false);};
 const catOn=(x,w,y0,y1)=>Math.abs(p.x-x)<w+p.hw&&p.y>y0&&p.y-p.h<y1;
 function updScare3(dt){const S=SC3,b=boss;if(!S)return;S.shake=Math.max(0,S.shake-dt);
@@ -3756,7 +3762,7 @@ function updCrowSave3(b,dt){const S=SC3,t=b.t,SX=SC_X(),go=s=>bossSet(s);p.idleT
       if(S.burn>.45)go('s_fire');break;}
     case 's_fire':{p.face=1*(SX>p.x?1:-1);p.bub=1;if(Math.random()<dt*5)tone(3000+Math.random()*800,3400,.05,'square',.012);if(t>1)go('s_wait');break;} // the chicks scream; the cat freezes
     case 's_wait':{p.bub=1;if(t>1){p.bub=0;SFX.meow&&SFX.meow();go('s_run');}break;} // one heartbeat of hesitation...
-    case 's_run':{const tx=SX-26,d=tx-p.x;p.vx=0;if(Math.abs(d)>2){p.x+=Math.sign(d)*Math.min(Math.abs(d),125*dt);p.face=Math.sign(d);}else{p.face=1;b.jx=p.x;b.jy=p.y;go('s_leap');}break;}
+    case 's_run':{const tx=SX-26,d=tx-p.x;p.vx=0;if(Math.abs(d)>2){p.x+=Math.sign(d)*Math.min(Math.abs(d),125*dt);p.face=Math.sign(d);p.pose=poseRun(gt*12,gt);}else{p.face=1;b.jx=p.x;b.jy=p.y;go('s_leap');}break;}
     case 's_leap':{const k=clamp(t/.45,0,1),x=lerp(b.jx,SX-5,k),y=lerp(b.jy,GROUND_Y-16,k)-Math.sin(k*Math.PI)*20;p.x=x;p.y=y;p.vx=0;p.vy=k<.5?-200:150;p.onGround=false;p.face=1;if(k>=1){p.y=GROUND_Y-16;go('s_pull');}break;}
     case 's_pull':{p.x=SX-5+Math.sin(t*25)*.6;p.y=GROUND_Y-16;p.vy=0;p.onGround=true;p.face=1;if(t>.9&&!S.nest){S.nest={x:SX,y:108,vx:-60,vy:-90,land:0};tone(500,250,.2,'square',.03);}
       if(t>1.1){b.jx=p.x;b.jy=p.y;go('s_down');}break;}
