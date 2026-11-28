@@ -2536,8 +2536,8 @@ function dogRunRows(t){const R=DOGMASK.run,W=R[0].length,H0=R.length,TOP=3,H=H0+
   const MX=30,dx=x=>x<MX?x:MX+(x-MX)*(1-k),off=x=>Math.round(TOP+bob+pitch*(x-33)/33-arch*Math.max(0,Math.sin(Math.PI*(x-8)/50))),
    set=(x,y,c)=>{x=Math.round(x);y=Math.round(y);if(x>=0&&x<W&&y>=0&&y<H)g[y][x]=c;};
   // torso: the reference body; the back half slides forward when the legs gather and the spine arches
-  const keep=(y,x)=>y<15||(y<18&&((x>=12+(y-15)*2&&x<=33-(y-15)*3)||(x>=41+(y-15)&&x<=55-(y-15)*2)));
-  for(let y=0;y<18;y++)for(let x=0;x<W;x++){const sx=x<MX?x:Math.round(MX+(x-MX)/(1-k));if(sx<W&&keep(y,sx)&&R[y][sx]==='#')set(x,y+off(x)+(sx>=50&&y<10?Math.round(Math.pow((sx-50)/15,1.3)*3.2*Math.sin(t*Math.PI*2-(sx-50)*.18+1)):0),'#');}
+  const keep=(y,x)=>y<15||(y<18&&((x>=12+(y-15)*2&&x<=33-(y-15)*3)));
+  for(let y=0;y<18;y++)for(let x=0;x<W;x++){const sx=x<MX?x:Math.round(MX+(x-MX)/(1-k));if(sx<W&&keep(y,sx)&&R[y][sx]==='#')set(x,y+off(x)+(sx>=50&&y<11?Math.round((sx-50)/15*3*Math.sin(t*Math.PI*2+1-(sx-50)*.05)):0),'#');}
   for(let x=15;x<dx(51);x++)set(x,15+off(x),'#');
   // muscle: deep chest and heavy haunch
   const blob=(cx,cy,rx,ry)=>{for(let y=-ry;y<=ry;y++)for(let x=-rx;x<=rx;x++)if((x*x)/(rx*rx)+(y*y)/(ry*ry)<=1)set(cx+x,cy+y+off(cx+x),'#');};
@@ -2548,7 +2548,12 @@ function dogRunRows(t){const R=DOGMASK.run,W=R[0].length,H0=R.length,TOP=3,H=H0+
    leg=(x0,an,front,c)=>{const hy=15+off(x0),L1=front?6:6.5,L2=front?7:7.2,[a1,a2]=an;
      const kx=x0-Math.sin(a1)*L1,ky=hy+Math.cos(a1)*L1,px=kx-Math.sin(a2)*L2,py=Math.min(H-1,ky+Math.cos(a2)*L2);
      seg(x0,hy-2,kx,ky,front?2.6:3.1,1.6,c);seg(kx,ky,px,py,1.5,1.1,c);seg(px,py,px-1.8,py,1.2,1,c);};
-  leg(fx+3,lg(1,.13),1,'%');leg(hx+3,lg(3,.15),0,'%');leg(fx,lg(0,0),1,'@');leg(hx,lg(2,.03),0,'@');
+  leg(fx+1,lg(1,.1),1,'%');leg(hx-1,lg(3,.1),0,'%');leg(fx,lg(0,0),1,'@');leg(hx,lg(2,.03),0,'@');
+  // tidy the silhouette: fill notches where legs meet the body, drop stray single pixels
+  const F=(x,y)=>y>=0&&y<H&&x>=0&&x<W&&g[y][x]!=='.';
+  for(let pass=0;pass<2;pass++)for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
+    if(g[y][x]==='.'){const l=F(x-1,y)||F(x-2,y),r=F(x+1,y)||F(x+2,y);if(l&&r&&F(x,y-1)&&y<20)g[y][x]=g[y][x-1]!=='.'?g[y][x-1]:g[y][x+1];}
+    else if(g[y][x]==='#'){const n=F(x-1,y)+F(x+1,y)+F(x,y-1)+F(x,y+1);if(n<=1)g[y][x]='.';}}
   return g.map(r=>r.join(''));}
 const DOG={};
 {const add=(k,n,pk)=>{for(let i=0;i<n;i++)DOG[k+i]=dogRig(dogPose(pk||k,i/n));};add('run',12);add('stand',8);add('growl',8);add('daze',8);add('kick',8);add('lie',4);add('rear',8);add('sit',4);
