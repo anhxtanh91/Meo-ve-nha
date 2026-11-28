@@ -4561,7 +4561,7 @@ function drawWorld(){
   if(shakeT>0){ctx.save();ctx.translate(R((Math.random()*2-1)*shakeA),R((Math.random()*2-1)*shakeA));}
   if(LV===1)drawShelter(156-cx);
   for(const f of flags)drawFlag(f,cx);
-  drawSign(cx);drawStory(cx);
+  drawStory(cx); // no "NHÀ" signpost before the bosses any more (user removed it)
   drawArenaTree(cx);
   if(!bus.gone)drawBus(bus.x-cx,144,bus.door,bus.leaving,bus.dist);
   if(LV===2){drawDockPosts(cx);for(const d of pads)if(!padSolid(d))drawPad(d,cx);}else if(LV===5)drawBalc5(cx);else if(LV===6)drawGate6(cx);else drawCanopyTrees(cx);
