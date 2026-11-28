@@ -906,7 +906,7 @@ let boss=null,apple=null,treeShake=0,treeSide=1,lastCheck=140;
 
 function newBoss(){return {x:ARENA_X+W+40,y:60,state:'intro',t:0,dir:-1,hits:0,summoned:0,waveT:1.2,dive:0,flash:0,hw:7,h:11,spd:1,sx:0,sy:0,tx:0,ty:0,vx:0,vy:0,shake:0};}
 function bossSet(s){boss.state=s;boss.t=0;boss.sx=boss.x;boss.sy=boss.y;}
-function bossBar(){const b=$('bossBar');b.hidden=!boss||boss.state==='gone';if(!boss)return;const mx=boss.kind==='frog'?5:3;if(boss.kind==='dog'){const d=Math.min(3,boss.dodges||0)+Math.min(3,boss.stomps||0)+boss.hits;$('bossFill').style.width=(100*(9-d)/9)+'%';return;}$('bossFill').style.width=(100*(mx-boss.hits)/mx)+'%';}
+function bossBar(){const b=$('bossBar');b.hidden=!boss||boss.state==='gone';if(!boss)return;const mx=boss.kind==='frog'?5:3;if(boss.kind==='crow2'){const d=(SC3?SC3.cuts:0)+(boss.phase===2?boss.hits:0);$('bossFill').style.width=(100*(6-d)/6)+'%';return;}if(boss.kind==='dog'){const d=Math.min(3,boss.dodges||0)+Math.min(3,boss.stomps||0)+boss.hits;$('bossFill').style.width=(100*(9-d)/9)+'%';return;}$('bossFill').style.width=(100*(mx-boss.hits)/mx)+'%';}
 function startBoss(){if(LV===5){boss=newStrayBoss();$('bossIcon').src=STRAY_ICON;bossBar();return;}if(LV===6){boss=newRatBoss();$('bossIcon').src=RAT6_ICON;bossBar();tone(1500,2000,.12,'square',.04);return;}boss=LV===2?newFrogBoss():LV===4?newDogBoss():LV===3?newCrowBoss():newBoss();$('bossIcon').src=LV===2?FROG_ICON:LV===3?CROW_ICON:LV===4?DOG_ICON:QUEEN_ICON;bossBar();LV===2?SFX.bigCroak():LV===3?SFX.caw():LV===4?0:SFX.buzz();}
 function summonMinion(i){
   const e={type:'minion',x:boss.x+(i?10:-10),y:boss.y,yT:112+i*10,hw:5,h:8,t:i*1.3,dir:-1,alive:true,dead:0,vy:0};
@@ -978,7 +978,7 @@ function updBoss(dt){
    squash & stretch from its own motion (breathing at rest, stretch when it leaps or dives, a squash when it lands),
    dark afterimages when it moves fast, and a white flash instead of a blank frame when it is hit ---- */
 const [BFX_CV,BFX_G]=mkCanvas(W,H),[BFX_L,BFX_LG]=mkCanvas(W,H),BFX_TR=[0,1,2,3].map(()=>mkCanvas(W,H));let bfx=null;
-const bossRage=b=>{const mx=b.kind==='frog'?5:3;return clamp((b.hits||0)/(mx-1),0,1);};
+const bossRage=b=>{if(b.kind==='crow2')return clamp(((SC3?SC3.cuts:0)+(b.phase===2?b.hits:0))/5,0,1);const mx=b.kind==='frog'?5:3;return clamp((b.hits||0)/(mx-1),0,1);};
 function drawBoss(cx){if(!boss||boss.state==='gone'){bfx=null;return;}const b=boss;
   if(!bfx||bfx.b!==b)bfx={b,px:b.x,py:b.y,vx:0,vy:0,sq:0,t:gt,tr:[],ti:0,trT:0,has:false};
   const f=bfx,dt=Math.max(1/240,gt-f.t);if(gt!==f.t){const vx=(b.x-f.px)/dt,vy=(b.y-f.py)/dt;if(Math.abs(vx)<2000&&Math.abs(vy)<2000){ // ignore teleports
@@ -3548,8 +3548,8 @@ function drawRain4(cx){alpha(.1*rainK,()=>rect(0,0,W,H,'#9aa8b8'));for(let i=0;i
 
 /* ---------- wild dog boss ---------- */
 /* ---------- Quạ Đầu Đàn: perches on the giant scarecrow's arms out of reach (her nest is in its ribcage); a scarecrow springboard launches the cat up ---------- */
-const POLE_L=()=>ARENA_X+16,POLE_R=()=>ARENA_X+W-16,SCARE_X=()=>ARENA_X+W/2,SCARE_TOP=GROUND_Y-33;
-const wireY=x=>GS3.beam; // the crow walks along the giant scarecrow's iron crossbar
+const POLE_L=()=>ARENA_X+16,POLE_R=()=>ARENA_X+W-16,SCARE_X=()=>ARENA_X+W/2,SCARE_TOP=GROUND_Y-17;
+const wireY=x=>{const a=POLE_L(),b=POLE_R();return 54+12*Math.sin(Math.PI*clamp((x-a)/(b-a),0,1));};
 let scareWob=0;
 const ROCK_C={o:'#1e1a16',d:'#5a5248',m:'#8a8274',l:'#b8b0a0',w:'#e8e2d2'};
 const ROCK_S=['...oooo...','..ommmmo..','.omlwlmmo.','omlwlmmmdo','ommlmmmmdo','ommmmmdddo','.ommmdddo.','..oooooo..','..........'];
@@ -3558,171 +3558,285 @@ const ROCK_M=(()=>{const [c,g]=mkCanvas(15,12);const P=(x,y,w,h,col)=>{g.fillSty
   P(4,1,7,1,'#8a8274');P(2,2,11,8,'#8a8274');P(1,4,13,4,'#8a8274');P(4,10,7,1,'#5a5248');
   P(3,2,5,2,'#b8b0a0');P(2,4,3,2,'#b8b0a0');P(4,2,2,1,'#e8e2d2');P(3,3,1,1,'#e8e2d2');
   P(9,7,4,2,'#5a5248');P(6,8,6,2,'#5a5248');P(12,5,1,3,'#5a5248');P(7,5,1,1,'#6e675c');P(10,4,1,1,'#6e675c');return c;})();
-function newCrowBoss(){return {kind:'crow2',x:ARENA_X+W+30,y:20,state:'intro',t:0,dir:-1,hits:0,flash:0,hw:9,h:14,spd:1,vx:0,vy:0,dropT:2,flockT:6,flockN:0,rocks:[],flock:[],pause:0,tx:ARENA_X+220,sx:0,sy:0};}
-function crowSpring(){ // the scarecrow's straw head is a springboard
+// ---- the scarecrow fight (user, 2026-11-28) ----
+// Phase 1: the scarecrow guards the nest. It slams an iron arm down (the arm lies on the ground like a ramp for a moment) or drags its
+//   hand along the ground (jump over it); now and then it jerks and flings burning straw and barbed wire. The Crow Queen circles high and
+//   drops razor feathers. Run up a slammed arm to the shoulder and claw the barbed wire there: 3 times and both arms fall off.
+// Phase 2: the Crow Queen soars up and fights with her worker crows, dropping rubbish; bounce off the straw bales to headbutt her (3 hits).
+// Then the straw catches fire and creeps toward the chicks: the cat waits a moment, then rushes in and pulls the nest out; the Queen sees it,
+//   and the whole flock carries the nest off toward the horizon.
+let SC3=null;
+const scPiv=s=>SC_X()+s*8;
+function newSC3(){return {arms:[{s:-1,a:0,len:SC_AL,st:'rest',t:0,cut:0},{s:1,a:0,len:SC_AL,st:'rest',t:0,cut:0}],cuts:0,slump:0,nextT:2.2,tw:6,shake:0,proj:[],fires:[],eye:0,burn:0,nest:null,last:1,kind:0};}
+function newCrowBoss(){SC3=newSC3();return {kind:'crow2',phase:1,x:ARENA_X+W+30,y:20,state:'intro',t:0,dir:-1,hits:0,flash:0,hw:9,h:14,spd:1,vx:0,vy:0,dropT:2,flockT:6,flockN:0,rocks:[],flock:[],fth:[],pause:0,tx:ARENA_X+220,sx:0,sy:0,fT:2};}
+const armTip=A=>[scPiv(A.s)+A.s*Math.cos(A.a)*A.len,SC_PY+Math.sin(A.a)*A.len];
+// the top of a lowered arm is something the cat can walk on
+const armTopY=(A,x)=>{const d=(x-scPiv(A.s))*A.s;if(d<4.5||d>Math.cos(A.a)*A.len)return null;return SC_PY+d*Math.tan(A.a);};
+function scareCollide3(){if(LV!==3||!SC3||p.vy<0)return;const was=p.onArm;p.onArm=0;for(const A of SC3.arms){if(A.st!=='down'&&A.st!=='lift')continue;
+    if(was===A.s){const lim=scPiv(A.s)+A.s*5;if((p.x-lim)*A.s<0){p.x=lim;p.vx=0;}}
+    const y=armTopY(A,p.x);if(y===null)continue;if(p.prevY<=y+4&&p.y>=y-2){p.y=y;p.vy=0;p.onGround=true;p.onArm=A.s;const lim=scPiv(A.s)+A.s*5;if((p.x-lim)*A.s<0){p.x=lim;p.vx=0;p.y=armTopY(A,p.x)??p.y;}}}}
+function crowSpring(){ // the straw bales at the scarecrow's feet are a springboard
   const sx=SCARE_X();if(p.vy>0&&p.prevY<=SCARE_TOP+1&&p.y>=SCARE_TOP&&Math.abs(p.x-sx)<9){p.y=SCARE_TOP;p.vy=-440;p.jumping=false;p.launch=1.1;p.onGround=false;scareWob=.6;tone(260,620,.18,'triangle',.06);puff(sx,SCARE_TOP,6,'#e8c070',40,20,.4);}}
+const scHurt=(x)=>{if(state==='play'&&p.inv<=0&&!(p.safe>0))hurt(x,false);};
+const catOn=(x,w,y0,y1)=>Math.abs(p.x-x)<w+p.hw&&p.y>y0&&p.y-p.h<y1;
+function updScare3(dt){const S=SC3,b=boss;if(!S)return;S.shake=Math.max(0,S.shake-dt);
+  const fight=b&&b.phase===1&&b.state==='fight';
+  S.eye=lerp(S.eye,fight?1:S.cuts>=3?0:.3,Math.min(1,dt*3));
+  if(b&&b.phase>=2)S.slump=Math.min(5,S.slump+dt*9);
+  for(const A of S.arms){A.t+=dt;const go=s=>{A.st=s;A.t=0;A.a0=A.a;A.l0=A.len;};
+    switch(A.st){
+      case 'rest':A.a=lerp(A.a,Math.sin(gt*1.3+A.s)*.02,Math.min(1,dt*4));A.len=lerp(A.len,SC_AL,Math.min(1,dt*4));break;
+      case 'wind':{const k=ease(clamp(A.t/.6,0,1));A.a=lerp(A.a0,-.34,k);A.a+=Math.sin(gt*40)*.006;if(A.t>.75)go('drop');break;}
+      case 'drop':{const k=clamp(A.t/.22,0,1);A.a=lerp(A.a0,SC_RAMP,k*k);if(k>=1){A.a=SC_RAMP;const [tx]=armTip(A);
+          shakeT=.3;shakeA=2.4;SFX.stomp();tone(90,50,.25,'square',.06);puff(tx,GROUND_Y-1,14,'#a89060',80,40,.6);
+          if(p.onGround&&Math.abs(p.x-tx)<26)scHurt(tx);
+          if(A.next==='sweep'){go('drag');}else go('down');}break;}
+      case 'down':{A.a=SC_RAMP+(A.t>2.6?Math.sin(gt*50)*.004:0);
+        // the cat at the shoulder claws through the barbed wire binding the joint
+        if(p.onArm===A.s&&Math.abs(p.x-scPiv(A.s))<14&&state==='play'){A.cut+=dt;if(Math.random()<.5)parts.push({x:scPiv(A.s)+(Math.random()-.5)*8,y:SC_PY+2+(Math.random()-.5)*6,vx:(Math.random()-.5)*80,vy:-40-Math.random()*60,life:.3,max:.3,c:Math.random()<.5?'#fff0a0':'#c8c8d0',g:300});
+          if(Math.random()<dt*12)tone(2400+Math.random()*800,1800,.03,'square',.015);
+          if(A.cut>=.7){A.cut=0;S.cuts++;bossBar();SFX.bossHit();tone(160,60,.5,'sawtooth',.05);shakeT=.3;shakeA=2;puff(scPiv(A.s),SC_PY+2,10,'#8a8a94',70,60,.5);
+            p.vy=-250;p.vx=A.s*-70;p.onGround=false;p.onArm=0;p.safe=.8;
+            if(S.cuts>=3){for(const B of S.arms){B.st='fall';B.t=0;B.x=scPiv(B.s);B.y=SC_PY;B.vx=B.s*(30+Math.random()*20);B.vy=-60;B.av=B.s*1.2;}SFX.roar&&0;crowPhase2();}
+            else{go('lift');A.fast=1;}}}
+        if(A.t>3.2)go('lift');break;}
+      case 'drag':{const k=clamp(A.t/1.5,0,1);A.len=lerp(SC_AL,64,ease(k));A.a=Math.asin(Math.min(1,(GROUND_Y-SC_PY-1)/A.len));const [tx]=armTip(A);
+        if(Math.random()<.5)puff(tx,GROUND_Y-1,1,'#a89060',30,15,.3);if(Math.random()<dt*6)tone(120+Math.random()*40,80,.06,'sawtooth',.02);
+        if(catOn(tx,6,GROUND_Y-11,GROUND_Y+2))scHurt(tx);if(k>=1)go('lift');break;}
+      case 'lift':{const k=ease(clamp(A.t/(A.fast?.35:.9),0,1));A.a=lerp(A.a0,0,k);A.len=lerp(A.l0,SC_AL,k);if(k>=1){A.fast=0;go('rest');}break;}
+      case 'fall':{if(!A.land){A.vy+=G*.7*dt;A.x+=A.vx*dt;A.y+=A.vy*dt;A.a+=A.av*dt;if(A.y>GROUND_Y-22){A.land=1;A.ft=0;shakeT=.4;shakeA=3;SFX.stomp();puff(A.x+A.s*40,GROUND_Y-2,20,'#a89060',100,40,.7);puff(A.x+A.s*70,GROUND_Y-4,10,'#c8a858',60,40,.6);}}
+        else{A.ft+=dt*1.5;if(A.ft>=1)A.st='gone';}break;}
+    }}
+  if(!fight)return;
+  // pick the next attack: the arm on the cat's side, a slam every other time so there is always a way up
+  S.nextT-=dt;if(S.nextT<=0&&S.arms.every(A=>A.st==='rest')){const s=p.x<SC_X()?-1:1,A=S.arms[s<0?0:1];A.next=S.kind%2===0?'slam':(Math.random()<.5?'sweep':'slam');S.kind++;A.st='wind';A.t=0;A.a0=A.a;A.l0=A.len;
+    tone(70,110,.5,'sawtooth',.035);hiss(.4,.02,300);S.nextT=2.6-S.cuts*.35;}
+  // now and then it jerks, flinging burning straw and barbed wire
+  S.tw-=dt;if(S.tw<=0&&S.arms.every(A=>A.st==='rest'||A.st==='down')){S.tw=5.5+Math.random()*2-S.cuts*.6;S.shake=.5;tone(80,40,.4,'sawtooth',.05);hiss(.3,.04,800);
+    for(let i=0;i<3;i++){const s=i%2?1:-1,k=i<2?'straw':'wire';S.proj.push({k,x:SC_X()+s*6,y:100,vx:s*(50+Math.random()*90)*(i===2?(p.x<SC_X()?-1:1)*s:1),vy:-170-Math.random()*90,t:0,rot:0,land:0});}}
+  for(const q of S.proj){q.t+=dt;if(!q.land){q.vy+=G*.6*dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.rot+=dt*8;if(q.k==='straw'&&Math.random()<.6)parts.push({x:q.x,y:q.y,vx:(Math.random()-.5)*10,vy:-20,life:.35,max:.35,c:Math.random()<.5?'#ffb030':'#ff6020',g:-40});
+      if(q.y>=GROUND_Y-2){q.land=1;q.t=0;q.y=GROUND_Y-2;tone(q.k==='wire'?900:200,q.k==='wire'?600:80,.08,'square',.025);}}
+    const w=q.k==='wire'?5:4;if(catOn(q.x,w,q.y-3,q.y+4)&&(q.k==='wire'||!q.land||q.t<1.6))scHurt(q.x);}
+  S.proj=S.proj.filter(q=>!q.land||q.t<(q.k==='wire'?2.6:1.8));}
+function crowPhase2(){const b=boss;b.phase=2;b.hits=0;b.fth=[];bossSet('soar');SFX.caw();tone(500,1400,.5,'sawtooth',.05);bossBar();}
 function updCrowBoss(dt){
   const b=boss;b.t+=dt;b.flash=Math.max(0,b.flash-dt);b.ivT=Math.max(0,(b.ivT||0)-dt);scareWob=Math.max(0,scareWob-dt);if(p.launch>0)p.launch-=dt;
-  const L=POLE_L()+14,Rx=POLE_R()-14;
-  if(state==='play')crowSpring();
+  const L=POLE_L()+14,Rx=POLE_R()-14,SX=SC_X();
+  if(state==='play'&&b.phase===2&&b.state!=='intro')crowSpring();
+  updScare3(dt);
   switch(b.state){
     case 'intro':{const t=b.t,CAT=ARENA_X+70,STOP=ARENA_X+178,D=2.9;
       // cutscene: a rat runs in, stops, looks around and sniffs; the cat stalks it, freezing whenever the rat looks its way.
-      // the rat decides it is safe and runs on — the cat leaps — and the crow snatches the rat first, vanishes into the sky, then lands on the wire
+      // the rat decides it is safe and runs on — the cat leaps — and the crow snatches the rat first, vanishes into the sky, then lands on the scarecrow's arm
       if(!b.rat){b.rat={x:ARENA_X+W+12,on:1,sq:0,ph:'run1',face:1};b.x=ARENA_X+W+40;b.y=-40;if(seenIntro[3]){b.rat.on=0;b.pounce=b.dv=1;b.t=4.6+D;p.stalk=0;}seenIntro[3]=1;}
       const r=b.rat;
       if(r.on===1){
         if(r.ph==='run1'&&t>.4){r.x-=95*dt;r.face=1;if(Math.random()<.2)puff(r.x+6,GROUND_Y,1,'#c8a860',20,8,.3);if(r.x<=STOP){r.x=STOP;r.ph='stop';r.st=t;}}
         else if(r.ph==='stop'){const u=t-r.st;
-          r.face=u<.5?1:u<1.1?-1:u<1.6?1:u<2.1?-1:1;                         // head turning: look ahead, behind, ahead, behind
-          if(!r.s1&&u>.7){r.s1=1;for(let k=0;k<3;k++)tone(2600,3000,.025,'square',.012,k*.09);}   // sniff sniff
+          r.face=u<.5?1:u<1.1?-1:u<1.6?1:u<2.1?-1:1;
+          if(!r.s1&&u>.7){r.s1=1;for(let k=0;k<3;k++)tone(2600,3000,.025,'square',.012,k*.09);}
           if(!r.s2&&u>1.8){r.s2=1;for(let k=0;k<3;k++)tone(2600,3000,.025,'square',.012,k*.09);}
           if(u>2.6){r.ph='run2';tone(1900,2300,.05,'square',.02);}}
         else if(r.ph==='run2'){r.x-=80*dt;r.face=1;if(Math.random()<.2)puff(r.x+6,GROUND_Y,1,'#c8a860',20,8,.3);}
         if(!r.sq&&t>.6){r.sq=1;tone(1900,2300,.06,'square',.03);setTimeout(()=>tone(2100,2500,.05,'square',.025),120);}}
       if(t<2+D){p.ctrl=false;keys.L=keys.R=false;p.face=1;
         if(t<1.4){if(p.x<CAT-2)p.vx=70;else if(p.onGround)p.vx=0;}
-        else{p.stalk=1;p.vx=0;const looking=r.ph==='stop'&&r.face<0;                 // freeze while the rat looks back
+        else{p.stalk=1;p.vx=0;const looking=r.ph==='stop'&&r.face<0;
           p.creep=!looking&&r.ph!=='run2'&&p.x<ARENA_X+100;if(p.creep){p.x+=14*dt;p.ph=(p.ph||0)+dt*7;}
           p.wiggle=r.ph==='run2';}}
       if(t>2+D&&!b.pounce){b.pounce=1;p.stalk=0;p.creep=0;p.wiggle=0;p.vy=JV*.8;p.vx=clamp((r.x-80*.4-p.x)/.52,40,112);p.jumping=false;p.onGround=false;SFX.jump();}
-      // dive from the upper right and grab the rat
       if(t>1.95+D&&t<=2.35+D){if(!b.dv){b.dv=1;b.sx=ARENA_X+W+30;b.sy=-30;SFX.caw();}const k=clamp((t-1.95-D)/.4,0,1);b.dir=-1;b.x=lerp(b.sx,r.x+2,k*k);b.y=lerp(b.sy,GROUND_Y-8,k*k);}
       if(t>2.35+D&&r.on===1){r.on=2;tone(2400,1400,.12,'square',.04);puff(r.x,GROUND_Y-4,8,'#2c2838',50,30,.4);b.sx=b.x;b.sy=b.y;}
-      // climb steeply away into the sky until it is gone
       if(t>2.35+D&&t<=3.5+D){const k=clamp((t-2.35-D)/1.1,0,1);b.x=b.sx-k*70;b.y=lerp(b.sy,-60,ease(k));if(Math.random()<.15)puff(b.x,b.y,1,'#2c2838',20,20,.4);}
       if(r.on===2){r.x=b.x+1;r.y=b.y+12;}
       if(t>3.5+D&&r.on===2){r.on=0;}
-      // swoop down and settle on the power line
+      // swoop down and land on the scarecrow's arm; the scarecrow wakes with a groan of iron, and she takes off to circle overhead
       if(t>4.6+D){if(!b.sw){b.sw=1;b.sx=ARENA_X+W*.3;b.sy=-40;SFX.caw();}const k=ease(clamp((t-4.6-D)/1.4,0,1));b.dir=1;b.x=lerp(b.sx,b.tx,k);b.y=lerp(b.sy,wireY(b.tx),k)+Math.sin(k*Math.PI)*28;
-        if(t>6.05+D){b.x=b.tx;b.y=wireY(b.x);b.dir=-1;b.rat=null;p.ctrl=true;bossSet('perch');SFX.caw();}}
+        if(t>6.05+D){b.x=b.tx;b.y=wireY(b.x);b.dir=-1;b.rat=null;bossSet('wake');SFX.caw();}}
       else if(t>3.5+D){b.y=-80;}
       break;}
-    case 'perch':{ // walk along the wire toward a spot above the cat, with little pauses
-      if(b.pause>0)b.pause-=dt;else{const tx=clamp(p.x,L,Rx);const d=tx-b.x;if(Math.abs(d)>3){b.dir=Math.sign(d);b.x+=b.dir*Math.min(Math.abs(d),(38+14*b.hits)*b.spd*dt);}else if(Math.random()<.02)b.pause=.5+Math.random()*.8;}
-      b.y=wireY(b.x);
-      b.dropT-=dt;if(b.dropT<=0&&Math.abs(b.x-p.x)<26){b.dropT=(1.5-b.hits*.25)/b.spd;b.rocks.push({x:b.x,y:b.y-2,vy:0});tone(500,300,.08,'square',.03);}
+    case 'wake':{b.y=wireY(b.x);p.ctrl=false;keys.L=keys.R=false;if(p.onGround)p.vx=0;SC3.eye=Math.min(1,b.t/1.2);if(b.t<1.3){shakeT=Math.max(shakeT,.05);shakeA=.8;if(Math.random()<dt*8)tone(60+Math.random()*30,40,.15,'sawtooth',.03);}
+      if(b.t>1.4&&!b.up){b.up=1;SFX.caw();tone(70,140,.6,'sawtooth',.05);}
+      if(b.t>1.4){const k=clamp((b.t-1.4)/.8,0,1);b.y=wireY(b.x)-k*30;b.x+=dt*-30;}
+      if(b.t>2.2){p.ctrl=true;bossSet('fight');}break;}
+    case 'fight':{ // phase 1: she circles high over the field and drops razor-sharp feathers on the cat
+      const a=b.t*.75;const tx=SX+Math.cos(a)*112,ty=26+Math.sin(a*2)*9;b.dir=Math.sin(a)>0?-1:1;b.x=lerp(b.x,tx,Math.min(1,dt*2.5));b.y=lerp(b.y,ty,Math.min(1,dt*2.5));
+      b.fT-=dt;if(b.fT<=0&&Math.abs(b.x-p.x)<70){b.fT=1.7-SC3.cuts*.3;for(let i=0;i<2;i++)b.fth.push({x:b.x+(i?6:-6),y:b.y-4,vy:70+i*20,ph:Math.random()*6,t:0,st:0});tone(1500,900,.08,'triangle',.03);}
+      break;}
+    case 'soar':{ // the arms are gone: she shrieks and climbs high into the sky...
+      const k=clamp(b.t/1.1,0,1);b.y=lerp(b.sy,-40,ease(k));b.x=lerp(b.sx,SX+40,k);b.dir=-1;if(b.t>1.6){bossSet('descend');b.sx=SX+90;b.sy=-40;SFX.caw();b.flockT=2.5;}break;}
+    case 'descend':{const k=ease(clamp(b.t/1.3,0,1));b.x=lerp(b.sx,SX+40,k);b.y=lerp(b.sy,wireY(b.x),k);b.dir=-1;if(k>=1)bossSet('perch');break;}
+    case 'perch':{ // ...then hovers over the field with her worker crows, following the cat and dropping rubbish
+      if(b.pause>0)b.pause-=dt;else{const tx=clamp(p.x,L,Rx);const d=tx-b.x;if(Math.abs(d)>3){b.dir=Math.sign(d);b.x+=b.dir*Math.min(Math.abs(d),(40+14*b.hits)*b.spd*dt);}else if(Math.random()<.02)b.pause=.5+Math.random()*.8;}
+      b.y=wireY(b.x)+Math.sin(gt*5)*1.5;
+      b.dropT-=dt;if(b.dropT<=0&&Math.abs(b.x-p.x)<26){b.dropT=(1.5-b.hits*.25)/b.spd;b.rocks.push({x:b.x,y:b.y-2,vy:0,k:JUNK6[Math.floor(Math.random()*JUNK6.length)]});tone(500,300,.08,'square',.03);}
       b.flockT-=dt;if(b.flockT<=0){bossSet('call');SFX.caw();}
       break;}
-    case 'call':{b.y=wireY(b.x);if(b.t>.8){const low=b.flockN%2===0,from=p.x<ARENA_X+W/2?1:-1;
+    case 'call':{b.y=wireY(b.x)+Math.sin(gt*5)*1.5;if(b.t>.8){const low=b.flockN%2===0,from=p.x<ARENA_X+W/2?1:-1;
         for(let i=0;i<5;i++)b.flock.push({x:from>0?ARENA_X+W+20+i*26:ARENA_X-20-i*26,y:low?GROUND_Y-5:GROUND_Y-27,vx:-from*(150+b.hits*20),ph:i});
         b.flockN++;b.flockT=(6.5-b.hits)/b.spd;bossSet('perch');}break;}
     case 'hit':{b.vy+=G*.6*dt;b.y+=b.vy*dt;b.x+=b.vx*dt;if(b.t>.7){bossSet('return');}break;}
     case 'return':{const tx=clamp(b.sx,L,Rx),k=ease(clamp(b.t/1,0,1));b.x=lerp(b.sx,tx,k);b.y=lerp(b.sy,wireY(tx),k)-Math.sin(k*Math.PI)*14;if(b.t>1.05){b.y=wireY(b.x);bossSet('perch');}break;}
-    case 'dead':{b.vy+=G*.4*dt;b.y+=b.vy*dt;b.x+=b.vx*dt;if(b.t>1.2){b.vy=Math.min(b.vy,-60);b.vx=-90;}if(Math.random()<.3)puff(b.x,b.y-8,1,'#2c2838',30,20,.6);if(b.t>2.6&&state==='play')winLevel();break;}
+    default:if(b.state.startsWith('s_'))updCrowSave3(b,dt);
   }
-  // falling pebbles
+  // razor feathers: fall swaying, stick in the ground a moment
+  for(const f of b.fth){f.t+=dt;if(!f.st){f.y+=f.vy*dt;f.x+=Math.sin(f.t*5+f.ph)*12*dt;if(f.y>=GROUND_Y-1){f.st=1;f.t=0;f.y=GROUND_Y-1;tone(1800,1200,.03,'square',.012);}
+      if(catOn(f.x,2,f.y-3,f.y+4))scHurt(f.x);}}
+  b.fth=b.fth.filter(f=>!f.st||f.t<.7);
+  // falling rubbish
   for(const r of b.rocks){r.vy+=G*.8*dt;r.y+=r.vy*dt;if(state==='play'&&!r.done&&Math.abs(p.x-r.x)<p.hw+5&&r.y>p.y-p.h&&r.y-10<p.y&&p.inv<=0&&!(p.safe>0)){r.done=1;hurt(r.x,false);}
     if(r.y>=GROUND_Y-2&&!r.done){r.done=1;puff(r.x,GROUND_Y-1,8,'#8a8070',50,40,.4);tone(140,60,.08,'square',.04);}}
   b.rocks=b.rocks.filter(r=>!r.done&&r.y<H);
-  // the flock sweeping across
-  for(const f of b.flock){f.x+=f.vx*dt;if(state==='play'&&Math.abs(p.x-f.x)<p.hw+5&&p.y>f.y-4&&p.y-p.h<f.y+3&&p.inv<=0&&!(p.safe>0))hurt(f.x,false);}
+  // the worker crows sweeping across
+  for(const f of b.flock){f.x+=f.vx*dt;if(state==='play'&&!b.state.startsWith('s_')&&Math.abs(p.x-f.x)<p.hw+5&&p.y>f.y-4&&p.y-p.h<f.y+3&&p.inv<=0&&!(p.safe>0))hurt(f.x,false);}
   b.flock=b.flock.filter(f=>f.x>ARENA_X-200&&f.x<ARENA_X+W+200);
-  if(state!=='play'||b.state==='dead'||b.state==='intro')return;
-  // headbutt from a springboard launch knocks it off the wire
-  if(!(b.ivT>0)&&(p.launch>0&&b.state==='perch'||p.launch>0&&b.state==='call')){if(Math.abs(p.x-b.x)<p.hw+b.hw&&p.y>b.y-b.h-2&&p.y-p.h<b.y+2){
+  if(state!=='play'||b.phase!==2||b.state==='intro'||b.state.startsWith('s_'))return;
+  // headbutt from a springboard launch knocks her out of the air
+  if(!(b.ivT>0)&&p.launch>0&&(b.state==='perch'||b.state==='call')){if(Math.abs(p.x-b.x)<p.hw+b.hw&&p.y>b.y-b.h-2&&p.y-p.h<b.y+2){
     b.hits++;b.flash=.5;b.ivT=3.5;p.launch=0;p.vy=60;SFX.bossHit();SFX.caw();puff(b.x,b.y-8,14,'#2c2838',70,60,.7);puff(b.x,b.y-8,6,'#fff3a0',50,40,.4);bossBar();
-    if(b.hits>=3){bossSet('dead');b.vy=-120;b.vx=40;}else{bossSet('hit');b.vy=-90;b.vx=(b.x<ARENA_X+W/2?1:-1)*60;b.spd*=1.15;b.flockT=Math.min(b.flockT,2);}}}
+    if(b.hits>=3){startCrowSave3(b);}else{bossSet('hit');b.vy=-90;b.vx=(b.x<ARENA_X+W/2?1:-1)*60;b.spd*=1.15;b.flockT=Math.min(b.flockT,2);}}}
 }
-// ---- the giant scarecrow: iron bars, torn sacks, barbed wire and rotten straw, a torn straw hat; the Crow Queen's nest sits in its hollow ribcage ----
-const GS3={W:300,H:142,cx:150,beam:57}; // drawn at arena x+10, screen y 2; beam = top of the iron crossbar (where the crow walks)
-let GS3C=null;
-function giantScare3(){if(GS3C)return GS3C;const {W:w,H:h,cx}=GS3,[c,g]=mkCanvas(w,h),r=mulberry(3303);const Y0=2;
-  const P=(x,y,ww,hh,col)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y)-Y0,ww,hh);};
-  const RU=['#2a1410','#4a2418','#6a3420','#8a4626','#a85c30','#d07a3c'],SK=['#3a2818','#5a4028','#7a5a38','#9a7848','#b89462'],ST=['#5a4824','#7a6430','#a08440','#c8a858','#e0c478'],HT=['#5a4020','#8a6a30','#b89048','#d8b060','#f0d488'],BW=['#262224','#4a4648','#7a7678'];
-  const line=(x0,y0,x1,y1,col,th=1)=>{const n=Math.max(1,Math.ceil(Math.hypot(x1-x0,y1-y0)));for(let i=0;i<=n;i++)P(x0+(x1-x0)*i/n-(th>>1),y0+(y1-y0)*i/n-(th>>1),th,th,col);};
-  // a rusted iron bar between two points, lit along the top edge, pitted with rust
-  const bar=(x0,y0,x1,y1,th)=>{const n=Math.max(1,Math.ceil(Math.hypot(x1-x0,y1-y0))),nx=-(y1-y0)/n,ny=(x1-x0)/n;
-    for(let i=0;i<=n;i++){const x=x0+(x1-x0)*i/n,y=y0+(y1-y0)*i/n;for(let k=0;k<th;k++){const o=k-(th-1)/2,v=th>1?k/(th-1):.5;P(x+nx*o,y+ny*o,1,1,v<.2?RU[4]:v<.5?RU[3]:v<.8?RU[2]:RU[1]);}
-      if(r()<.07)P(x,y,1,1,RU[5]);else if(r()<.06)P(x+nx,y+ny,1,1,RU[0]);}};
-  // ---- the post and its splayed brace legs, down to the ground ----
-  bar(cx-1,100,cx-1,GROUND_Y,5);bar(cx,104,cx-22,GROUND_Y,3);bar(cx,104,cx+22,GROUND_Y,3);
-  for(const s of [-1,1]){P(cx+s*22-3,GROUND_Y-2,7,2,RU[1]);P(cx+s*22-3,GROUND_Y-2,7,1,RU[3]);}
-  for(let y=110;y<GROUND_Y;y+=6)P(cx-3,y,5,1,RU[1]);
-  // ---- the spine and the hollow ribcage: curved iron ribs round a dark hollow ----
-  bar(cx,48,cx,104,4);
-  // a few rags of sacking hang inside the cage; the sky shows through between the ribs
-  for(let i=0;i<4;i++){const x=cx-16+i*10+r()*3,l=6+r()*8;for(let j=0;j<l;j++)P(x+Math.round(Math.sin(j*.5+i)),66+j,2,1,j%3?SK[1]:SK[0]);}
-  for(let i=0;i<6;i++){const y0=62+i*6.5,sp=24-Math.abs(i-2)*2.6,dn=10+i*.6;for(const s of [-1,1]){if(i===4&&s>0)continue; // one rib snapped off
-      let px=cx,py=y0;for(let k=1;k<=14;k++){const t=k/14,x=cx+s*sp*Math.sin(t*Math.PI*.78),y=y0+(1-Math.cos(t*Math.PI*.78))*dn*.55+t*3;bar(px,py,x,y,2);px=x;py=y;}
-      P(px-1,py,2,2,RU[0]);}}
-  {const s=1,i=4,y0=62+i*6.5;let px=cx,py=y0;for(let k=1;k<=6;k++){const t=k/14,x=cx+s*22*Math.sin(t*Math.PI*.78),y=y0+t*4;bar(px,py,x,y,2);px=x;py=y;}P(px,py-1,1,3,RU[5]);}
-  // ---- the nest in the bottom of the ribcage: twigs, wire, straw and scraps of plastic ----
-  for(let i=0;i<140;i++){const a=r()*Math.PI,rr=18+r()*12,x=cx+Math.cos(a)*rr*(r()<.5?1:-1)*.95,y=100+Math.sin(a)*4+r()*6,l=3+r()*6,an=(r()-.5)*.9;line(x,y,x+Math.cos(an)*l,y+Math.sin(an)*l,r()<.6?['#3a2414','#5a3a20','#7a5430'][Math.floor(r()*3)]:ST[Math.floor(r()*4)]);}
-  for(let i=0;i<10;i++){const x=cx-24+r()*48,y=99+r()*7;P(x,y,2+Math.floor(r()*3),1,['#d8d4c8','#3a6a9a','#c84a3a','#e8e0a0'][Math.floor(r()*4)]);}
-  for(let i=0;i<5;i++){const x=cx-22+r()*44,y=100+r()*5;line(x,y,x+5,y+1,BW[2]);}
-  // ---- a ragged sack vest draped over the shoulders, torn open across the chest ----
-  for(const s of [-1,1]){for(let y=60;y<96;y++){const x0=cx+s*(14+Math.max(0,(y-60)*.35)),x1=cx+s*(33-Math.max(0,(y-78)*.6));const a=Math.min(x0,x1),b=Math.max(x0,x1);
-      for(let x=Math.round(a);x<=b;x++){if(y>86&&r()<(y-86)/12)continue;const sh=(x+y*3)%5===0?SK[1]:y<62?SK[4]:(s>0&&x>b-3)||(s<0&&x<a+3)?SK[1]:SK[2+((x*7+y)%9===0?1:0)];P(x,y,1,1,sh);}}
-    for(let k=0;k<5;k++){const x=cx+s*(16+k*3.5),y=94+r()*5;line(x,86,x+s*(r()-.5)*2,y,SK[1]);}
-    P(cx+s*24,70,3,3,'#6a4a5a');P(cx+s*24,70,3,1,'#8a6a7a');P(cx+s*20,80,2,2,SK[0]);} // a patch, a hole
-  // ---- the crossbar arms: an iron I-beam, sacks hanging from it, straw bursting out of the torn ends ----
-  const L0=8,R0=w-8,BY=GS3.beam;
-  for(let x=L0;x<=R0;x++){P(x,BY,1,1,RU[5]);P(x,BY+1,1,1,RU[4]);P(x,BY+2,1,1,RU[3]);P(x,BY+3,1,1,RU[2]);P(x,BY+4,1,1,RU[1]);if(r()<.08)P(x,BY+2,1,1,RU[1]);if(x%22===4){P(x,BY+1,1,1,'#2a1410');P(x,BY+3,1,1,'#2a1410');}}
-  for(const s of [-1,1]){const xa=cx+s*38,xb=cx+s*128;for(let x=Math.min(xa,xb);x<=Math.max(xa,xb);x++){const u=Math.abs(x-cx)/128,hang=Math.round(9+7*Math.sin(u*9+s)+(r()<.3?2:0)*(u>.5?1:0));
-      for(let y=BY+5;y<BY+5+hang;y++)P(x,y,1,1,y===BY+5?SK[3]:((x*3+y)%6===0?SK[1]:y>BY+hang?SK[1]:SK[2]));}
-    // the sleeve ends: straw bursting out and hanging down
-    const ex=cx+s*130;for(let i=0;i<28;i++){const x=ex+s*r()*10,l=6+r()*16;line(x,BY+5+r()*4,x+s*(r()*4),BY+5+l,ST[1+Math.floor(r()*4)]);}
-    // the rope cinching each sleeve
-    for(let y=BY+3;y<BY+18;y++)P(ex-s*2,y,2,1,y%2?'#8a7448':'#5a4a2c');}
-  // barbed wire coiled round the arms and the spine
-  for(const s of [-1,1])for(let x=cx+s*12;Math.abs(x-cx)<136;x+=s*1){const t=Math.abs(x-cx),y=BY+2.5+Math.sin(t*.55)*3.6;P(x,y,1,1,Math.sin(t*.55)>0?BW[1]:BW[0]);if(Math.round(t)%9===0){P(x-1,y-1,1,1,BW[2]);P(x+1,y+1,1,1,BW[2]);P(x+1,y-1,1,1,BW[1]);P(x-1,y+1,1,1,BW[1]);}}
-  for(let y=62;y<104;y++){const x=cx+Math.sin(y*.6)*5;if(Math.abs(x-cx)>2.5||y%3===0)P(x,y,1,1,BW[1]);if(y%8===0){P(x-1,y,1,1,BW[2]);P(x+1,y,1,1,BW[2]);}}
-  // ---- neck: straw bursting from a sack collar tied with wire ----
-  for(let i=0;i<30;i++){const x=cx-9+r()*18;line(x,44+r()*3,x+(r()-.5)*5,52+r()*6,ST[1+Math.floor(r()*4)]);}
-  for(let x=cx-8;x<=cx+8;x++){P(x,51,1,1,BW[1]);if(x%3===0)P(x,50,1,1,BW[2]);}
-  // ---- head: a stuffed burlap sack, stitched mouth, two torn eye holes ----
-  for(let y=22;y<50;y++){const v=(y-36)/14,half=Math.round(16*Math.sqrt(Math.max(0,1-v*v))*(y>44?1-(y-44)*.06:1));for(let x=-half;x<=half;x++){const e=Math.abs(x)>half-2,wv=(x+y)%4===0||(x-y)%4===0;
-      P(cx+x,y,1,1,y<24?SK[4]:e?SK[1]:wv?SK[2]:x<-half*.3?SK[4]:SK[3]);}}
-  for(const s of [-1,1]){for(let k=0;k<4;k++)line(cx+s*(6-k*.5),30+k*.4,cx+s*(10+k*.3),31+k*1.6,'#1a0c08',1);P(cx+s*5,31,7*s>0?6:6,5,'#0e0604');P(cx+(s>0?4:-10),30,6,6,'#120806');}
-  for(let x=-8;x<=8;x++){P(cx+x,42+Math.round(Math.abs(x)*.12),1,1,'#2a1810');if(x%2===0)line(cx+x,40,cx+x,44,'#4a3018');}
-  P(cx-12,35,3,2,SK[1]);P(cx+10,25,2,3,'#6a4a5a'); // a patch on the forehead, a hole in the cheek
-  for(let i=0;i<10;i++){const x=cx-14+r()*28;line(x,48,x+(r()-.5)*4,50+r()*3,ST[3]);}
-  // ---- the torn straw hat: wide sagging brim, a crown with holes, straw unravelling ----
-  for(let x=-34;x<=34;x++){const sag=Math.round((x/34)**2*4),yb=20+sag;if(Math.abs(x)>28&&r()<.35)continue;for(let y=yb;y<yb+3;y++)P(cx+x,y,1,1,y===yb?HT[4]:(x+y)%3===0?HT[1]:HT[2]);}
-  for(let y=4;y<20;y++){const half=Math.round(14+(y-4)*.25);for(let x=-half;x<=half;x++){const weave=(x*2+y)%4===0;P(cx+x,y,1,1,y===4?HT[4]:x<-half+2?HT[1]:weave?HT[1]:x<0?HT[3]:HT[2]);}}
-  P(cx-15,17,31,2,'#6a2a20');P(cx-15,17,31,1,'#8a3a2a'); // faded band
-  P(cx+3,6,5,4,'#120806');P(cx-9,10,3,3,'#120806');P(cx+30,21,4,2,'#120806');P(cx-26,21,3,1,'#120806'); // holes
-  for(let i=0;i<16;i++){const x=cx-34+r()*68,a=r()<.5;line(x,22,x+(r()-.5)*4,25+r()*5,HT[1+Math.floor(r()*3)]);if(a)line(cx+(r()-.5)*26,4,cx+(r()-.5)*30,r()*3,HT[3]);}
-  // rim light from the low sun behind the scarecrow
-  {const d=g.getImageData(0,0,w,h),q=d.data,o=new Uint8ClampedArray(q);for(let y=1;y<h;y++)for(let x=1;x<w-1;x++){const i=(y*w+x)*4;if(!o[i+3])continue;const up=((y-1)*w+x)*4,lf=(y*w+x-1)*4;if(!o[up+3]||!o[lf+3]){q[i]=Math.min(255,q[i]*1.25+40);q[i+1]=Math.min(255,q[i+1]*1.12+14);q[i+2]=q[i+2]*1.02;}}g.putImageData(d,0,0);}
-  return GS3C=c;}
-// ---- the hungry chicks in the nest: fuzzy grey heads, huge gaping beaks with yellow flanges ----
-const GS3_CH=(()=>{const a=[],r=mulberry(77);for(let i=0;i<13;i++){const row=i<7?0:1;a.push({x:row?-19+(i-7)*7.6+r()*2:-24+i*8+r()*2,y:row?101:97+r()*2,ph:r()*6,sp:2.5+r()*3,big:r()<.3,lean:r()<.5?-1:0});}return a;})();
+// ---- after the fight: fire in the straw, the cat saves the chicks, the flock carries the nest away ----
+function startCrowSave3(b){bossSet('s_fall');b.vx=40;b.vy=-80;b.flock=[];b.rocks=[];b.fth=[];p.ctrl=false;keys.L=keys.R=keys.J=false;$('bossBar').hidden=true;if(!cutView)show('skip',false);
+  const S=SC3;S.proj=[];S.fires=[];S.nest=null;S.burn=0;for(const A of S.arms)if(A.st!=='fall'&&A.st!=='gone'){A.st='fall';A.t=0;A.x=scPiv(A.s);A.y=SC_PY;A.vx=A.s*30;A.vy=-40;A.av=A.s;A.land=0;}S.cuts=3;b.phase=2;}
+function updCrowSave3(b,dt){const S=SC3,t=b.t,SX=SC_X(),go=s=>bossSet(s);p.idleT=0;
+  // the fire: starts in the bales, climbs the post toward the nest
+  if(S.burn>0)S.burn=Math.min(1.6,S.burn+dt*(b.state==='s_fire'||b.state==='s_wait'||b.state==='s_run'||b.state==='s_climb'?.22:.12));
+  if(S.burn>0&&Math.random()<.4+S.burn*.4){const h=clamp(S.burn,0,1)*46;parts.push({x:SX+(Math.random()-.5)*24,y:GROUND_Y-4-Math.random()*h,vx:(Math.random()-.5)*14,vy:-30-Math.random()*30,life:.6,max:.6,c:['#ffd040','#ff9a20','#ff5010'][Math.floor(Math.random()*3)],g:-30});}
+  if(S.burn>0&&Math.random()<.15)parts.push({x:SX+(Math.random()-.5)*20,y:GROUND_Y-20-S.burn*30,vx:(Math.random()-.5)*8,vy:-14,life:1.6,max:1.6,c:'#3a3030',g:-6});
+  switch(b.state){
+    case 's_fall':{b.vy+=G*.5*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;if(b.y>=GROUND_Y){b.y=GROUND_Y;SFX.bonk();puff(b.x,GROUND_Y,8,'#2c2838',40,20,.4);go('s_daze');}break;}
+    case 's_daze':{b.y=GROUND_Y;p.face=Math.sign(b.x-p.x)||1;
+      if(t>.6&&!S.burn){S.burn=.01;SFX.stomp&&0;tone(300,100,.4,'sawtooth',.03);hiss(.8,.04,1200);
+        for(let i=0;i<10;i++)parts.push({x:SX+(Math.random()-.5)*20,y:GROUND_Y-30,vx:(Math.random()-.5)*60,vy:-40-Math.random()*40,life:.6,max:.6,c:'#ffb030',g:200});}
+      if(t>2.2)go('s_fire');break;}
+    case 's_fire':{p.face=1*(SX>p.x?1:-1);p.bub=1;if(Math.random()<dt*5)tone(3000+Math.random()*800,3400,.05,'square',.012);if(t>1)go('s_wait');break;} // the chicks scream; the cat freezes
+    case 's_wait':{p.bub=1;if(t>1){p.bub=0;SFX.meow&&SFX.meow();go('s_run');}break;} // one heartbeat of hesitation...
+    case 's_run':{const tx=SX-26,d=tx-p.x;p.vx=0;if(Math.abs(d)>2){p.x+=Math.sign(d)*Math.min(Math.abs(d),125*dt);p.face=Math.sign(d);}else{p.face=1;b.jx=p.x;b.jy=p.y;go('s_leap');}break;}
+    case 's_leap':{const k=clamp(t/.45,0,1),x=lerp(b.jx,SX-5,k),y=lerp(b.jy,GROUND_Y-16,k)-Math.sin(k*Math.PI)*20;p.x=x;p.y=y;p.vx=0;p.vy=k<.5?-200:150;p.onGround=false;p.face=1;if(k>=1){p.y=GROUND_Y-16;go('s_pull');}break;}
+    case 's_pull':{p.x=SX-5+Math.sin(t*25)*.6;p.y=GROUND_Y-16;p.vy=0;p.onGround=true;p.face=1;if(t>.9&&!S.nest){S.nest={x:SX,y:108,vx:-60,vy:-90,land:0};tone(500,250,.2,'square',.03);}
+      if(t>1.1){b.jx=p.x;b.jy=p.y;go('s_down');}break;}
+    case 's_down':{const k=clamp(t/.5,0,1),x=lerp(b.jx,SX-44,k),y=lerp(b.jy,GROUND_Y,k*k);p.x=x;p.y=y;p.vy=150;p.onGround=false;p.face=-1;if(k>=1){p.y=GROUND_Y;p.onGround=true;p.vy=0;go('s_guard');}break;}
+    case 's_guard':{p.face=1;if(t>1.2){b.sx=b.x;b.sy=b.y;go('s_rise');}break;}
+    case 's_rise':{const k=ease(clamp(t/1.2,0,1));b.x=lerp(b.sx,S.nest.x+14,k);b.y=lerp(b.sy,GROUND_Y-30,k)-Math.sin(k*Math.PI)*10;b.dir=-1;p.face=1;if(t>1.4){SFX.caw();go('s_see');}break;}
+    case 's_see':{b.y=GROUND_Y-30+Math.sin(gt*3)*2;b.dir=-1;p.face=1;if(t>.3&&t<.7)p.x-=20*dt;if(t>2.2){go('s_lift');b.crew=[];for(let i=0;i<6;i++)b.crew.push({x:ARENA_X+W+30+i*18,y:10+i*7,i,ph:i*1.1});SFX.caw();}break;}
+    case 's_lift':{ // the workers fly in, take hold of the nest's rim, and the whole flock carries it off into the sunset
+      const n=S.nest,up=t>2.2?(t-2.2):0;if(up>0){n.x-=24*dt*up;n.y-=(26+up*14)*dt;}
+      for(const c of b.crew){const side=c.i%2?1:-1,tx=n.x+side*(6+(c.i>>1)*4),ty=n.y-6-(c.i>>1)*3;const k=Math.min(1,dt*(2+c.i*.2));c.x+=(tx-c.x)*k;c.y+=(ty-c.y)*k;}
+      b.x+=((n.x-18)-b.x)*Math.min(1,dt*2);b.y+=((n.y-16)-b.y)*Math.min(1,dt*2);b.dir=-1;p.face=1;
+      if(n.y<-40){go('s_end');}break;}
+    case 's_end':{p.face=-1;if(t>1.2&&state==='play'){b.state2='gone';winLevel();}break;}
+  }
+  if(S.nest&&!S.nest.land){const n=S.nest;n.vy+=G*.6*dt;n.x+=n.vx*dt;n.y+=n.vy*dt;if(n.y>=GROUND_Y-3){n.y=GROUND_Y-3;n.land=1;SFX.bonk();puff(n.x,GROUND_Y,6,'#a89060',30,15,.4);}}
+  if(b.state==='s_run')p.pose=poseRun(gt*12,gt);}
+// ---- the scarecrow (user, 2026-11-28): iron bars, torn sacks, barbed wire, rotten straw, a torn straw hat. The Crow Queen's chicks nest
+// in its belly under the sack shirt, only their heads poking out of the tears. Its iron arms are its weapons in phase 1. ----
+const SC_X=()=>ARENA_X+160,SC_PY=84,SC_AL=86,SC_RAMP=Math.asin((GROUND_Y-SC_PY-1)/SC_AL),SC_OY=44; // pivot row (top of the arm pipes), arm length
+let SCB=null,SCA=null,SCL=null;
+const SCP={RU:['#2a1410','#4a2418','#6a3420','#8a4626','#a85c30','#d07a3c'],SK:['#3a2818','#5a4028','#7a5a38','#9a7848','#b89462'],ST:['#5a4824','#7a6430','#a08440','#c8a858','#e0c478'],HT:['#5a4020','#8a6a30','#b89048','#d8b060','#f0d488'],BW:['#262224','#4a4648','#7a7678']};
+function scRim(g,w,h){const d=g.getImageData(0,0,w,h),q=d.data,o=new Uint8ClampedArray(q);for(let y=1;y<h;y++)for(let x=1;x<w-1;x++){const i=(y*w+x)*4;if(!o[i+3])continue;const up=((y-1)*w+x)*4,lf=(y*w+x-1)*4;if(!o[up+3]||!o[lf+3]){q[i]=Math.min(255,q[i]*1.25+40);q[i+1]=Math.min(255,q[i+1]*1.12+14);}}g.putImageData(d,0,0);}
+function scBuild(){if(SCB)return;const {RU,SK,ST,HT,BW}=SCP,r=mulberry(3303);
+  const mk=(w,h,ox,oy)=>{const [c,g]=mkCanvas(w,h);const P=(x,y,ww,hh,col)=>{g.fillStyle=col;g.fillRect(Math.round(x)-ox,Math.round(y)-oy,ww,hh);};
+    const line=(x0,y0,x1,y1,col)=>{const n=Math.max(1,Math.ceil(Math.hypot(x1-x0,y1-y0)));for(let i=0;i<=n;i++)P(x0+(x1-x0)*i/n,y0+(y1-y0)*i/n,1,1,col);};
+    const bar=(x0,y0,x1,y1,th)=>{const n=Math.max(1,Math.ceil(Math.hypot(x1-x0,y1-y0))),nx=-(y1-y0)/n,ny=(x1-x0)/n;for(let i=0;i<=n;i++){const x=x0+(x1-x0)*i/n,y=y0+(y1-y0)*i/n;
+      for(let k=0;k<th;k++){const o=k-(th-1)/2,v=th>1?k/(th-1):.5;P(x+nx*o,y+ny*o,1,1,v<.25?RU[4]:v<.6?RU[3]:RU[1]);}if(r()<.08)P(x,y,1,1,RU[5]);}};
+    return {c,g,P,line,bar};};
+  // ---------- body: post, braces, sack shirt over the belly nest, head, hat (canvas origin = world (SC_X-100, SC_OY)) ----------
+  {const cx=100,{c,g,P,line,bar}=mk(200,101,0,SC_OY);
+    bar(cx,88,cx,GROUND_Y,4);bar(cx,116,cx-17,GROUND_Y,2);bar(cx,116,cx+17,GROUND_Y,2);for(const s of [-1,1]){P(cx+s*17-2,GROUND_Y-1,5,1,RU[1]);}
+    // the sack shirt: wide at the shoulders, tapering, ragged hem with hanging strips
+    for(let y=SC_PY-1;y<122;y++){const half=Math.round(y<90?13+(y-SC_PY+1)*.6:18-(y-90)*.12);for(let x=-half;x<=half;x++){if(y>116&&r()<(y-116)/7)continue;
+        const fold=(x+Math.round(y*.15))%6===0,edge=x<=-half+1?SK[1]:x>=half-1?SK[0]:null;P(cx+x,y,1,1,edge||(fold?SK[1]:x<-4?SK[3]:x<6?SK[2]:SK[1]));}}
+    for(let k=0;k<8;k++){const x=cx-15+k*4+r()*2,l=3+r()*6;line(x,121,x+(r()-.5)*2,121+l,SK[1]);}
+    for(let i=0;i<120;i++){const x=cx-16+r()*32,y=86+r()*34;if(r()<.5)P(x,y,1,1,(x+y)%2?SK[1]:SK[3]);} // burlap weave
+    P(cx+8,88,5,4,'#6a4a5a');P(cx+8,88,5,1,'#8a6a7a');P(cx-13,114,4,3,'#4a5a3a'); // patches
+    // the big tear across the belly, and two small holes: dark inside, a little straw showing
+    const hole=(x0,y0,w,h)=>{for(let y=0;y<h;y++){const hw=Math.round(w/2*Math.sqrt(Math.max(0,1-((y-h/2)/(h/2))**2)))+(r()<.3?1:0);for(let x=-hw;x<=hw;x++)P(x0+x,y0+y,1,1,y===0?SK[0]:'#140806');}
+      for(let k=0;k<3;k++)P(x0-w/2+2+r()*(w-4),y0+h-2,2,1,ST[1]);};
+    hole(cx-1,99,24,10);hole(cx-12,90,6,5);hole(cx+12,92,6,5);
+    // rope belt and a strand of barbed wire wound round the waist
+    for(let x=-15;x<=15;x++){P(cx+x,113,1,1,x%2?'#8a7448':'#5a4a2c');const y=111+Math.round(Math.sin(x*.7)*1.5);P(cx+x,y,1,1,BW[1]);if(x%5===0){P(cx+x,y-1,1,1,BW[2]);P(cx+x,y+1,1,1,BW[2]);}}
+    // shoulder joints: riveted plates wrapped in barbed wire (the cat claws these)
+    for(const s of [-1,1]){const hx=cx+s*8;P(hx-3,SC_PY-1,7,6,RU[1]);P(hx-2,SC_PY,5,4,RU[3]);P(hx-2,SC_PY,5,1,RU[5]);P(hx-1,SC_PY+1,1,1,RU[0]);P(hx+1,SC_PY+2,1,1,RU[0]);
+      for(let a=0;a<6.3;a+=.45){P(hx+Math.cos(a)*4.5,SC_PY+2+Math.sin(a)*4,1,1,BW[(a*3|0)%2]);if((a*10|0)%6===0)P(hx+Math.cos(a)*5.5,SC_PY+2+Math.sin(a)*5,1,1,BW[2]);}}
+    // neck: straw bursting from a wired collar
+    for(let i=0;i<20;i++){const x=cx-6+r()*12;line(x,77+r()*2,x+(r()-.5)*4,82+r()*4,ST[1+Math.floor(r()*4)]);}
+    for(let x=-6;x<=6;x++){P(cx+x,80,1,1,BW[1]);if(x%3===0)P(cx+x,79,1,1,BW[2]);}
+    // head: stuffed burlap sack, torn eye holes, stitched mouth
+    for(let y=61;y<79;y++){const v=(y-70)/9,half=Math.round(10*Math.sqrt(Math.max(0,1-v*v)));for(let x=-half;x<=half;x++){const e=Math.abs(x)>half-2,wv=(x+y)%3===0;P(cx+x,y,1,1,e?SK[1]:wv?SK[2]:x<-3?SK[4]:SK[3]);}}
+    for(const s of [-1,1]){P(cx+(s>0?2:-6),67,4,4,'#120806');P(cx+(s>0?3:-5),66,2,1,'#120806');line(cx+s*2,65,cx+s*7,66,'#1a0c08');}
+    for(let x=-5;x<=5;x++){P(cx+x,75,1,1,'#2a1810');if(x%2===0)line(cx+x,74,cx+x,76,'#4a3018');}
+    P(cx+6,63,2,2,'#6a4a5a');
+    // the torn straw hat
+    for(let x=-22;x<=22;x++){const sag=Math.round((x/22)**2*3),yb=59+sag;if(Math.abs(x)>18&&r()<.35)continue;for(let y=yb;y<yb+2;y++)P(cx+x,y,1,1,y===yb?HT[4]:(x+y)%3===0?HT[1]:HT[2]);}
+    for(let y=50;y<59;y++){const half=Math.round(9+(y-50)*.2);for(let x=-half;x<=half;x++)P(cx+x,y,1,1,y===50?HT[4]:x<-half+2?HT[1]:(x*2+y)%4===0?HT[1]:x<0?HT[3]:HT[2]);}
+    P(cx-10,57,21,1,'#6a2a20');P(cx+2,52,3,3,'#120806');P(cx-6,55,2,2,'#120806');P(cx+19,60,3,1,'#120806');
+    for(let i=0;i<10;i++){const x=cx-22+r()*44;line(x,61,x+(r()-.5)*3,62+r()*4,HT[1+Math.floor(r()*3)]);}
+    scRim(g,200,101);SCB=c;}
+  // ---------- one arm: an iron pipe, a torn sleeve hanging off it, a straw hand, barbed wire wound round (pivot at local (0,3)) ----------
+  {const {c,g,P,line}=mk(100,26,0,-3);const L=86;
+    for(let x=0;x<=L;x++){P(x,0,1,1,RU[5]);P(x,1,1,1,RU[3]);P(x,2,1,1,RU[2]);P(x,3,1,1,RU[1]);if(r()<.08)P(x,1,1,1,RU[1]);}
+    for(let x=4;x<52;x++){const hang=Math.round(6+4*Math.sin(x*.21)+(x>40?(x-40)*.3:0));for(let y=3;y<3+hang;y++)P(x,y,1,1,y===3?SK[3]:(x*3+y)%5===0?SK[1]:y>hang?SK[1]:SK[2]);if(r()<.3)P(x,3+hang,1,1,SK[0]);}
+    for(let y=0;y<10;y++)P(50,y,2,1,y%2?'#8a7448':'#5a4a2c');
+    for(let i=0;i<22;i++){const x=L-6+r()*8,l=4+r()*9;line(x,1+r()*2,x+2+r()*6,2+l,SCP.ST[1+Math.floor(r()*4)]);}
+    for(let i=0;i<6;i++){const x=L-2+r()*6;line(x,1,x+4+r()*4,-1+r()*3,SCP.ST[3]);}
+    for(let x=6;x<L-8;x++){const y=1.5+Math.sin(x*.6)*2.6;P(x,y,1,1,Math.sin(x*.6)>0?BW[1]:BW[0]);if(x%8===0){P(x-1,y-1,1,1,BW[2]);P(x+1,y+1,1,1,BW[2]);}}
+    scRim(g,100,26);SCA={r:c,l:flipOf(c)};}
+  // ---------- the lower lip of the belly tear, drawn over the chicks' necks ----------
+  {const {c,P}=mk(28,6,0,0);for(let x=0;x<28;x++){const t=Math.round(1+Math.sin(x*.9)*1+(r()<.3?1:0));for(let y=t;y<6;y++)P(x,y,1,1,y===t?SCP.SK[3]:SCP.SK[2]);}SCL=c;}}
+// chicks peeking out of the tears in the shirt (offsets from the scarecrow's centre; y is the bottom of the tear)
+const SC_CH=[{x:-8,y:107,ph:0,sp:3.1},{x:-3,y:107,ph:2,sp:4},{x:2,y:107,ph:4.1,sp:3.4,big:1},{x:7,y:107,ph:1.2,sp:3.8},{x:-12,y:95,ph:3,sp:2.9,lean:-1},{x:12,y:97,ph:5,sp:3.6}];
 function drawChick3(x,y,open,lean,big){x=R(x);y=R(y);const s=big?1:0;
-  // fuzzy grey head and neck stretched up out of the nest
-  rect(x-1,y,3,4,'#2a2632');rect(x-2-s,y-2,5+s*2,3,'#2a2632');rect(x-1-s,y-3,3+s*2,1,'#2a2632');rect(x-2-s,y-2,1,1,'#4a4656');rect(x-1-s,y-3,2,1,'#5a5666');
+  rect(x-2-s,y-3,5+s*2,4,'#2a2632');rect(x-1-s,y-4,3+s*2,1,'#2a2632');rect(x-2-s,y-3,1,1,'#4a4656');rect(x-1-s,y-4,2,1,'#5a5666');rect(x+1,y-5-s,1,1,'#6a6676');
   rect(x+lean,y-2,1,1,'#0a0808');
-  // the beak points up at the sky; open, it is a big gaping V with yellow flanges round a red throat
-  const bx=x+lean,by=y-3-s;
+  const bx=x+lean,by=y-4-s;
   if(open>.35){const o=open>.75?3:2;for(let k=0;k<=o;k++){rect(bx-1-Math.round(k*.6),by-k,1,1,k===0?'#f0c840':'#5a5048');rect(bx+1+Math.round(k*.6),by-k,1,1,k===0?'#f0c840':'#5a5048');}
-    for(let k=1;k<=o;k++)rect(bx-Math.round(k*.6),by-k,1+Math.round(k*1.2)-0,1,k<2?'#b83a30':'#e05848');rect(bx-1,by,3,1,'#f0c840');}
+    for(let k=1;k<=o;k++)rect(bx-Math.round(k*.6),by-k,1+Math.round(k*1.2),1,k<2?'#b83a30':'#e05848');rect(bx-1,by,3,1,'#f0c840');}
   else{rect(bx,by-1,1,2,'#5a5048');rect(bx,by-2,1,1,'#7a7068');}}
-let GS3L=null;function GS3_LIP(){if(GS3L)return GS3L;const [c,g]=mkCanvas(60,12),r=mulberry(909);for(let i=0;i<90;i++){const x=3+r()*54,y=3+r()*6+Math.abs(x-30)*-.05,l=3+r()*6,an=(r()-.5)*.7,col=r()<.6?['#3a2414','#5a3a20','#7a5430'][Math.floor(r()*3)]:['#7a6430','#a08440','#c8a858'][Math.floor(r()*3)];
-    for(let k=0;k<l;k++){g.fillStyle=col;g.fillRect(Math.round(x+Math.cos(an)*k),Math.round(y+Math.sin(an)*k),1,1);}}return GS3L=c;}
-function drawGiantScare3(cx){const X=R(ARENA_X+10-cx),C=giantScare3(),b=boss&&boss.kind==='crow2'?boss:null;ctx.drawImage(C,X,2);const mx=X+GS3.cx;
-  // dull red glints deep in the eye holes, brighter when the Crow Queen is close
-  const pl=.5+.5*Math.sin(gt*2.3);for(const s of [-1,1]){rect(mx+s*7-(s<0?1:0),33,1,1,'#7a1008');if(pl>.6)rect(mx+s*7-(s<0?1:0),33,1,1,'#c02010');}
-  // torn sack strips and rags fluttering in the wind from the arms and vest
-  for(let i=0;i<14;i++){const s=i<7?-1:1,k=i%7,x=mx+s*(44+k*13),y=GS3.beam+5+10+((k*5)%4),l=4+(k*3)%5,sw=Math.sin(gt*3+i*1.7)*1.4;
-    for(let j=0;j<l;j++)rect(x+Math.round(sw*j/l),y+j,1,1,j<l-1?'#5a4028':'#3a2818');}
-  for(const s of [-1,1])for(let k=0;k<3;k++){const x=mx+s*(18+k*5),sw=Math.sin(gt*2.6+k+s)*1.2;for(let j=0;j<5;j++)rect(x+Math.round(sw*j/5),96+k+j,1,1,'#5a4028');}
-  // the chicks: they stretch up and gape, screaming harder whenever their mother calls or comes near
-  const hungry=b&&(b.state==='call'||Math.abs(b.x-(ARENA_X+160))<40)?1:0;
-  for(const c of GS3_CH){const v=Math.sin(gt*c.sp+c.ph),open=clamp(v*.9-.1+hungry*.7,0,1),up=Math.round(Math.max(0,v)*2+hungry*2);drawChick3(mx+c.x,c.y-up,open,c.lean,c.big);}
-  ctx.drawImage(GS3_LIP(),mx-30,98);
-  if(hungry&&Math.random()<.04)tone(3200+Math.random()*900,3600,.04,'square',.008);
+function drawScArm(cx,A,yo){const img=A.s>0?SCA.r:SCA.l;ctx.save();
+  if(A.st==='fall'){ctx.globalAlpha=clamp(1-(A.ft||0),0,1);ctx.translate(R(A.x-cx),R(A.y));}else ctx.translate(R(SC_X()+A.s*8-cx),SC_PY+yo);
+  ctx.rotate(A.s*A.a);const off=SC_AL-A.len;ctx.beginPath();if(A.s>0)ctx.rect(3,-12,120,50);else ctx.rect(-123,-12,120,50);ctx.clip();
+  ctx.drawImage(img,A.s>0?-off:-100+off,-3);ctx.restore();}
+function drawScare3(cx){scBuild();const S=SC3,b=boss&&boss.kind==='crow2'?boss:null,yo=S?R(S.slump):0,sh=S&&S.shake>0?Math.round(Math.sin(gt*60)*1.5):0;
+  const X=R(SC_X()-100-cx)+sh;if(X<-210||X>W+10)return;const mx=X+100;
+  // the arms hang behind the shirt at the shoulders
+  const arms=S?S.arms:[{s:-1,a:0,len:SC_AL,st:'rest'},{s:1,a:0,len:SC_AL,st:'rest'}];
+  for(const A of arms)if(A.st!=='gone')drawScArm(cx-sh,A,yo);
+  ctx.drawImage(SCB,X,SC_OY+yo);
+  // the eye holes: a dull red glow that flares when the scarecrow is fighting
+  const ek=S?S.eye:.3,pl=.5+.5*Math.sin(gt*2.3);for(const s of [-1,1]){const ex=mx+(s>0?3:-5),ey=68+yo;rect(ex,ey,2,1,ek>.6?'#ff3018':'#7a1008');if(ek>.6)glow(ex+1,ey,4+pl*2,'rgb(255,40,20)',.35*ek);}
+  // fluttering strips from the hem
+  for(let k=0;k<5;k++){const x=mx-12+k*6,sw=Math.sin(gt*2.6+k)*1.2;for(let j=0;j<4;j++)rect(x+Math.round(sw*j/4),122+yo+j,1,1,'#5a4028');}
+  // the chicks: heads out of the tears, beaks gaping up at the sky, louder when their mother calls or the fire comes
+  if(!(S&&S.nest)){const frantic=b&&b.state&&(b.state==='s_fire'||b.state==='s_wait'||b.state==='s_run'||b.state==='s_leap'||b.state==='s_pull'||b.state==='s_daze');
+    const hungry=frantic?1:b&&(b.state==='call'||Math.abs(b.x-SC_X())<40)?1:0;
+    for(const c of SC_CH){const v=Math.sin(gt*c.sp*(frantic?2:1)+c.ph),open=clamp(v*.9-.1+hungry*.7,0,1),up=Math.round(Math.max(0,v)*1.5+hungry*1.5);drawChick3(mx+c.x,c.y+yo-up,open,c.lean||0,c.big);}
+    ctx.drawImage(SCL,mx-15,106+yo);
+    if(hungry&&Math.random()<(frantic?.15:.04))tone(3200+Math.random()*900,3600,.04,'square',.008);}
   // the straw-bale springboard at its feet
   const sx=R(SCARE_X()-cx),sq=scareWob>.45?2:0,w=scareWob>0?Math.round(Math.sin(scareWob*30)*1.5*scareWob/.6):0;
-  for(let k=0;k<2;k++){const y=GROUND_Y-16-k*16+(k?sq:sq>>1),x=sx-11+(k?1:0)+(k?w:0),hh=16-(k?0:sq>>1);
+  {const y=GROUND_Y-16+sq,x=sx-11+w,hh=16-sq;
     rect(x,y,22,hh,'#a08440');rect(x,y,22,1,'#e0c478');rect(x,y+1,22,1,'#c8a858');for(let j=0;j<22;j+=3)rect(x+j,y+2,1,hh-3,'#7a6430');rect(x+21,y+1,1,hh-1,'#5a4824');rect(x,y+hh-1,22,1,'#5a4824');
-    rect(x+5,y,1,hh,'#3a3030');rect(x+16,y,1,hh,'#3a3030'); // baling wire
-    for(let j=0;j<5;j++)rect(x-1+((j*7+k*3)%23),y-1-(j%2),1,2,'#c8a858');}
+    rect(x+5,y,1,hh,'#3a3030');rect(x+16,y,1,hh,'#3a3030');for(let j=0;j<5;j++)rect(x-1+((j*7)%23),y-1-(j%2),1,2,'#c8a858');}
+  if(!S)return;
+  // fire: licks up from the bale along the post toward the belly
+  if(S.burn>0&&state==='play'){const hgt=clamp(S.burn,0,1.2)*40;for(let i=0;i<16;i++){const x=sx-11+i*1.5+Math.sin(i*2.3)*2,h=hgt*(.4+.6*Math.abs(Math.sin(i*1.7+gt*9)))*(1-Math.abs(i-7.5)/12);
+      for(let y=0;y<h;y++){const k=y/h;rect(x,GROUND_Y-2-y,1,1,k<.3?'#fff0a0':k<.6?'#ffb030':'#ff5010');}}
+    glow(sx,GROUND_Y-hgt*.6,18+hgt*.6,'rgb(255,120,30)',.45);}
+  // flung burning straw and barbed wire
+  for(const q of S.proj){const x=R(q.x-cx),y=R(q.y);if(q.k==='straw'){const f=!q.land||q.t<1.6;rect(x-2,y-1,5,2,f?'#c89040':'#5a4824');if(f){rect(x-1,y-3-(Math.floor(gt*14)%2),3,2,'#ff9a20');rect(x,y-4-(Math.floor(gt*14)%2),1,1,'#fff0a0');glow(x,y-2,6,'rgb(255,140,40)',.4);}}
+    else{ctx.save();ctx.translate(x,y);ctx.rotate(q.land?0:q.rot);for(let a=0;a<6.3;a+=.5){const px=Math.round(Math.cos(a)*3.5),py=Math.round(Math.sin(a)*2.5);rect(px,py,1,1,'#7a7678');if((a*2|0)%3===0)rect(px+(px>0?1:-1),py,1,1,'#b8b4b8');}ctx.restore();}}
+  // the nest the cat pulled out, with the chicks in it
+  if(S.nest){const n=S.nest,X0=R(n.x-cx),Y0=R(n.y);for(let i=0;i<4;i++)drawChick3(X0-6+i*4,Y0-1,clamp(Math.sin(gt*4+i)*.9+.2,0,1),0,i===2);
+    rect(X0-10,Y0-1,21,4,'#5a3a20');rect(X0-11,Y0,23,2,'#7a5430');for(let i=0;i<8;i++)rect(X0-10+i*3,Y0-1+(i%2),3,1,i%2?'#a08440':'#3a2414');rect(X0-9,Y0+3,19,1,'#3a2414');}
 }
 function drawArena3(cx){
-  drawGiantScare3(cx);const sx=R(SCARE_X()-cx),top=SCARE_TOP;
-  // hint arrow while the boss is up
-  if(boss&&boss.kind==='crow2'&&boss.hits===0&&boss.state==='perch'&&Math.floor(gt*2)%2)rect(sx,top-9,1,3,'#fff0b0');
+  const a=POLE_L()-cx,bb=POLE_R()-cx;
+  for(const x of [a,bb]){rect(x-2,38,4,GROUND_Y-38,'#4a2e2a');rect(x-1,38,1,GROUND_Y-38,'#6a4438');rect(x-9,44,18,3,'#4a2e2a');rect(x-8,44,16,1,'#6a4438');rect(x-7,52,2,2,'#c8c8b8');rect(x+5,52,2,2,'#c8c8b8');}
+  for(let x=Math.floor(a);x<=bb;x++){const y=wireY(x+cx);rect(x,y,1,1,'#2a1a28');rect(x,y+6,1,1,'#3a2434');}
+  drawScare3(cx);
+  // hint arrow over the bale while she is on the wire
+  if(boss&&boss.kind==='crow2'&&boss.phase===2&&boss.hits===0&&boss.state==='perch'&&Math.floor(gt*2)%2)rect(R(SCARE_X()-cx),SCARE_TOP-9,1,3,'#fff0b0');
 }
 function drawCrowBoss(cx){const b=boss;
   for(const r of b.rocks){const x=Math.round(r.x-cx),y=Math.round(r.y),k=clamp((r.y-b.y)/(GROUND_Y-b.y),0,1),sw=4+Math.round(k*8);
@@ -3730,16 +3844,18 @@ function drawCrowBoss(cx){const b=boss;
     alpha(.25+.3*k,()=>rect(x-sw/2,GROUND_Y-2,sw,2,'#000'));
     if(Math.sin(gt*30)>0)alpha(.55,()=>{rect(x-sw/2-2,GROUND_Y-1,2,1,'#ff4030');rect(x+sw/2,GROUND_Y-1,2,1,'#ff4030');});
     alpha(.35,()=>rect(x-1,y-20,3,7,'#e8e0c8'));
-    ctx.drawImage(ROCK_M,x-7,y-12);}
+    if(r.k)drawJunkItem(r.k,r.x-cx,r.y-6);else ctx.drawImage(ROCK_M,x-7,y-12);}
+  // razor feathers: black quills with a blue sheen, point down
+  for(const f of b.fth){const x=R(f.x-cx),y=R(f.y);rect(x,y-6,1,6,'#0a0810');rect(x+1,y-5,1,3,'#2a2640');rect(x-1,y-4,1,2,'#1a1624');rect(x,y,1,1,'#c8c8d8');}
   for(const f of b.flock){const s=Math.floor(gt*10+f.ph)%2?CROW_S.a:CROW_S.b;blit(s,f.x-cx,f.y+4,f.vx<0?1:-1);}
   if(b.rat&&b.rat.on===1){const r=b.rat,still=r.ph==='stop';
     const fr=!still?RAT_RUN[Math.floor(gt*13)%5]:(((gt-(r.st||0))%1.3)>.95?RAT_IDLE[2+Math.floor(gt*4)%2]:RAT_IDLE[Math.floor(gt*6)%2]);blit(fr,r.x-cx,GROUND_Y+RAT_DY,r.face||1);}
   if(b.rat&&b.rat.on===2)blit(RAT_RUN[Math.floor(gt*20)%5],b.rat.x-cx+Math.sin(gt*20),b.rat.y,1);
   if(b.flash>0&&Math.floor(b.flash*20)%2)return;
   const ivA=b.ivT>0&&Math.floor(b.ivT*8)%2?.35:1; // blinking while it can't be hurt
-  const sitting=b.state==='perch'||b.state==='call';const fr=sitting?(b.state==='call'&&Math.floor(gt*6)%2?CROWN_SIT2[2]:CROWN_SIT2[Math.floor(gt*1.6)%2]):CROWN_FLY[[0,1,2,1][Math.floor(gt*(b.state==='hit'||b.state==='dead'?14:10))%4]];
-  ctx.save();ctx.globalAlpha=ivA;if(b.state==='dead'||b.state==='hit'){ctx.translate(R(b.x-cx),R(b.y-10));ctx.rotate(b.t*6);ctx.translate(-R(b.x-cx),-R(b.y-10));}
-  const bob=b.state==='perch'&&b.pause<=0?Math.round(Math.abs(Math.sin(gt*8))):0;
+  const sitting=(b.phase===2&&(b.state==='perch'||b.state==='call'))||(b.state==='wake'&&b.t<1.4)||/^s_(daze|fire|wait|run|leap|pull|down|guard)$/.test(b.state);const fr=sitting?(b.state==='call'&&Math.floor(gt*6)%2?CROWN_SIT2[2]:CROWN_SIT2[Math.floor(gt*1.6)%2]):CROWN_FLY[[0,1,2,1][Math.floor(gt*(b.state==='hit'||b.state==='dead'?14:10))%4]];
+  ctx.save();ctx.globalAlpha=ivA;if(b.state==='dead'||b.state==='hit'||b.state==='s_fall'){ctx.translate(R(b.x-cx),R(b.y-10));ctx.rotate(b.t*6);ctx.translate(-R(b.x-cx),-R(b.y-10));}
+  const bob=b.state==='perch'&&b.phase===2&&b.pause<=0?Math.round(Math.abs(Math.sin(gt*8))):0;
   const wi=[0,1,2,1][Math.floor(gt*(b.state==='hit'||b.state==='dead'?14:10))%4],lift=sitting?0:[0,0,1,0][Math.floor(gt*10)%4]; // body lifts on the downstroke
   const X0=R(b.x-cx-fr.w/2),Y0=R(b.y-(sitting?20:CROWN_FEET)-bob-lift);
   ctx.drawImage(b.dir>0?fr.l:fr.r,X0,Y0);ctx.restore();
@@ -3757,6 +3873,11 @@ function drawCrowBoss(cx){const b=boss;
   if(b.state==='call'){const k=(gt*1.6)%1,rx=R(b.x-cx)+(b.dir>0?8:-8),ry=R(b.y-20);
     alpha((1-k)*.5,()=>{ctx.strokeStyle='#ff5040';ctx.lineWidth=1;ctx.beginPath();ctx.arc(rx,ry,4+k*22,0,Math.PI*2);ctx.stroke();});
     if(Math.floor(gt*6)%2){rect(b.x-cx-14,b.y-24,3,1,'#fff0b0');rect(b.x-cx-16,b.y-27,3,1,'#fff0b0');}}
+  // after the fight: dizzy stars, the cat's alarm, her look of thanks, and the worker crows carrying the nest
+  if(b.state==='s_daze'||b.state==='s_fire'||b.state==='s_wait'||b.state==='s_run'||b.state==='s_leap'||b.state==='s_pull'||b.state==='s_down'||b.state==='s_guard')for(let i=0;i<3;i++){const a=gt*5+i*2.1;blit(STAR,b.x-cx+Math.cos(a)*9,b.y-24+Math.sin(a)*2,1);}
+  if(p.bub===1&&b.state&&b.state.startsWith('s_'))bubble(p.x-cx+7,p.y-20,GLY.ex);
+  if(b.state==='s_see'&&b.t>.4)bubble(b.x-cx+6,b.y-26,GLY.hrt);
+  if(b.crew)for(const c of b.crew){const s=Math.floor(gt*12+c.ph)%2?CROW_S.a:CROW_S.b;blit(s,c.x-cx,c.y+4,1);}
 }
 
 /* ---------- Chó hoang: stomping does nothing; lure it through the flaring fires ---------- */
@@ -3961,6 +4082,7 @@ const CUTS=[{a:'cut1',name:'Mở đầu',note:'Chuyến xe buýt',ok:()=>true},
   {a:'boss6',name:'Màn 2',note:'Chuột Chúa bãi rác',ok:d=>reached(d,6)},
   {a:'dream6',name:'Flashback 2',note:'Chuột trong bếp',ok:d=>d.includes(6)},
   {a:'boss3',name:'Màn 3',note:'Quạ và chuột',ok:d=>reached(d,3)},
+  {a:'save3',name:'Màn 3',note:'Mèo cứu tổ quạ con',ok:d=>d.includes(3)},
   {a:'dream3',name:'Flashback 3',note:'Cánh đồng lúa chín',ok:d=>d.includes(3)},
   {a:'ign4',name:'Màn 4',note:'Đám cháy bắt đầu',ok:d=>reached(d,4)},
   {a:'boss4',name:'Màn 4',note:'Chó hoang giữa rừng cháy',ok:d=>reached(d,4)},
@@ -3979,7 +4101,7 @@ let cvT=0,cvEnd=0;
 function replayArena(id,out){LV=id;seenIntro={};lastCheck=56;resetLevel();cutView=false;startPlay(false);show('banner',false);bannerT=0;
   p.x=ARENA_X+(out?40:62);p.y=GROUND_Y;p.vx=p.vy=0;p.onGround=true;p.face=1;p.ctrl=false;keys.L=keys.R=keys.J=false;cam=ARENA_X;cvT=0;cvEnd=0;
   if(out){cutView='out';winLevel();}else cutView='boss';show('skip',true);}
-function updCutView(dt){if(cutView!=='boss')return;cvT+=dt;if(boss&&boss.state!=='intro'&&!boss.intro){cvEnd+=dt;if(cvEnd>.6){endCutView();return;}}if(cvT>25)endCutView();}
+function updCutView(dt){if(cutView!=='boss')return;cvT+=dt;if(boss&&boss.state!=='intro'&&boss.state!=='wake'&&!boss.intro){cvEnd+=dt;if(cvEnd>.6){endCutView();return;}}if(cvT>25)endCutView();}
 function buildCuts(){const d=completedLevels();let h='';
   // unlocked scenes are bright; locked ones stay faded (with cheats on they can still be played)
   // one row per level, in story order: the level's scenes first, then its flashback
@@ -4040,6 +4162,7 @@ function menuDo(a){
   else if(a==='dream2'){closeMenu();cutView=true;startDream1(null,'fish');}
   else if(/^boss[1-6]$/.test(a)){closeMenu();ensureAudio();replayArena(+a[4],false);}
   else if(a==='save1'){closeMenu();ensureAudio();replayArena(1,false);cutView='out';if(!boss)startBoss();const b=boss;b.swarm=null;b.rev=1;b.hits=3;b.x=ARENA_X+150;b.y=70;p.x=ARENA_X+100;p.y=GROUND_Y;startBeeSave1(b);}
+  else if(a==='save3'){closeMenu();ensureAudio();replayArena(3,false);cutView='out';if(!boss)startBoss();const b=boss;b.rat=null;b.x=ARENA_X+200;b.y=60;b.hits=3;p.x=ARENA_X+110;p.y=GROUND_Y;startCrowSave3(b);}
   else if(a==='save4'){closeMenu();ensureAudio();ign4Done=true;replayArena(4,false);fireK=1;cutView='out';if(!boss)startBoss();const b=boss;b.phase=3;b.ph1=false;b.p3t=5;b.dodges=3;b.stomps=3;b.hits=3;b.dk=0;b.eyeK=0;b.jumped=1;b.sc=1;b.x=ARENA_X+180;b.y=GROUND_Y;p.x=ARENA_X+120;startRescue4(b);}
   else if(/^out[1-6]$/.test(a)){closeMenu();ensureAudio();replayArena(+a[3],true);}
   else if(a==='back'){const from=menuPage;setPage('main');menuSel=from==='levels'?1:2;menuMark();}
@@ -4178,7 +4301,7 @@ function updPlayer(dt){
   p.vy=Math.min(p.vy+G*dt,FALLMAX);
   const wasGround=p.onGround,vyBefore=p.vy;
   p.prevY=p.y;
-  moveX(p,p.vx*dt);moveY(p,p.vy*dt);padCollide();turtleCollide6();
+  moveX(p,p.vx*dt);moveY(p,p.vy*dt);padCollide();turtleCollide6();scareCollide3();
   if(!wasGround&&p.onGround){p.landT=.14;if(vyBefore>200)puff(p.x,p.y,5,'#e9dcb8',35,12,.3);}
   p.landT=Math.max(0,p.landT-dt);
   p.ph+=Math.abs(p.vx)*dt*.19;
