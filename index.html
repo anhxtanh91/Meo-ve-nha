@@ -863,22 +863,25 @@ function groundY(c){for(let r=0;r<ROWS;r++){if(SOLID.has(map[r][c]))return r*T;}
 /* ================= boss: Ong Chúa (queen bee) ================= */
 let ARENA_X=LW-W,TREE_X=ARENA_X+292,LTREE_X=ARENA_X+28;const GROUND_Y=144;
 function setGeom(){COLS=LV===2?262:LV>2?250:265;LW=COLS*T;GOAL_X=(LV===2?236:LV>2?222:240)*T+8;ARENA_X=LW-W;TREE_X=ARENA_X+(LV===2?306:292);LTREE_X=ARENA_X+(LV===2?14:28);}const QK=.5;
-function queenFrame(up,stun){const wu=up===true?1:up===false?0:up;return shapeSprite(28,23,'#1a1420',m0=>{
+function queenFrame(up,stun,ph=0,kind=''){const wu=up===true?1:up===false?0:up,T=Math.PI*2,q=ph*T,dv=kind==='dive',lim=stun; // ph: slow body cycle (breathing abdomen, swinging legs, twitching antennae)
+  const pump=dv?0:Math.sin(q)*2.2,lg=i=>dv?0:Math.sin(q+i*1.3)*(lim?1:2.4),an=i=>Math.sin(q*2+i*2)*1.6;return shapeSprite(28,23,'#1a1420',m0=>{
   const K=QK,S=v=>v*K;const m={cap:(a,b,c,d,r,col)=>m0.cap(S(a),S(b),S(c),S(d),Math.max(.6,r*K),col),disc:(x,y,r,col)=>m0.disc(S(x),S(y),Math.max(.6,r*K),col),
     px:(x,y,col)=>m0.px(Math.round(S(x)),Math.round(S(y)),col),rect:(x,y,w,h,col)=>m0.rect(Math.round(S(x)),Math.round(S(y)),Math.max(1,Math.round(w*K)),Math.max(1,Math.round(h*K)),col),
     get:(x,y)=>m0.get(Math.round(S(x)),Math.round(S(y))),recolor:(test,col)=>m0.recolor((x,y,c)=>test(x/K,y/K,c),col)};
   // wings: the tips sweep smoothly between the raised and lowered pose (many in-between frames)
   {const L=(a,b)=>a+(b-a)*wu;m.cap(26,L(17,13),L(15,21),L(13,3),L(5.5,6),'#e4f5ff');m.cap(33,L(17,14),L(42,38),L(13,5),5,'#c7e6f7');
     m.cap(26,L(16,13),L(17,22),L(13,5),.6,'#a8c8dc');} // a vein along the front wing
-  m.cap(23,26,38,27,10,'#f5c542');
+  m.cap(23,26,38+pump*.6,27+pump*.5,10+pump*.15,'#f5c542');
   m.recolor((x,y,c)=>c==='#f5c542'&&((x>=26&&x<=28)||(x>=32&&x<=34)||x>=39),'#2a2230');
   m.recolor((x,y,c)=>c==='#f5c542'&&m.get(x,y-1)!=='#f5c542'&&m.get(x,y-1)!=='#ffe58a','#ffe58a');
   m.recolor((x,y,c)=>c==='#f5c542'&&y>=33,'#d9a22a');
-  m.cap(46,28,52,30,1.4,'#2a2230');m.cap(50,29.5,54,30.5,.6,'#1a1420');m.px(54,32,'#9aff6a');
-  m.cap(16,30,13,38,1.1,'#2a2230');m.cap(21,32,20,39,1.1,'#2a2230');m.cap(27,35,28,40,1.1,'#2a2230');
+  {const sy=pump,dd=dv?5:0;m.cap(46,28+sy,52,30+sy+dd,1.4,'#2a2230');m.cap(50,29.5+sy+dd*.8,54,30.5+sy+dd*1.4,.6,'#1a1420');m.px(54,32+sy+dd*1.4,'#9aff6a');if(pump>1.5&&!dv)m.px(55,33+sy,'#c8ff9a');}
+  if(dv){m.cap(16,30,22,37,1.1,'#2a2230');m.cap(21,32,27,38,1.1,'#2a2230');m.cap(27,35,33,39,1.1,'#2a2230');} // legs tucked back in a dive
+  else{for(const [i,x0,y0,x1,y1] of [[0,16,30,13,38],[1,21,32,20,39],[2,27,35,28,40]]){const kx=(x0+x1)/2+lg(i)*.5,ky=(y0+y1)/2;m.cap(x0,y0,kx,ky,1.1,'#2a2230');m.cap(kx,ky,x1+lg(i),y1-(lim?0:Math.abs(lg(i))*.3),1,'#2a2230');m.px(x1+lg(i),y1+1,'#1a1420');}}
   m.disc(19,24,7,'#c9902a');m.recolor((x,y,c)=>c==='#c9902a'&&(x+y)%3===0,'#e0aa40');
   m.disc(10,24,8,'#2a2230');
-  m.cap(8,16,4,8,.8,'#2a2230');m.cap(12,16,14,8,.8,'#2a2230');m.disc(4,8,1.3,'#2a2230');m.disc(14,8,1.3,'#2a2230');
+  {const t=lim?[[1,13],[17,13]]:dv?[[11,7],[17,8]]:[[4+an(0)*.6,8+an(0)],[14+an(1)*.6,8-an(1)*.7]];m.cap(8,16,(8+t[0][0])/2-1,(16+t[0][1])/2-1,.8,'#2a2230');m.cap((8+t[0][0])/2-1,(16+t[0][1])/2-1,t[0][0],t[0][1],.8,'#2a2230');
+   m.cap(12,16,(12+t[1][0])/2+1,(16+t[1][1])/2-1,.8,'#2a2230');m.cap((12+t[1][0])/2+1,(16+t[1][1])/2-1,t[1][0],t[1][1],.8,'#2a2230');m.disc(t[0][0],t[0][1],1.3,'#2a2230');m.disc(t[1][0],t[1][1],1.3,'#2a2230');}
   m.rect(5,11,11,4,'#f2c43a');m.px(5,10,'#f2c43a');m.px(10,9,'#f2c43a');m.px(10,10,'#f2c43a');m.px(15,10,'#f2c43a');m.rect(5,11,11,1,'#ffe58a');m.px(10,12,'#e5484d');m.px(7,13,'#4fa0d8');m.px(13,13,'#4fa0d8');
   if(stun){m.px(5,22,'#ffffff');m.px(7,22,'#ffffff');m.px(6,23,'#ffffff');m.px(5,24,'#ffffff');m.px(7,24,'#ffffff');
     m.px(10,22,'#ffffff');m.px(12,22,'#ffffff');m.px(11,23,'#ffffff');m.px(10,24,'#ffffff');m.px(12,24,'#ffffff');m.rect(6,28,5,1,'#e5484d');}
@@ -887,7 +890,10 @@ function queenFrame(up,stun){const wu=up===true?1:up===false?0:up;return shapeSp
     m.rect(5,27,6,2,'#3a0a10');m.px(5,27,'#ffffff');m.px(10,27,'#ffffff');m.px(6,28,'#ffffff');m.px(9,28,'#ffffff'); // open jaws with fangs
     m.cap(4,29,2,32,.7,'#2a2230');m.cap(11,29,13,32,.7,'#2a2230');} // mandibles
 });}
-const QUEEN={a:queenFrame(true,false),b:queenFrame(false,false),sa:queenFrame(true,true),sb:queenFrame(false,true),w:[0,1,2,3,4,5,6,7].map(i=>queenFrame(.5+.5*Math.cos(i/8*Math.PI*2),false))};
+// 16 hover frames (wings beat twice per slow body cycle), 8 dive frames (legs tucked, stinger down), 8 stunned frames (drooping, wings trembling low)
+const QUEEN={a:queenFrame(true,false),b:queenFrame(false,false),sa:queenFrame(true,true),sb:queenFrame(false,true),
+  w:[...Array(16)].map((_,i)=>queenFrame(.5+.5*Math.cos(i/8*Math.PI*2),false,i/16)),dv:[...Array(8)].map((_,i)=>queenFrame(.5+.5*Math.cos(i/8*Math.PI*2),false,0,'dive')),
+  st:[...Array(8)].map((_,i)=>queenFrame(.12+.08*Math.sin(i/8*Math.PI*4),true,i/8))};
 const APPLE=shapeSprite(8,9,'#3a1010',m=>{m.disc(4,5,3.2,'#e5372f');m.recolor((x,y)=>y<=3&&x<=3,'#ff7a6a');m.px(4,1,'#6b4a2f');m.px(5,0,'#4c9a4f');m.px(6,0,'#4c9a4f');});
 const APPLE_TREE=(()=>{const c=makeTree(130,156,23,70,LEAF);const g=c.getContext('2d');const r=mulberry(77);
   const ox=(c.width-130)/2;for(let i=0;i<16;i++){const x=ox+20+Math.floor(r()*90),y=14+Math.floor(r()*60);const a=g.getImageData(x+2,y+2,1,1).data;if(a[3])g.drawImage(APPLE.r,x,y);}return c;})();
@@ -1005,7 +1011,7 @@ function drawBossRaw(cx){
   if(b.state==='intro'&&b.t<5&&b.kind!=='crow')return;
   const QF=b.kind==='crow'?CROWB:QUEEN;
   const stun=b.state==='stun'||b.state==='q_fall'||b.state==='q_daze';
-  const fr=stun?(Math.floor(gt*4)%2?QF.sa:QF.sb):QF.w?QF.w[Math.floor(gt*(b.state==='dive'?64:44))%8]:(Math.floor(gt*(b.kind==='crow'?9:18))%2?QF.a:QF.b);
+  const fr=stun?(QF.st?QF.st[Math.floor(gt*8)%8]:(Math.floor(gt*4)%2?QF.sa:QF.sb)):QF.w?(b.state==='dive'&&QF.dv?QF.dv[Math.floor(gt*64)%8]:QF.w[Math.floor(gt*44)%16]):(Math.floor(gt*(b.kind==='crow'?9:18))%2?QF.a:QF.b);
   const sx=b.shake>0?Math.round(Math.sin(gt*80)*1.5):0;
   if(b.flash>0&&Math.floor(b.flash*20)%2)return;
   const bob=stun?0:Math.round(Math.sin(gt*3.4)*2);
