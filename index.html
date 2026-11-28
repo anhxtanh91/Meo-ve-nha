@@ -4033,8 +4033,7 @@ function updDogBoss(dt){
     case 'r_crouch':{b.dir=b.jd;if(b.t>.5){bossSet('r_jump');b.vx=b.jd*170;b.vy=-185;SFX.jump&&SFX.jump();}break;}
     case 'r_jump':{b.x+=b.vx*dt;b.vy+=G*.55*dt;b.y+=b.vy*dt;if(b.y>=GROUND_Y&&b.vy>0){b.y=GROUND_Y;b.vy=0;b.landed=1;}if(b.t>.9)b.blk=Math.min(1,(b.blk||0)+dt*2.5);if(b.t>1.6){bossSet('r_out');}break;}
     case 'r_out':{b.blk=1;if(!b.placed){b.placed=1;b.carry=0;b.br=null;b.fwOv=0;b.x=ARENA_X+196;b.y=GROUND_Y;b.vx=b.vy=0;b.dir=-1;p.x=ARENA_X+170;p.y=GROUND_Y;p.vx=p.vy=0;p.onGround=true;p.face=1;}
-      if(!b.pic&&b.t>.15){b.pic=1;picOn('pic4',true);}if(b.pic===1&&b.t>3.6){b.pic=2;picOn('pic4',false);} // the user's painting: the dog and the forest animals fleeing the fire
-      if(b.t>3.9)b.blk=1-clamp((b.t-3.9)/.9,0,1);if(b.t>4.9){b.blk=0;bossSet('r_rest');winLevel();}break;}
+      if(b.t>.6)b.blk=1-clamp((b.t-.6)/.9,0,1);if(b.t>1.6){b.blk=0;bossSet('r_rest');winLevel();}break;}
     case 'r_rest':{b.dir=-1;if(typeof rainK!=='undefined'&&rainK>.8&&b.t>2.5){SFX.bark();bossSet('r_leave');}break;}
     case 'r_leave':{b.dir=1;b.x+=130*dt;if(b.x>cam+W+40)b.state2='gone';break;}
     case 'p3fall':{b.dir=p.x<b.x?-1:1;if(b.t>.9&&!b.cr){b.cr=1;shakeT=.9;shakeA=4;SFX.roar&&SFX.roar();hiss(1.4,.08,300);}if(b.t>2.6){SFX.whimper();bossSet('pant');}break;}
@@ -4561,7 +4560,9 @@ function updOutro(dt){
   if(o.ph==='wait'){p.vx=0;if(o.t>1.1&&p.onGround)go('sitdown');}
   else if(o.ph==='walk'){const d=CXm-p.x;if(Math.abs(d)<2){p.vx=0;go('sitdown');}else{p.face=Math.sign(d);p.vx=p.face*55;moveX(p,p.vx*dt);p.ph+=55*dt*.19;P=poseRun(p.ph,gt);}}
   else if(o.ph==='sitdown'){P.k=o.t<.15?'crouch':'sit';if(o.t>.6)go(LV===2&&!o.cleared?'clear':LV===4&&!o.cleared?'douse':'seek');}
-  else if(o.ph==='douse'){P=poseSit(gt,1);P.k='sit';rainK=clamp(o.t/1.6,0,1);fireK=1-clamp((o.t-1.2)/5,0,1);if(Math.random()<.25*fireK+.05&&fireK>0){const f=fires4[Math.floor(Math.random()*fires4.length)];if(f)puff(f.x,GROUND_Y-6,2,'#c8c8d0',20,40,1.2,-20);}if(o.t>6.6){o.cleared=true;go('seek');}}
+  else if(o.ph==='douse'){P=poseSit(gt,1);P.k='sit';rainK=clamp(o.t/1.6,0,1);fireK=1-clamp((o.t-1.2)/5,0,1);if(Math.random()<.25*fireK+.05&&fireK>0){const f=fires4[Math.floor(Math.random()*fires4.length)];if(f)puff(f.x,GROUND_Y-6,2,'#c8c8d0',20,40,1.2,-20);}// once the dog has run off: the user's painting of the dog and the forest animals fleeing the fire
+    const dogGone=LV!==4||!boss||boss.state2==='gone'||boss.state==='gone';if(LV===4&&dogGone&&!o.pic4){o.pic4=o.t;picOn('pic4',true);}if(o.pic4&&!o.pic4e&&o.t-o.pic4>3.5){o.pic4e=o.t;picOn('pic4',false);}
+    if(o.t>6.6&&(LV!==4||(o.pic4e&&o.t-o.pic4e>.5)||o.t>16)){if(o.pic4&&!o.pic4e)picOn('pic4',false);o.cleared=true;go('seek');}}
   else if(o.ph==='clear'){P=poseSit(gt,1);P.k='sit';clearK=clamp(o.t/5,0,1);
     if(o.t>5.2){o.cleared=true;const f=p.x<ARENA_X+W-60?1:-1;p.face=f;sprout={x:clamp(p.x+f*26,ARENA_X+24,ARENA_X+W-24),t:0};go('sprout');}}
   else if(o.ph==='sprout'){P=poseSit(gt,1);P.k=o.t>1.2&&o.t<2.4?'sitwag':'sit';if(o.t>3.6)go('seek');}
