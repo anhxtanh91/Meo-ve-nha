@@ -2531,7 +2531,7 @@ function dogRunRows(t){const R=DOGMASK.run,W=R[0].length,H0=R.length,TOP=3,H=H0+
    [[.5,-.7],[.3,-.9],[-.35,-.3],[-.15,-.15],.1,2,0,1.5],
    [[1.0,.9],[.8,.6],[-.75,-.9],[-.55,-.75],.03,0,-1,.5]];
   const f=t*6,i0=Math.floor(f)%6,i1=(i0+1)%6,u=f-Math.floor(f),A=K[i0],B=K[i1],L=(a,b)=>a+(b-a)*u,
-   lg=n=>[L(A[n][0],B[n][0]),L(A[n][1],B[n][1])],k=L(A[4],B[4]),arch=L(A[5],B[5]),bob=L(A[6],B[6]),pitch=L(A[7],B[7]);
+   lg=(n,lag)=>{const tt=((t-lag)%1+1)%1,ff=6*(tt+.035*Math.sin(tt*Math.PI*4)),j0=Math.floor(ff)%6,j1=(j0+1)%6,v=ff-Math.floor(ff),e=v*v*(3-2*v),m=n%2?n-1:n;return [K[j0][m][0]+(K[j1][m][0]-K[j0][m][0])*e,K[j0][m][1]+(K[j1][m][1]-K[j0][m][1])*e];},k=L(A[4],B[4]),arch=L(A[5],B[5]),bob=L(A[6],B[6]),pitch=L(A[7],B[7]);
   for(let y=0;y<H;y++)g.push(Array(W).fill('.'));
   const MX=30,dx=x=>x<MX?x:MX+(x-MX)*(1-k),off=x=>Math.round(TOP+bob+pitch*(x-33)/33-arch*Math.max(0,Math.sin(Math.PI*(x-8)/50))),
    set=(x,y,c)=>{x=Math.round(x);y=Math.round(y);if(x>=0&&x<W&&y>=0&&y<H)g[y][x]=c;};
@@ -2548,7 +2548,7 @@ function dogRunRows(t){const R=DOGMASK.run,W=R[0].length,H0=R.length,TOP=3,H=H0+
    leg=(x0,an,front,c)=>{const hy=15+off(x0),L1=front?6:6.5,L2=front?7:7.2,[a1,a2]=an;
      const kx=x0-Math.sin(a1)*L1,ky=hy+Math.cos(a1)*L1,px=kx-Math.sin(a2)*L2,py=Math.min(H-1,ky+Math.cos(a2)*L2);
      seg(x0,hy-2,kx,ky,front?2.6:3.1,1.6,c);seg(kx,ky,px,py,1.5,1.1,c);seg(px,py,px-1.8,py,1.2,1,c);};
-  leg(fx+3,lg(1),1,'%');leg(hx+3,lg(3),0,'%');leg(fx,lg(0),1,'@');leg(hx,lg(2),0,'@');
+  leg(fx+3,lg(1,.13),1,'%');leg(hx+3,lg(3,.15),0,'%');leg(fx,lg(0,0),1,'@');leg(hx,lg(2,.03),0,'@');
   return g.map(r=>r.join(''));}
 const DOG={};
 {const add=(k,n,pk)=>{for(let i=0;i<n;i++)DOG[k+i]=dogRig(dogPose(pk||k,i/n));};add('run',12);add('stand',8);add('growl',8);add('daze',8);add('kick',8);add('lie',4);add('rear',8);add('sit',4);
@@ -3591,8 +3591,8 @@ function drawCrowBoss(cx){const b=boss;
 }
 
 /* ---------- Chó hoang: stomping does nothing; lure it through the flaring fires ---------- */
-const DSC=1.25,DEYE_X=()=>ARENA_X+170,DEYE_Y=GROUND_Y-24,DLEAP=.78; // dog drawn 30% bigger; where its eyes glow in the dark
-function newDogBoss(){return {ph1:true,phase:1,dodges:0,kind:'dog',x:ARENA_X+232,y:116,state:'intro',t:0,dir:-1,hits:0,flash:0,hw:15,h:23,spd:1,vx:0,vy:0,sc:.42,cnt:0,shake:0,sx:0,sy:0,burnCD:0};}
+const DSC=1.25*2/3,DEYE_X=()=>ARENA_X+170,DEYE_Y=GROUND_Y-24,DLEAP=.78; // dog at 2/3 of its old size (user); where its eyes glow in the dark
+function newDogBoss(){return {ph1:true,phase:1,dodges:0,kind:'dog',x:ARENA_X+232,y:116,state:'intro',t:0,dir:-1,hits:0,flash:0,hw:10,h:15,spd:1,vx:0,vy:0,sc:.42,cnt:0,shake:0,sx:0,sy:0,burnCD:0};}
 const arenaFires=()=>fires4.filter(f=>f.arena);
 let seenIntro={}; // after the first try, boss intros are shortened
 function startRescue4(b){b.vx=b.vy=0;b.y=GROUND_Y;b.cs=p.x>=b.x?1:-1;if(Math.abs(b.x-(ARENA_X+160))>80)b.x=clamp(b.x,ARENA_X+90,ARENA_X+230);b.br={x:b.x,y:-20,vy:0,ang:0,off:0};b.fwOv=1;
@@ -3645,7 +3645,7 @@ function updDogBoss(dt){
     case 'r_push':{const r=b.br,k=clamp(b.t/2.6,0,1);p.face=-b.cs;p.vx=0;p.x=b.x+b.cs*(34-k*6)+Math.sin(b.t*20)*.5;r.off=-b.cs*k*34;r.ang=b.cs*k*.22;r.y=b.y-9+k*3;if(Math.random()<.3)puff(p.x,p.y,1,'#6a5a4a',20,10,.3);
       if(b.t>2.6){r.vy=0;r.drop=1;r.y=GROUND_Y-2;r.ang=0;SFX.clank();puff(b.x-b.cs*30,GROUND_Y,10,'#5a4a40',50,30,.5);bossSet('r_trap');}break;}
     case 'r_trap':{b.fwOv=Math.min(1.5,(b.fwOv||1)+dt*.4);p.vx=0;if(b.t>.4&&b.t<1.6)p.face=Math.floor(b.t*2.5)%2?1:-1;p.bub=b.t>.3&&b.t<1.8;if(b.t>.9&&!b.up){b.up=1;SFX.growl();}if(b.t>2.2){p.bub=false;bossSet('r_grab');}break;}
-    case 'r_grab':{const tx=p.x-b.cs*0-b.dir*22;b.dir=Math.sign(p.x-b.x)||1;const d=p.x-b.dir*22-b.x;b.x+=Math.sign(d)*Math.min(Math.abs(d),90*dt);if(Math.abs(d)<2){b.carry=1;SFX.bark();b.jd=Math.sign(ARENA_X+W/2-b.x)||1;bossSet('r_crouch');}break;}
+    case 'r_grab':{const tx=p.x-b.cs*0-b.dir*15;b.dir=Math.sign(p.x-b.x)||1;const d=p.x-b.dir*15-b.x;b.x+=Math.sign(d)*Math.min(Math.abs(d),90*dt);if(Math.abs(d)<2){b.carry=1;SFX.bark();b.jd=Math.sign(ARENA_X+W/2-b.x)||1;bossSet('r_crouch');}break;}
     case 'r_crouch':{b.dir=b.jd;if(b.t>.5){bossSet('r_jump');b.vx=b.jd*170;b.vy=-185;SFX.jump&&SFX.jump();}break;}
     case 'r_jump':{b.x+=b.vx*dt;b.vy+=G*.55*dt;b.y+=b.vy*dt;if(b.y>=GROUND_Y&&b.vy>0){b.y=GROUND_Y;b.vy=0;b.landed=1;}if(b.t>.9)b.blk=Math.min(1,(b.blk||0)+dt*2.5);if(b.t>1.6){bossSet('r_out');}break;}
     case 'r_out':{b.blk=1;if(!b.placed){b.placed=1;b.carry=0;b.br=null;b.fwOv=0;b.x=ARENA_X+196;b.y=GROUND_Y;b.vx=b.vy=0;b.dir=-1;p.x=ARENA_X+170;p.y=GROUND_Y;p.vx=p.vy=0;p.onGround=true;p.face=1;}
@@ -3653,7 +3653,7 @@ function updDogBoss(dt){
     case 'r_rest':{b.dir=-1;if(typeof rainK!=='undefined'&&rainK>.8&&b.t>2.5){SFX.bark();bossSet('r_leave');}break;}
     case 'r_leave':{b.dir=1;b.x+=130*dt;if(b.x>cam+W+40)b.state2='gone';break;}
     case 'p3fall':{b.dir=p.x<b.x?-1:1;if(b.t>.9&&!b.cr){b.cr=1;shakeT=.9;shakeA=4;SFX.roar&&SFX.roar();hiss(1.4,.08,300);}if(b.t>2.6){SFX.whimper();bossSet('pant');}break;}
-    case 'pant':{face();if(Math.random()<.08)puff(b.x+b.dir*22,b.y-14,1,'rgba(220,220,230,.5)',10,10,.6,-10);if(b.t>1.1){bossSet('growl');}break;}
+    case 'pant':{face();if(Math.random()<.08)puff(b.x+b.dir*15,b.y-10,1,'rgba(220,220,230,.5)',10,10,.6,-10);if(b.t>1.1){bossSet('growl');}break;}
     case 'roar':{face();b.shake=.3;if(b.t<.05&&!b.rr){b.rr=1;SFX.roar&&SFX.roar();SFX.growl();shakeT=.4;shakeA=2;}if(b.t>1.0){b.rr=0;bossSet('prep');b.ph1c=true;}break;}
     case 'growl':{face();b.shake=.15;if(b.ph1&&b.t>.5){bossSet('roar');break;}if(!b.ph1&&b.t>.8/b.spd){const r=Math.random();if(b.phase>=3?r<.65:r<.4){bossSet('prep');SFX.growl();}else bossSet('crouch');}break;}
     case 'crouch':{face();if(b.t>.35/b.spd){bossSet('leap');SFX.bark();const tx=clamp(p.x,L,Rx);b.vx=clamp((tx-b.x)/.72,-270,270)*Math.min(1.25,b.spd);b.vy=-355;}break;}
@@ -3674,7 +3674,7 @@ function updDogBoss(dt){
       if(state==='play'&&p.inv<=0&&!(p.safe>0)&&Math.abs(p.x-w.x)<9&&p.y>GROUND_Y-11){hurt(w.x,false);}}
     b.waves=b.waves.filter(w=>w.t<2.2&&w.x>LTREE_X&&w.x<TREE_X);}
   b.stCD=Math.max(0,(b.stCD||0)-dt);
-  if(b.carry){p.x=b.x+b.dir*24;p.y=b.y-4;p.vx=p.vy=0;p.onGround=false;const P=poseStand(0);P.k='curl';P.eye='half';p.pose=P;p.face=b.dir;}
+  if(b.carry){p.x=b.x+b.dir*16;p.y=b.y-3;p.vx=p.vy=0;p.onGround=false;const P=poseStand(0);P.k='curl';P.eye='half';p.pose=P;p.face=b.dir;}
   if(b.state==='r_push'||b.walkC){p.pose=poseRun(gt*(b.walkC?12:7),gt);}
   if(b.state==='intro'||b.state==='flee'||b.state.startsWith('r_'))return;
   if(state!=='play')return;
@@ -3710,7 +3710,7 @@ function drawDogBoss(cx){const b=boss;if(b.state2==='gone')return;for(const w of
   else if(s==='r_trap'&&b.t<.9)k='daze'+(Math.floor(gt*8)%8);else if(s==='r_rest')k='sit'+(Math.floor(gt*3)%4);else k='stand'+(Math.floor(gt*5)%8);
   const fr=DOG[k]||DOG.stand,sc=b.sc*DSC,w=fr.w*sc,h=fr.h*sc;const sx=b.shake>0?Math.round(Math.sin(gt*80)):0;
   if(s==='intro'&&!b.jumped)return; // only the red eyes show (drawn over the dark in drawNight)
-  if(sc>=.99*DSC)alpha(.25,()=>rect(b.x-cx-22,GROUND_Y-2,44,2,'#000'));
+  if(sc>=.99*DSC)alpha(.25,()=>rect(b.x-cx-15,GROUND_Y-2,30,2,'#000'));
   const img=b.dir>0?fr.l:fr.r;ctx.drawImage(img,R(b.x-cx-w/2+sx),R(b.y-h+1),R(w),R(h));
   // glowing red eye with a streak while charging, toxic drool, dust, smoke from singed fur
   {const X0=R(b.x-cx-w/2+sx),Y0=R(b.y-h+1),fx=v=>b.dir>0?X0+R(w-v*sc):X0+R(v*sc),pl=.5+.5*Math.sin(gt*7),run=s==='charge'||s==='flee';
@@ -3722,7 +3722,7 @@ function drawDogBoss(cx){const b=boss;if(b.state2==='gone')return;for(const w of
       if(s==='growl'&&Math.random()<.12)parts.push({x:fx(fr._mx-1)+cx,y:Y0+R(fr._my*sc),vx:-b.dir*16,vy:-8,life:.9,max:.9,c:'rgba(220,220,230,.5)',g:-10});}
     if((run||s==='skid')&&b.y>=GROUND_Y-1&&Math.random()<.5)parts.push({x:b.x-b.dir*12+(Math.random()*8-4),y:GROUND_Y-1,vx:-b.dir*(10+Math.random()*20),vy:-10-Math.random()*20,life:.5,max:.5,c:Math.random()<.5?'#6a5a4a':'#4a4038',g:60});
     if((s==='burnt'||s==='hurt'||b.hits>0)&&Math.random()<(s==='burnt'?.7:.12*b.hits))parts.push({x:b.x+(Math.random()*24-12),y:Y0+4+Math.random()*6,vx:(Math.random()-.5)*6,vy:-14-Math.random()*10,life:1.1,max:1.1,c:Math.random()<.3?'#ff8a30':'#3a3434',g:-6});}
-  if(s==='roar'){const mx=b.x-cx+b.dir*22,my=b.y-16;for(let i=0;i<3;i++){const q=((b.t*1.8+i/3)%1);alpha((1-q)*.55,()=>{ctx.strokeStyle='#ffd0a0';ctx.lineWidth=1;ctx.beginPath();ctx.arc(R(mx),R(my),4+q*30,b.dir>0?-1:Math.PI-1,b.dir>0?1:Math.PI+1);ctx.stroke();});}}
+  if(s==='roar'){const mx=b.x-cx+b.dir*15,my=b.y-11;for(let i=0;i<3;i++){const q=((b.t*1.8+i/3)%1);alpha((1-q)*.55,()=>{ctx.strokeStyle='#ffd0a0';ctx.lineWidth=1;ctx.beginPath();ctx.arc(R(mx),R(my),4+q*30,b.dir>0?-1:Math.PI-1,b.dir>0?1:Math.PI+1);ctx.stroke();});}}
   if(s==='daze'){for(let i=0;i<3;i++){const a=gt*5+i*2.1;blit(STAR,b.x-cx+(b.dir>0?10:-10)+Math.cos(a)*8,b.y-28+Math.sin(a)*2,1);}}
 }
 
