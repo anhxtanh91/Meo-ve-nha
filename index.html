@@ -4435,7 +4435,7 @@ function updPlayer(dt){
   if(LV===6&&lakeAt6(p.x)&&p.y>WATER6_Y+3&&!p.splashed){p.splashed=true;SFX.splash();puff(p.x,WATER6_Y,12,'#a8b494',60,80,.6,300);}
   if(p.y>(LV===2?WATER_Y+20:LV===6&&lakeAt6(p.x)?WATER6_Y+16:H+30)){p.splashed=false;hurt(p.x,true);return;}
   for(const f of flags){if(!f.on&&p.x>f.x-4){f.on=true;p.spawnX=f.x;lastCheck=f.x;if(p.lives<3){p.lives=3;updateHud();for(let i=0;i<6;i++)parts.push({x:p.x+(Math.random()*16-8),y:p.y-14,vx:(Math.random()*2-1)*20,vy:-40-Math.random()*30,life:.9,max:.9,c:'#e5484d',g:20});}SFX.flag();puff(f.x+5,f.y-24,10,'#f2c43a',50,40,.6);}}
-  if(!boss&&!bossWarn&&p.x>ARENA_X+60&&state==='play'){if(seenIntro[LV+'w'])startBoss();else{seenIntro[LV+'w']=1;bossWarn={t:0,b:-1};}} // user: a 2s red flashing warning before every boss appears
+  if(!boss&&!bossWarn&&p.x>ARENA_X+60&&state==='play')bossWarn={t:0,b:-1}; // user: a 2s red flashing warning before every boss appears, retries after dying too
   if(boss&&p.x<LTREE_X+14){p.x=LTREE_X+14;p.vx=Math.max(0,p.vx);}
   if(p.x>TREE_X-14){p.x=TREE_X-14;p.vx=Math.min(0,p.vx);}
 }
