@@ -1058,17 +1058,38 @@ function makeArena1(){
   // honey that has dripped onto the face
   for(const [hx,w] of [[56-ST1.cx+cx0-38,7],[198-ST1.cx+cx0-38,5],[cx0+60,4]]){for(let x=-w;x<=w;x++){const yy=cy0+1+(Math.abs(x)<w*.6?0:0);P(hx+x,yy,'#e8961a');if(Math.abs(x)<w-1)P(hx+x,yy-1,'#f4b834');}P(hx-1,cy0,'#ffe08a');}
   // ---- broken snags framing the arena, with low branches carrying the smashed hive ----
-  const snag=dir=>shapeSprite(64,130,'#24120a',m=>{const tx=dir>0?14:50;
-    m.cap(tx,129,tx,40,11,BK);m.cap(tx,129,tx-dir*1,90,13,BK);m.cap(tx-14,128,tx-6,118,4,BK);m.cap(tx+14,128,tx+6,118,4,BK);
-    for(let y=18;y<44;y++)for(let x=tx-11;x<=tx+11;x++){const top=24+Math.floor(hashD(x*5)*16)+(x===tx+3?-10:0)+(x===tx-4?-6:0);if(y>=top)m.px(x,y,y<top+3?'#d8b888':BK);} // jagged broken top
-    // low branches angling up into the arena (the hive pieces hang under them)
-    m.cap(tx+dir*8,46,tx+dir*48,26,3,BK);m.cap(tx+dir*44,28,tx+dir*54,20,1.6,BK);m.cap(tx+dir*28,36,tx+dir*36,22,1.4,BK);
-    m.cap(tx-dir*9,96,tx-dir*14,88,2,BK);m.cap(tx+dir*9,104,tx+dir*26,96,2.2,BK);
-    m.recolor((x,y,c)=>c===BK&&(hashD(x*7)>.7),BL);m.recolor((x,y,c)=>c===BK&&(hashD(x*3+1)>.82||hashD(x+y*31)>.94),BD);
-    m.recolor((x,y,c)=>(c===BK||c===BL)&&x*dir<(tx-dir*6)*dir,BX);
-    m.recolor((x,y,c)=>c!=='#d8b888'&&y>110&&hashD(x*13+y)>.8,'#5a8a3a');
-    for(let y=48;y<70;y++)m.px(tx+dir*2,y,BD);m.px(tx+dir*2,70,'#1a0a04'); // a long lightning crack
-  });
+  // finely shaded broken snag: round trunk lit from the sun side, fissured bark plates, knots, torn pale top, moss, ivy
+  const snag=dir=>{const CW=80,CH=130,tx=dir>0?24:56,G=new Array(CW*CH).fill(-1),EX=new Array(CW*CH).fill(null);
+    const RAMP=['#1e0f08','#2e180c','#422414','#583320','#6e4428','#875632','#a06a3c','#b8824c','#cf9c62'];
+    const hwAt=y=>{const b=CH-1-y;return 12+(b<26?Math.pow((26-b)/26,2.2)*13:0)-(y<60?(60-y)*.03:0);};
+    const topAt=x=>{const d=x-tx;return 22+Math.floor(hashD(x*5+dir)*9)+(d===3*dir?-14:0)+(d===4*dir?-11:0)+(d===-5*dir?-8:0)+(d===-4*dir?-5:0)+(Math.abs(d)>8?6:0);};
+    const set=(x,y,v)=>{if(x>=0&&y>=0&&x<CW&&y<CH)G[y*CW+x]=v;};
+    // trunk
+    for(let y=8;y<CH;y++){const hw=hwAt(y);for(let x=Math.floor(tx-hw);x<=Math.ceil(tx+hw);x++){if(y<topAt(x))continue;const u=(x+.5-tx)/hw;if(Math.abs(u)>1)continue;
+      const b=CH-1-y;if(b<14&&Math.abs(u)>.6&&Math.sin(u*16+dir)>.45)continue; // gaps between the root flares
+      let v=3.4+u*dir*2.3+(1-u*u)*1.2;const k=x+Math.round(Math.sin(y*.17+x*.7)*1.3);
+      if(hashD(k*7+3)>.7)v-=2.2;else if(hashD(k*7+3)>.62)v-=1; // vertical fissures
+      if((y+Math.floor(hashD(Math.floor(k/4)*13)*9))%9===0)v-=1.4; // plates crack across
+      if(hashD((k-1)*7+3)>.7&&hashD(k*7+3)<=.62)v+=.9; // lit ridge beside a fissure
+      if(y<topAt(x)+3){v=7+(y-topAt(x))*-.3+u*dir;EX[y*CW+x]=y===topAt(x)?'#e8cc96':(hashD(x*3+y)>.5?'#d8b888':'#c4a06a');} // torn pale wood
+      set(x,y,clamp(Math.round(v),0,8));}}
+    // knots and a long lightning crack
+    for(const [kx,ky,r] of [[tx-dir*3,92,2.6],[tx+dir*4,60,2]]){for(let y=-4;y<=4;y++)for(let x=-4;x<=4;x++){const e=Math.hypot(x/(r*.8),y/r);if(e>1.25||G[(ky+y)*CW+kx+x]<0)continue;set(kx+x,ky+y,e>1?1:e>.6?5:e>.3?2:0);}}
+    for(let y=44;y<74;y++){const x=tx+dir*2+Math.round(Math.sin(y*.4)*1);set(x,y,0);if(y%3)set(x-dir,y,6);}
+    // branches: tapered, lit on top, broken stubs at their ends
+    const limb=(x0,y0,x1,y1,r0,r1)=>{const n=Math.ceil(Math.hypot(x1-x0,y1-y0));for(let i=0;i<=n;i++){const t=i/n,cx=x0+(x1-x0)*t,cy=y0+(y1-y0)*t,r=r0+(r1-r0)*t;
+      for(let y=Math.floor(cy-r-1);y<=cy+r+1;y++)for(let x=Math.floor(cx-r-1);x<=cx+r+1;x++){const d=(y+.5-cy)/r;if(Math.hypot(x+.5-cx,y+.5-cy)>r)continue;let v=Math.round(4.6-d*2.6+(hashD(x*11+y*5)>.8?-1.5:0));if(Math.abs(t-.5)<.02&&hashD(x)>.5)v=2;set(x,y,clamp(v,0,8));}}
+      const ex=Math.round(x1),ey=Math.round(y1);set(ex,ey,7);set(ex,ey-1,8);};
+    limb(tx+dir*8,47,tx+dir*48,26,3.4,2);limb(tx+dir*44,28,tx+dir*55,19,1.6,.8);limb(tx+dir*28,36,tx+dir*37,22,1.6,.8);limb(tx+dir*40,30,tx+dir*44,36,1,.6);
+    limb(tx-dir*10,95,tx-dir*20,86,2.4,1.2);limb(tx+dir*10,104,tx+dir*27,96,2.6,1.4);limb(tx-dir*8,70,tx-dir*14,66,1.6,1.1);
+    // moss on the shady roots, ivy climbing the trunk
+    const [c,g]=mkCanvas(CW,CH);const P=(x,y,col)=>{g.fillStyle=col;g.fillRect(x,y,1,1);};
+    for(let y=0;y<CH;y++)for(let x=0;x<CW;x++){const v=G[y*CW+x];if(v<0){const n=(i,j)=>i>=0&&j>=0&&i<CW&&j<CH&&G[j*CW+i]>=0;if(n(x-1,y)||n(x+1,y)||n(x,y-1)||n(x,y+1))P(x,y,'#160a04');continue;}
+      let col=EX[y*CW+x]||RAMP[v];const u=(x-tx)*dir;if(!EX[y*CW+x]&&y>CH-24&&u<2&&hashD(x*13+y*7)>.55)col=hashD(x+y)>.5?'#5a8a3a':'#456e2e';P(x,y,col);}
+    for(let y=CH-6;y>62;y--){const x=Math.round(tx-dir*6+Math.sin(y*.21)*4);if(G[y*CW+x]<0)continue;P(x,y,'#2e5a24');if(y%5===0){const lx=x+(y%10?2:-2);P(lx,y,'#4e8a34');P(lx+(y%10?1:-1),y,'#6aa844');P(lx,y-1,'#4e8a34');P(lx+(y%10?1:-1),y+1,'#3a6e2a');}}
+    // a few dead leaves still clinging to the twigs
+    for(const [x,y] of [[tx+dir*55,18],[tx+dir*37,21],[tx+dir*50,22]]){P(x,y,'#b07a30');P(x+1,y+1,'#8a5a22');}
+    return {r:c,w:CW,h:CH};};
   // ---- felled trunks lying all around behind the stump ----
   const log=(w,r,endR)=>shapeSprite(w,r*2+3,'#24120a',m=>{m.cap(r+1,r+1,w-r-2,r+1,r,BK);
     m.recolor((x,y)=>y<=3,BL);m.recolor((x,y)=>y>=r*2-1,BX);m.recolor((x,y,c)=>c===BK&&hashD(x*5+y)>.85,BD);
@@ -1086,8 +1107,8 @@ function sawSprites(){return [0,1].map(f=>shapeSprite(46,16,'#141414',m=>{
 function drawArenaBack1(cx){if(!A1)makeArena1();const ax=ARENA_X-R(cx);if(ax>W+20||ax<-W-60)return;
   const sh=treeShake>0?Math.round(Math.sin(gt*70)*2*treeShake/.6):0;
   // felled trunks lying in a jumble behind the stump
-  ctx.drawImage(A1.logs[1].r,ax-20,GROUND_Y-12);ctx.drawImage(A1.logs[0].r,ax+168,GROUND_Y-15);ctx.drawImage(A1.logs[2].l,ax+92,GROUND_Y-24);
-  ctx.drawImage(A1.snL.r,ax+LTREE_X-ARENA_X-14+(treeSide<0?sh:0),GROUND_Y+2-130);ctx.drawImage(A1.snR.r,ax+TREE_X-ARENA_X-50+(treeSide>0?sh:0),GROUND_Y+2-130);
+  ctx.drawImage(A1.logs[1].r,ax-20,GROUND_Y-12);ctx.drawImage(A1.logs[0].r,ax+168,GROUND_Y-15);ctx.drawImage(A1.logs[2].l,ax+92,GROUND_Y-11);
+  ctx.drawImage(A1.snL.r,ax+LTREE_X-ARENA_X-24+(treeSide<0?sh:0),GROUND_Y+2-130);ctx.drawImage(A1.snR.r,ax+TREE_X-ARENA_X-56+(treeSide>0?sh:0),GROUND_Y+2-130);
   // honeycomb pieces stuck under the low branches, honey dripping off them
   for(const h of HIVE1){if(h.log)continue;if(h.main&&apple&&(apple.x>ARENA_X+160?1:-1)===h.side)continue;const s=A1.hive[h.s],sw=h.side!==0&&treeSide===h.side?sh:0;
     const X=ax+h.x+sw,Y=h.y+Math.round(Math.sin(gt*1.3+h.x)*.4);ctx.drawImage(h.side<0?s.r:s.l,R(X-s.w/2),R(Y-2));
@@ -1097,16 +1118,19 @@ function drawArenaBack1(cx){if(!A1)makeArena1();const ax=ARENA_X-R(cx);if(ax>W+2
 function drip1(x,y,seed){const q=(gt*.42+hashD(seed)*.9)%1,fy=y+(q<.62?0:Math.pow((q-.62)/.38,2)*(GROUND_Y-2-y));
   if(q<.62){const l=Math.round(q/.62*3);rect(R(x),R(y),1,l+1,'#e8961a');if(l>1)rect(R(x),R(y)+l,1,1,'#ffd060');}else{rect(R(x),R(fy),1,2,'#f0a020');rect(R(x),R(fy),1,1,'#ffe08a');}}
 function drawArenaFront1(cx){if(!A1)makeArena1();const ax=ARENA_X-R(cx);if(ax>W+20||ax<-W-60)return;
+  // the abandoned chainsaw, its bar driven into the edge of the stump and still idling: shakes, puffs blue exhaust, sawdust spitting out of the cut
+  const on=state!=='title',f=on?Math.floor(gt*24)%2:0,jx=on?Math.round(Math.sin(gt*61)*.6):0,jy=on&&Math.sin(gt*47)>.3?-1:0,sx=ax+16,sy=GROUND_Y-20;
+  ctx.save();ctx.translate(sx+jx,sy+jy);ctx.rotate(.42);ctx.drawImage(A1.saw[f].r,-12,-10);ctx.restore();
   ctx.drawImage(A1.stump,R(ax+ST1.cx-A1.sox),GROUND_Y-A1.soy);
+  rect(ax+38,GROUND_Y-1,3,1,'#3e2214');rect(ax+37,GROUND_Y,1,3,'#2a160c'); // the kerf the bar has cut
+  if(on){for(let i=0;i<4;i++){const q=(gt*.9+i/4)%1;alpha(.3*(1-q),()=>rect(R(sx-10-q*10+Math.sin(q*7+i)*2),R(sy-4-q*16),2+Math.floor(q*2),2,'#a8b0bc'));}
+    for(let i=0;i<4;i++){const q=(gt*2.3+i/4)%1;rect(R(ax+36-q*10),R(GROUND_Y-2-q*6+q*q*12),1,1,i%2?'#e8cc96':'#c8a070');}}
+  for(let x=-6;x<=4;x++){const h=Math.round(2*Math.cos(x/6*1.5));for(let y=0;y<h;y++)rect(ax+30+x,GROUND_Y-y,1,1,y?'#e8cc96':'#c8a070');} // a little heap of sawdust
   const h=HIVE1[6],s=A1.hive[h.s];ctx.drawImage(s.r,R(ax+h.x-s.w/2),GROUND_Y-12); // a chunk fallen onto the face
   // the falling honeycomb that knocks the queen out
   if(apple){const s0=A1.hive[0],X=R(apple.x-cx),Y=R(apple.y);ctx.save();ctx.translate(X,Y);if(!apple.hit||apple.y<GROUND_Y-5)ctx.rotate(apple.t*(apple.hit?9:3));ctx.drawImage(s0.r,-s0.w/2,-s0.h/2);ctx.restore();
     if(apple.hit&&apple.y>=GROUND_Y-5)alpha(.8,()=>{rect(X-6,GROUND_Y,12,1,'#e8961a');rect(X-4,GROUND_Y-1,8,1,'#f4b834');});}
-  // the abandoned chainsaw, still idling: shakes, puffs blue exhaust, chain creeping round
-  const on=state!=='title',f=on?Math.floor(gt*24)%2:0,jx=on?Math.round(Math.sin(gt*61)*.6):0,jy=on&&Math.sin(gt*47)>.3?-1:0,sx=ax+4,sy=GROUND_Y-15;
-  ctx.drawImage(A1.saw[f].r,sx+jx,sy+jy);
-  if(on){for(let i=0;i<4;i++){const q=(gt*.9+i/4)%1;alpha(.3*(1-q),()=>rect(R(sx+1-q*10+Math.sin(q*7+i)*2),R(sy+9-q*16),2+Math.floor(q*2),2,'#a8b0bc'));}
-    for(let i=0;i<3;i++){const q=(gt*2.3+i/3)%1;rect(R(sx+46+q*6),R(sy+9-q*5+q*q*10),1,1,i%2?'#e8cc96':'#c8a070');}}}
+}
 let saw1T=0;
 function sawSound1(dt){if(LV!==1||state==='title'||!ac||muted)return;const d=Math.abs(p.x-(ARENA_X+20));if(d>260)return;saw1T-=dt;if(saw1T>0)return;saw1T=.085;const v=.018*(1-d/260);tone(62+Math.random()*6,48,.07,'sawtooth',v);}
 
@@ -1730,7 +1754,7 @@ function resetLevelN(){
   fly.forEach(([c,r])=>enemies.push({type:'bee',x0:c*T+8,y0:r*T+12,x:c*T+8,y:r*T+12,hw:5,h:8,t:hash(c)*6,dir:-1,alive:true,dead:0,vy:0}));
   flags=(LV===6?[22,52,76,116,146,168,196]:LV===5?[46,81,118,162,200]:LV===3?[38,88,126,167,206]:[34,70,110,150,212]).map(c=>({x:c*T+8,y:groundY(c),on:false}));
   fires4=LV===4?[124,129,138,141,147,154,159,166,175,181,193,202,211,219].map((c,i)=>({x:c*T+8,ph:i*1.37,c})):[];
-  if(LV===4)for(const [dx,ph] of [[105,0],[215,Math.PI]])fires4.push({x:ARENA_X+dx,ph,c:Math.floor((ARENA_X+dx)/T),arena:true});scareWob=0;if(LV===5)reset5();
+  // (user: no campfires in the middle of the dog arena any more; in phase 3 the dog burns itself on the closing fire walls instead)scareWob=0;if(LV===5)reset5();
   stats={fish:0,total:0,stomps:0};
   p=LV===5?newPlayer(START5[0],START5[1]):newPlayer(56,144);
   bus={x:-400,door:0,vx:0,leaving:false,gone:true,dist:0};
@@ -3287,8 +3311,10 @@ function updDogBoss(dt){
   const fall=()=>{b.vy+=G*dt;b.y+=b.vy*dt;if(b.y>=GROUND_Y){b.y=GROUND_Y;b.vy=0;return true;}return false;};
   const fireBetween=()=>arenaFires().some(f=>(f.x-b.x)*(f.x-p.x)<0);
   // runs (or lands) straight in a fire: if it is flaring, the dog gets burnt
-  function dogBurnCheck(){for(const f of arenaFires())if(b.burnCD<=0&&Math.abs(b.x-f.x)<11&&fireH(f)>=10){b.hits++;b.burnCD=1.5;b.flash=.6;SFX.whimper();SFX.bossHit();puff(b.x,b.y-14,14,'#3a3030',50,50,.9,-30);puff(b.x,b.y-10,10,'#ffb040',70,60,.5);bossBar();
-      const dir=b.vx?Math.sign(b.vx):b.dir;if(b.hits>=3){startRescue4(b);}else{b.spd*=1.15;bossSet('burnt');b.vx=-dir*150;b.vy=-230;}return;}}
+  // phase 3: the dog charges (or lands) into the fire walls closing in from both edges and gets burnt
+  function dogBurnCheck(){const wl=LTREE_X+14+FW,wr=TREE_X-14-FW;if(b.phase<3||FW<20||b.burnCD>0||!(b.x<=wl+10||b.x>=wr-10))return;
+    b.hits++;b.burnCD=1.5;b.flash=.6;SFX.whimper();SFX.bossHit();puff(b.x,b.y-14,14,'#3a3030',50,50,.9,-30);puff(b.x,b.y-10,10,'#ffb040',70,60,.5);bossBar();
+    const away=b.x<=wl+10?1:-1;if(b.hits>=3){startRescue4(b);}else{b.spd*=1.15;bossSet('burnt');b.vx=away*150;b.vy=-230;}}
   switch(b.state){
     case 'intro':{b.dir=-1;if(!b.seen){b.seen=1;if(seenIntro[4])b.t=3.6;seenIntro[4]=1;}const t=b.t,MX=ARENA_X+150,CAT=ARENA_X+70;
       // the cat walks in and freezes, staring into the dark
@@ -3326,7 +3352,7 @@ function updDogBoss(dt){
     case 'p3fall':{b.dir=p.x<b.x?-1:1;if(b.t>.9&&!b.cr){b.cr=1;shakeT=.9;shakeA=4;SFX.roar&&SFX.roar();hiss(1.4,.08,300);}if(b.t>2.6){SFX.whimper();bossSet('pant');}break;}
     case 'pant':{face();if(Math.random()<.08)puff(b.x+b.dir*22,b.y-14,1,'rgba(220,220,230,.5)',10,10,.6,-10);if(b.t>1.1){bossSet('growl');}break;}
     case 'roar':{face();b.shake=.3;if(b.t<.05&&!b.rr){b.rr=1;SFX.roar&&SFX.roar();SFX.growl();shakeT=.4;shakeA=2;}if(b.t>1.0){b.rr=0;bossSet('prep');b.ph1c=true;}break;}
-    case 'growl':{face();b.shake=.15;if(b.ph1&&b.t>.5){bossSet('roar');break;}if(!b.ph1&&b.t>.8/b.spd){const r=Math.random();if(fireBetween()?r<.72:r<.4){bossSet('prep');SFX.growl();}else bossSet('crouch');}break;}
+    case 'growl':{face();b.shake=.15;if(b.ph1&&b.t>.5){bossSet('roar');break;}if(!b.ph1&&b.t>.8/b.spd){const r=Math.random();if(b.phase>=3?r<.65:r<.4){bossSet('prep');SFX.growl();}else bossSet('crouch');}break;}
     case 'crouch':{face();if(b.t>.35/b.spd){bossSet('leap');SFX.bark();const tx=clamp(p.x,L,Rx);b.vx=clamp((tx-b.x)/.72,-270,270)*Math.min(1.25,b.spd);b.vy=-355;}break;}
     case 'leap':{b.x=clamp(b.x+b.vx*dt,L-10,Rx+10);if(b.vx)b.dir=b.vx<0?-1:1;if(fall()&&b.t>.1){bossSet('land');shakeT=.15;shakeA=1.5;puff(b.x,GROUND_Y,8,'#5a4a40',60,20,.4);}break;}
     case 'land':{dogBurnCheck();if(b.state==='land'&&b.t>.45/b.spd){b.cnt++;bossSet(b.phase===3?'pant':'growl');}break;}
@@ -4250,7 +4276,8 @@ function decor2(c,r,X,Y){
 }
 // how ruined the land is at world x: 0 far from the boss, 1 in the boss arena
 function decayAt(x){if(LV>2)return 0;const s0=LW*.38,e0=ARENA_X-40;return clamp((x-s0)/(e0-s0),0,1);}
-function witherAt(c){if(LV>2)return LV===4&&c>FIRE_C+2?4:0;if(c*T>=ARENA_X-24)return 3;return clamp(Math.floor(decayAt(c*T)*4+(hashD(c*5+11)-.5)*1.3),0,3);}
+function witherAt(c){if(LV>2)return LV===4&&(c>FIRE_C+2||(fireK>.3&&c>FIRE_C-14))?4:0; // the camp's grass scorches as soon as the fire breaks out
+if(c*T>=ARENA_X-24)return 3;return clamp(Math.floor(decayAt(c*T)*4+(hashD(c*5+11)-.5)*1.3),0,3);}
 function mixHex(a,b,t){const A=hex(a),B=hex(b);return 'rgb('+A.map((v,i)=>Math.round(lerp(v,B[i],t))).join(',')+')';}
 // big cut stump: flared roots, ridged bark, axe notch, ringed top face
 // cut stump in flat 2D side view: straight cut line on top, no top face
